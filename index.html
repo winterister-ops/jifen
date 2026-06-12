@@ -149,6 +149,7 @@
     <h1>🎉 宝贝积分乐园 🎉</h1>
     <div class="score-num" id="scoreNum">0</div>
     <div class="star">✨ 我的小星星 ✨</div>
+    <div id="syncStatus" style="margin-top:6px;font-size:.8rem;opacity:.9;"></div>
   </div>
 
   <div class="tabs">
@@ -169,6 +170,9 @@
   <footer>数据自动保存在本机 · 陪宝贝一起成长 💛</footer>
 </div>
 
+<!-- Firebase 云同步 SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
   // ====== 可自由修改的任务和奖励 ======
   const TASKS = [
@@ -190,17 +194,67 @@
     { id: 'park',    emoji: '🎡', name: '去游乐场玩',     pts: 50 },
   ];
 
+  // ====== ① 在这里粘贴你的 Firebase 配置（开启多设备同步）======
+  // 不填也能用：留空时是「单机模式」，数据存本机；填好后自动开启云同步。
+  const firebaseConfig = {
+    apiKey: "AIzaSyBSfzrKexHnCDOQ3k8vTSJ8oGqRtlh95tk",
+    authDomain: "baby-points-9a82c.firebaseapp.com",
+    databaseURL: "https://baby-points-9a82c-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "baby-points-9a82c",
+    storageBucket: "baby-points-9a82c.firebasestorage.app",
+    messagingSenderId: "524651272617",
+    appId: "1:524651272617:web:b827922fafbc5e083c4cb8"
+  };
+  // 同一个「家庭代号」的所有设备共享同一份积分，可自定义（建议英文/数字）
+  const FAMILY = "mybaby";
+
   // ====== 数据存储 ======
   const KEY = 'kid_points_data_v1';
-  let state = load();
-  function load() {
+  let state = loadLocal();
+  let cloudRef = null;
+  let applyingRemote = false;
+
+  function loadLocal() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY));
-      if (d && typeof d.score === 'number') return d;
+      if (d && typeof d.score === 'number') { if (!Array.isArray(d.history)) d.history = []; return d; }
     } catch(e){}
     return { score: 0, history: [] };
   }
-  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+  function saveLocal() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  function save() {
+    saveLocal();
+    if (cloudRef && !applyingRemote) {
+      cloudRef.set(state).catch(err => console.warn('云同步写入失败', err));
+    }
+  }
+
+  function setStatus(text, color) {
+    const el = document.getElementById('syncStatus');
+    if (el) { el.textContent = text; el.style.color = color; }
+  }
+
+  function initCloud() {
+    if (!firebaseConfig.databaseURL) { setStatus('📱 单机模式（未配置同步）', '#ffffff'); return; }
+    try {
+      firebase.initializeApp(firebaseConfig);
+      cloudRef = firebase.database().ref('families/' + FAMILY);
+      let first = true;
+      cloudRef.on('value', snap => {
+        const val = snap.val();
+        if (val && typeof val.score === 'number') {
+          state = { score: val.score, history: Array.isArray(val.history) ? val.history : [] };
+          saveLocal();
+          applyingRemote = true; render(); applyingRemote = false;
+        } else if (first) {
+          cloudRef.set(state); // 云端为空时，把本机数据作为初始上传
+        }
+        first = false;
+        setStatus('☁️ 已开启多设备同步', '#ffffff');
+      }, err => { console.warn(err); setStatus('⚠️ 云连接失败，暂用单机', '#fff0a8'); });
+    } catch(e) { console.warn(e); setStatus('⚠️ 云配置有误，暂用单机', '#fff0a8'); }
+  }
 
   let currentTab = 'earn';
 
@@ -345,6 +399,7 @@
   }
 
   render();
+  initCloud();
 </script>
 </body>
 </html>
