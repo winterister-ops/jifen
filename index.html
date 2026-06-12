@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宝贝积分乐园</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg1: #fef6ff;
+    --bg2: #eef7ff;
+    --card: #ffffff;
+    --accent: #ff8fab;
+    --accent2: #ffd166;
+    --green: #06d6a0;
+    --blue: #4cc9f0;
+    --purple: #b794f6;
+    --text: #4a4a6a;
+    --shadow: 0 8px 24px rgba(120,110,160,.15);
+  }
+  body {
+    font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    background: linear-gradient(160deg, var(--bg1), var(--bg2));
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  /* 顶部积分卡 */
+  .score-card {
+    background: linear-gradient(135deg, #ff9a9e, #fecfef, #a18cd1);
+    border-radius: 28px;
+    padding: 28px 24px;
+    text-align: center;
+    color: #fff;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .score-card h1 { font-size: 1.3rem; font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,.15); letter-spacing: 1px; }
+  .score-num {
+    font-size: 4.6rem;
+    font-weight: 900;
+    line-height: 1;
+    margin: 8px 0 4px;
+    text-shadow: 0 4px 12px rgba(0,0,0,.2);
+    transition: transform .25s;
+  }
+  .score-num.bump { transform: scale(1.25); }
+  .score-card .star { font-size: 1.6rem; }
+  .float-emoji {
+    position: absolute; bottom: 8px; font-size: 2rem; opacity: .35;
+  }
+  .float-emoji.l { left: 14px; } .float-emoji.r { right: 14px; }
+
+  /* 标签切换 */
+  .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+  .tab {
+    flex: 1; padding: 14px; border: none; border-radius: 18px;
+    font-size: 1.05rem; font-weight: 700; cursor: pointer;
+    background: #fff; color: var(--text); box-shadow: var(--shadow);
+    transition: transform .15s, background .2s;
+    font-family: inherit;
+  }
+  .tab:active { transform: scale(.95); }
+  .tab.active { color: #fff; }
+  .tab.active.earn { background: linear-gradient(135deg, var(--green), #4cc9f0); }
+  .tab.active.spend { background: linear-gradient(135deg, var(--accent2), var(--accent)); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .grid { gap: 10px; } }
+
+  .item {
+    background: var(--card); border-radius: 22px; padding: 16px 12px;
+    text-align: center; box-shadow: var(--shadow); cursor: pointer;
+    transition: transform .12s; position: relative; user-select: none;
+    border: 3px solid transparent;
+  }
+  .item:active { transform: scale(.93); }
+  .item .emoji { font-size: 2.6rem; display: block; margin-bottom: 6px; }
+  .item .name { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+  .item .pts {
+    display: inline-block; padding: 4px 14px; border-radius: 999px;
+    font-size: .95rem; font-weight: 800; color: #fff;
+  }
+  .earn-item .pts { background: var(--green); }
+  .spend-item .pts { background: var(--accent); }
+  .item .count {
+    position: absolute; top: 8px; right: 8px;
+    background: var(--purple); color: #fff; font-size: .75rem; font-weight: 700;
+    min-width: 22px; height: 22px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; padding: 0 6px;
+  }
+  .spend-item.locked { opacity: .45; filter: grayscale(.6); }
+
+  /* 历史记录 */
+  .section-title { font-size: 1.1rem; font-weight: 800; margin: 24px 0 12px; display: flex; align-items: center; gap: 8px; }
+  .history { background: var(--card); border-radius: 22px; box-shadow: var(--shadow); padding: 8px; }
+  .log {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 14px;
+  }
+  .log:nth-child(odd) { background: #faf7ff; }
+  .log .left { display: flex; align-items: center; gap: 10px; font-size: .95rem; }
+  .log .le { font-size: 1.4rem; }
+  .log .time { font-size: .72rem; color: #aaa; }
+  .log .delta { font-weight: 800; font-size: 1rem; }
+  .log .delta.plus { color: var(--green); }
+  .log .delta.minus { color: var(--accent); }
+  .empty { text-align: center; color: #bbb; padding: 24px; }
+
+  .toolbar { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-soft {
+    flex: 1; padding: 12px; border: none; border-radius: 16px; cursor: pointer;
+    background: #fff; color: var(--text); font-weight: 700; font-family: inherit;
+    box-shadow: var(--shadow); font-size: .9rem;
+  }
+  .btn-soft:active { transform: scale(.96); }
+
+  /* 飘出的积分提示 */
+  .pop {
+    position: fixed; left: 50%; top: 30%; transform: translateX(-50%);
+    font-size: 3rem; font-weight: 900; pointer-events: none; z-index: 50;
+    animation: popUp 1s ease-out forwards;
+  }
+  @keyframes popUp {
+    0% { opacity: 0; transform: translateX(-50%) scale(.4); }
+    25% { opacity: 1; transform: translateX(-50%) scale(1.3) translateY(-10px); }
+    100% { opacity: 0; transform: translateX(-50%) scale(1) translateY(-90px); }
+  }
+  .confetti {
+    position: fixed; width: 12px; height: 12px; z-index: 49; pointer-events: none;
+    border-radius: 3px; top: -20px;
+  }
+  @keyframes fall {
+    to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+  footer { text-align: center; color: #c5c0d8; font-size: .8rem; margin: 20px 0 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="score-card">
+    <span class="float-emoji l">🌈</span>
+    <span class="float-emoji r">⭐</span>
+    <h1>🎉 宝贝积分乐园 🎉</h1>
+    <div class="score-num" id="scoreNum">0</div>
+    <div class="star">✨ 我的小星星 ✨</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')">💪 做任务赚积分</button>
+    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')">🎁 换奖励花积分</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="section-title">📜 积分记录</div>
+  <div class="history" id="history"></div>
+
+  <div class="toolbar">
+    <button class="btn-soft" onclick="undoLast()">↩️ 撤销上一条</button>
+    <button class="btn-soft" onclick="clearAll()">🧹 全部清空</button>
+  </div>
+
+  <footer>数据自动保存在本机 · 陪宝贝一起成长 💛</footer>
+</div>
+
+<script>
+  // ====== 可自由修改的任务和奖励 ======
+  const TASKS = [
+    { id: 'wash',    emoji: '🧼', name: '自己洗手',   pts: 2 },
+    { id: 'eat',     emoji: '🍚', name: '自己吃饭',   pts: 5 },
+    { id: 'brush',   emoji: '🪥', name: '认真刷牙',   pts: 3 },
+    { id: 'dress',   emoji: '👕', name: '自己穿衣服', pts: 5 },
+    { id: 'shoes',   emoji: '👟', name: '自己穿鞋',   pts: 3 },
+    { id: 'tidy',    emoji: '🧸', name: '收拾玩具',   pts: 4 },
+    { id: 'sleep',   emoji: '😴', name: '乖乖睡觉',   pts: 4 },
+    { id: 'jump',    emoji: '🤽', name: '勇敢跳水',   pts: 10 },
+    { id: 'dive',    emoji: '🌊', name: '勇敢潜水',   pts: 10 },
+  ];
+  const REWARDS = [
+    { id: 'cartoon', emoji: '📺', name: '看动画片15分钟', pts: 10 },
+    { id: 'snack',   emoji: '🍪', name: '小零食一份',     pts: 8 },
+    { id: 'icecream',emoji: '🍦', name: '冰淇淋一个',     pts: 15 },
+    { id: 'toy',     emoji: '🚗', name: '小玩具一个',     pts: 30 },
+    { id: 'park',    emoji: '🎡', name: '去游乐场玩',     pts: 50 },
+  ];
+
+  // ====== 数据存储 ======
+  const KEY = 'kid_points_data_v1';
+  let state = load();
+  function load() {
+    try {
+      const d = JSON.parse(localStorage.getItem(KEY));
+      if (d && typeof d.score === 'number') return d;
+    } catch(e){}
+    return { score: 0, history: [] };
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+  let currentTab = 'earn';
+
+  function switchTab(t) {
+    currentTab = t;
+    document.getElementById('tabEarn').classList.toggle('active', t === 'earn');
+    document.getElementById('tabSpend').classList.toggle('active', t === 'spend');
+    render();
+  }
+
+  function countOf(id) {
+    return state.history.filter(h => h.id === id).length;
+  }
+
+  function render() {
+    document.getElementById('scoreNum').textContent = state.score;
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    const list = currentTab === 'earn' ? TASKS : REWARDS;
+    list.forEach(it => {
+      const div = document.createElement('div');
+      const c = countOf(it.id);
+      if (currentTab === 'earn') {
+        div.className = 'item earn-item';
+        div.innerHTML = `
+          ${c ? `<span class="count">${c}</span>` : ''}
+          <span class="emoji">${it.emoji}</span>
+          <span class="name">${it.name}</span>
+          <span class="pts">+${it.pts}</span>`;
+        div.onclick = (e) => earn(it, e);
+      } else {
+        const locked = state.score < it.pts;
+        div.className = 'item spend-item' + (locked ? ' locked' : '');
+        div.innerHTML = `
+          ${c ? `<span class="count">${c}</span>` : ''}
+          <span class="emoji">${it.emoji}</span>
+          <span class="name">${it.name}</span>
+          <span class="pts">-${it.pts}</span>`;
+        div.onclick = (e) => spend(it, e, locked);
+      }
+      grid.appendChild(div);
+    });
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const h = document.getElementById('history');
+    if (!state.history.length) {
+      h.innerHTML = '<div class="empty">还没有记录，快去做任务赚积分吧！🚀</div>';
+      return;
+    }
+    h.innerHTML = '';
+    state.history.slice().reverse().slice(0, 30).forEach(log => {
+      const row = document.createElement('div');
+      row.className = 'log';
+      const plus = log.delta > 0;
+      row.innerHTML = `
+        <div class="left">
+          <span class="le">${log.emoji}</span>
+          <div>
+            <div>${log.name}</div>
+            <div class="time">${log.time}</div>
+          </div>
+        </div>
+        <div class="delta ${plus ? 'plus' : 'minus'}">${plus ? '+' : ''}${log.delta}</div>`;
+      h.appendChild(row);
+    });
+  }
+
+  function nowStr() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getMonth()+1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function earn(it, e) {
+    state.score += it.pts;
+    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr() });
+    save();
+    bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();
+    render();
+  }
+
+  function spend(it, e, locked) {
+    if (locked) {
+      popup('积分不够哦', '#ff8fab', '😅');
+      shakeScore();
+      return;
+    }
+    state.score -= it.pts;
+    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr() });
+    save();
+    bump(); popup('-' + it.pts, '#ff8fab', it.emoji);
+    render();
+  }
+
+  function undoLast() {
+    if (!state.history.length) return;
+    const last = state.history.pop();
+    state.score -= last.delta;
+    save();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm('确定要清空所有积分和记录吗？')) return;
+    state = { score: 0, history: [] };
+    save();
+    render();
+  }
+
+  // ====== 动画效果 ======
+  function bump() {
+    const el = document.getElementById('scoreNum');
+    el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+  }
+  function shakeScore() {
+    const el = document.getElementById('scoreNum');
+    el.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:300});
+  }
+  function popup(text, color, emoji) {
+    const p = document.createElement('div');
+    p.className = 'pop';
+    p.style.color = color;
+    p.textContent = (emoji || '') + ' ' + text;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+  function confetti() {
+    const colors = ['#ff8fab','#ffd166','#06d6a0','#4cc9f0','#b794f6'];
+    for (let i = 0; i < 24; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.left = Math.random()*100 + 'vw';
+      c.style.background = colors[Math.floor(Math.random()*colors.length)];
+      const dur = 1.2 + Math.random()*1;
+      c.style.animation = `fall ${dur}s linear forwards`;
+      c.style.transform = `rotate(${Math.random()*360}deg)`;
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), dur*1000 + 100);
+    }
+  }
+
+  render();
+</script>
+</body>
+</html>
