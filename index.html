@@ -129,34 +129,78 @@
   .empty { text-align: center; color: #bbb; padding: 24px; }
 
   /* 积分记录页面 */
-  .hp-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .hp-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .hp-title { font-size: 1.25rem; font-weight: 800; }
 
+  .hp-datebar {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .hp-date-main { flex: 1; min-width: 0; }
+  .hp-date-title {
+    font-size: 1rem; font-weight: 800; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hp-date-stats {
+    font-size: .82rem; font-weight: 700; color: #b08a5e; margin-top: 4px;
+  }
+  .hp-date-stats .net.plus { color: var(--green); }
+  .hp-date-stats .net.minus { color: var(--accent); }
+  .hp-date-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .filter-pill {
+    border: 2px solid #ffe2bf; background: #fff; color: var(--text);
+    padding: 7px 12px; border-radius: 999px; font-family: inherit;
+    font-size: .78rem; font-weight: 800; cursor: pointer; transition: transform .12s, background .2s, color .2s, border-color .2s;
+  }
+  .filter-pill:active { transform: scale(.92); }
+  .filter-pill.active {
+    background: linear-gradient(135deg, #ff9a3c, #ffc94d); color: #fff;
+    border-color: transparent;
+  }
+  .filter-today { background: #fff0d6; border-color: #ffe2bf; }
+
+  .week-toolbar {
+    display: flex; align-items: stretch; gap: 8px; margin-bottom: 12px;
+  }
   .week-scroll {
+    flex: 1; min-width: 0;
     display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px;
     -webkit-overflow-scrolling: touch;
   }
   .week-scroll::-webkit-scrollbar { height: 0; }
+  .cal-btn {
+    flex: 0 0 auto; width: 48px; border: none; border-radius: 16px;
+    background: var(--card); box-shadow: var(--shadow); cursor: pointer;
+    font-size: 1.35rem; font-family: inherit; transition: transform .12s;
+  }
+  .cal-btn:active { transform: scale(.9); }
+  .cal-btn-sm { width: 42px; font-size: 1.2rem; }
+  .filter-all-btn {
+    flex: 0 0 auto; align-self: stretch; min-width: 48px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 14px; border-radius: 16px;
+  }
+
   .day-chip {
-    flex: 0 0 auto; min-width: 60px; padding: 9px 12px; border-radius: 16px;
+    flex: 0 0 auto; min-width: 58px; padding: 9px 10px 11px; border-radius: 16px;
     background: var(--card); box-shadow: var(--shadow); cursor: pointer;
     text-align: center; border: 2px solid transparent; transition: transform .12s;
+    position: relative;
   }
   .day-chip:active { transform: scale(.94); }
   .day-chip .dc-top { font-size: .82rem; font-weight: 800; white-space: nowrap; }
   .day-chip .dc-bot { font-size: .72rem; color: #b08a5e; margin-top: 2px; white-space: nowrap; }
+  .day-chip.today-chip:not(.active) { box-shadow: inset 0 0 0 2px var(--accent2), var(--shadow); }
+  .day-chip .chip-dot {
+    position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+  }
   .day-chip.active {
     background: linear-gradient(135deg, #ff9a3c, #ffc94d); color: #fff;
     border-color: rgba(255,255,255,.6);
   }
   .day-chip.active .dc-bot { color: rgba(255,255,255,.92); }
-
-  .date-more {
-    width: 100%; margin: 10px 0 2px; padding: 12px; border: none; border-radius: 16px;
-    background: #fff0d6; color: var(--text); font-family: inherit; font-weight: 700;
-    cursor: pointer; font-size: .92rem; box-shadow: var(--shadow);
-  }
-  .date-more:active { transform: scale(.97); }
+  .day-chip.active .chip-dot { background: #fff; }
 
   /* 自定义日历 */
   .cal-box { max-width: 360px; }
@@ -189,12 +233,6 @@
   }
   .cal-cell.sel .dot { background: #fff; }
 
-  .hp-summary {
-    text-align: center; font-size: .92rem; font-weight: 700;
-    color: var(--text); margin: 12px 0; min-height: 1.2em;
-  }
-  .hp-summary .net.plus { color: var(--green); }
-  .hp-summary .net.minus { color: var(--accent); }
   .date-head {
     font-size: .82rem; font-weight: 800; color: #b0772f;
     padding: 12px 12px 4px;
@@ -382,11 +420,21 @@
     <div class="hp-title">📜 积分记录</div>
   </div>
 
-  <div class="week-scroll" id="weekBar"></div>
+  <div class="hp-datebar">
+    <div class="hp-date-main">
+      <div class="hp-date-title" id="hpDateTitle">今天</div>
+      <div class="hp-date-stats" id="hpDateStats"></div>
+    </div>
+    <div class="hp-date-actions">
+      <button class="cal-btn cal-btn-sm" onclick="openCalendar()" title="选择其它日期">📅</button>
+      <button class="filter-pill filter-today" id="todayBtn" onclick="goToToday()" style="display:none">今天</button>
+    </div>
+  </div>
 
-  <button class="date-more" id="dateMoreBtn" onclick="openCalendar()">📅 选择其它年月日</button>
-
-  <div class="hp-summary" id="hpSummary"></div>
+  <div class="week-toolbar">
+    <div class="week-scroll" id="weekBar"></div>
+    <button class="filter-pill filter-all-btn" id="allToggle" onclick="toggleAllFilter()">全部</button>
+  </div>
 
   <div class="history" id="history"></div>
 
@@ -650,13 +698,74 @@
 
   const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
   function dateHeadLabel(key) {
+    if (key === 'all') return '全部记录';
     if (key === 'unknown') return '更早的记录';
     const [y, mo, da] = key.split('-').map(Number);
     const d = new Date(y, mo - 1, da);
     const today = ymd(new Date());
     const yest = ymd(new Date(Date.now() - 86400000));
+    const curYear = new Date().getFullYear();
     let prefix = key === today ? '今天 · ' : (key === yest ? '昨天 · ' : '');
-    return prefix + `${mo}月${da}日 ${WEEKDAYS[d.getDay()]}`;
+    const yearPart = y !== curYear ? `${y}年` : '';
+    return prefix + `${yearPart}${mo}月${da}日 ${WEEKDAYS[d.getDay()]}`;
+  }
+
+  function buildStats(list) {
+    if (!list.length) return '暂无记录';
+    const net = list.reduce((s, x) => s + x.delta, 0);
+    const cls = net >= 0 ? 'plus' : 'minus';
+    const sign = net > 0 ? '+' : '';
+    return `共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ⭐`;
+  }
+
+  function filteredHistory() {
+    let list = state.history.slice();
+    if (selectedDateKey !== 'all') list = list.filter(log => entryDateKey(log) === selectedDateKey);
+    return list;
+  }
+
+  function renderDateHeader() {
+    const titleEl = document.getElementById('hpDateTitle');
+    const statsEl = document.getElementById('hpDateStats');
+    const allBtn = document.getElementById('allToggle');
+    const todayBtn = document.getElementById('todayBtn');
+    if (!titleEl) return;
+
+    const list = filteredHistory();
+    const showAll = selectedDateKey === 'all';
+    titleEl.textContent = showAll ? '全部记录' : dateHeadLabel(selectedDateKey);
+    if (statsEl) statsEl.innerHTML = buildStats(list);
+    if (allBtn) allBtn.classList.toggle('active', showAll);
+
+    const todayKey = ymd(new Date());
+    if (todayBtn) todayBtn.style.display = (selectedDateKey !== todayKey && selectedDateKey !== 'all') ? '' : 'none';
+  }
+
+  function selectDate(key) {
+    selectedDateKey = key;
+    renderDateHeader();
+    renderWeekBar();
+    renderHistory();
+  }
+
+  function toggleAllFilter() {
+    selectDate(selectedDateKey === 'all' ? ymd(new Date()) : 'all');
+  }
+
+  function goToToday() {
+    selectDate(ymd(new Date()));
+  }
+
+  function scrollWeekBar() {
+    const bar = document.getElementById('weekBar');
+    if (!bar) return;
+    requestAnimationFrame(() => {
+      const target = bar.querySelector('.day-chip.active')
+        || bar.querySelector('.today-chip')
+        || bar.lastElementChild;
+      if (target) target.scrollIntoView({ inline: 'nearest', behavior: 'smooth' });
+      else bar.scrollLeft = bar.scrollWidth;
+    });
   }
 
   function renderWeekBar() {
@@ -666,31 +775,45 @@
     const today = new Date();
     const todayKey = ymd(today);
     const yestKey = ymd(new Date(Date.now() - 86400000));
+    const recDays = new Set(state.history.map(entryDateKey));
 
-    const makeChip = (top, bot, key) => {
-      const c = document.createElement('div');
-      c.className = 'day-chip' + (key === selectedDateKey ? ' active' : '');
-      c.innerHTML = `<div class="dc-top">${top}</div><div class="dc-bot">${bot}</div>`;
-      c.onclick = () => { selectedDateKey = key; renderWeekBar(); renderHistory(); };
-      bar.appendChild(c);
-    };
-
-    makeChip('全部', '所有记录', 'all');
-    for (let i = 0; i < 7; i++) {
+    const chips = [];
+    for (let i = 6; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
       const key = ymd(d);
-      const top = key === todayKey ? '今天' : (key === yestKey ? '昨天' : WEEKDAYS[d.getDay()]);
-      makeChip(top, `${d.getMonth() + 1}/${d.getDate()}`, key);
+      chips.push({
+        key,
+        top: key === todayKey ? '今天' : (key === yestKey ? '昨天' : WEEKDAYS[d.getDay()]),
+        bot: `${d.getMonth() + 1}/${d.getDate()}`
+      });
     }
-    // 选中的日期若不在最近一周内，补一个高亮卡片，方便看到当前筛选
-    if (selectedDateKey !== 'all' && selectedDateKey !== 'unknown') {
-      const exists = Array.from(bar.querySelectorAll('.day-chip.active')).length > 0;
-      if (!exists) {
-        const [y, mo, da] = selectedDateKey.split('-').map(Number);
-        const d = new Date(y, mo - 1, da);
-        makeChip(WEEKDAYS[d.getDay()], `${mo}/${da}`, selectedDateKey);
+
+    if (selectedDateKey !== 'all' && selectedDateKey !== 'unknown' && !chips.some(c => c.key === selectedDateKey)) {
+      const [y, mo, da] = selectedDateKey.split('-').map(Number);
+      const d = new Date(y, mo - 1, da);
+      const extra = { key: selectedDateKey, top: WEEKDAYS[d.getDay()], bot: `${mo}/${da}` };
+      const selTime = d.getTime();
+      let inserted = false;
+      for (let i = 0; i < chips.length; i++) {
+        const chipTime = new Date(chips[i].key.replace(/-/g, '/')).getTime();
+        if (selTime < chipTime) { chips.splice(i, 0, extra); inserted = true; break; }
       }
+      if (!inserted) chips.push(extra);
     }
+
+    chips.forEach(chip => {
+      const c = document.createElement('div');
+      const isToday = chip.key === todayKey;
+      c.className = 'day-chip'
+        + (chip.key === selectedDateKey ? ' active' : '')
+        + (isToday ? ' today-chip' : '');
+      c.innerHTML = `<div class="dc-top">${chip.top}</div><div class="dc-bot">${chip.bot}</div>`
+        + (recDays.has(chip.key) ? '<i class="chip-dot"></i>' : '');
+      c.onclick = () => selectDate(chip.key);
+      bar.appendChild(c);
+    });
+
+    scrollWeekBar();
   }
 
   // ====== 自定义日历选择器 ======
@@ -719,10 +842,8 @@
     renderCalendar();
   }
   function calSelect(key) {
-    selectedDateKey = key;
     hideCalendar();
-    renderWeekBar();
-    renderHistory();
+    selectDate(key);
   }
   function calPickToday() {
     calSelect(ymd(new Date()));
@@ -767,6 +888,7 @@
     document.getElementById('navSettings').classList.toggle('active', view === 'settings');
     if (view === 'history') {
       selectedDateKey = ymd(new Date());
+      renderDateHeader();
       renderWeekBar();
       renderHistory();
     }
@@ -887,13 +1009,10 @@
   function renderHistory() {
     const h = document.getElementById('history');
     if (!h) return;
-    const summary = document.getElementById('hpSummary');
+    renderDateHeader();
 
-    let list = state.history.slice();
+    let list = filteredHistory();
     const showAll = selectedDateKey === 'all';
-    if (!showAll) list = list.filter(log => entryDateKey(log) === selectedDateKey);
-
-    if (summary) summary.innerHTML = buildSummary(list, showAll);
 
     if (!list.length) {
       h.innerHTML = showAll
@@ -927,15 +1046,6 @@
         <div class="delta ${plus ? 'plus' : 'minus'}">${plus ? '+' : ''}${log.delta}</div>`;
       h.appendChild(row);
     });
-  }
-
-  function buildSummary(list, showAll) {
-    const scope = showAll ? '全部记录' : dateHeadLabel(selectedDateKey);
-    if (!list.length) return scope + ' · 暂无记录';
-    const net = list.reduce((s, x) => s + x.delta, 0);
-    const cls = net >= 0 ? 'plus' : 'minus';
-    const sign = net > 0 ? '+' : '';
-    return `${scope} · 共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ⭐`;
   }
 
   function nowStr() {
