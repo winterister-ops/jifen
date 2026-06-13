@@ -129,19 +129,14 @@
   }
   .item:active { transform: scale(.93); }
   .item .emoji { font-size: 2.6rem; display: block; margin-bottom: 6px; }
-  .item .name { font-size: 1.05rem; font-weight: 700; margin-bottom: 6px; }
+  .item .name { font-size: 1.05rem; font-weight: 700; }
   .item .pts {
-    display: inline-block; padding: 4px 14px; border-radius: 999px;
-    font-size: .95rem; font-weight: 800; color: #fff;
+    position: absolute; top: 8px; right: 8px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: .75rem; font-weight: 800; color: #fff;
   }
   .earn-item .pts { background: var(--green); }
   .spend-item .pts { background: var(--accent); }
-  .item .count {
-    position: absolute; top: 8px; right: 8px;
-    background: var(--purple); color: #fff; font-size: .75rem; font-weight: 700;
-    min-width: 22px; height: 22px; border-radius: 999px;
-    display: flex; align-items: center; justify-content: center; padding: 0 6px;
-  }
   .spend-item.locked { opacity: .45; filter: grayscale(.6); }
 
   /* 历史记录 */
@@ -381,6 +376,61 @@
   .stat-num.plus { color: var(--green); }
   .stat-num.minus { color: var(--accent); }
   .stat-lb { font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 4px; }
+
+  .task-stats {
+    background: var(--card); border-radius: 22px; box-shadow: var(--shadow);
+    padding: 8px; margin-bottom: 8px;
+  }
+  .task-stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-radius: 14px;
+  }
+  .task-stat-list .task-stat-row:nth-child(odd) { background: #fff5e6; }
+  .task-stat-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .task-stat-emoji { font-size: 1.4rem; flex-shrink: 0; }
+  .task-stat-name {
+    font-size: .95rem; font-weight: 700;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .task-stat-count {
+    flex-shrink: 0; background: var(--purple); color: #fff;
+    font-size: .78rem; font-weight: 800; min-width: 28px; height: 28px;
+    border-radius: 999px; display: flex; align-items: center; justify-content: center;
+    padding: 0 8px;
+  }
+  .task-stats .empty { padding: 20px; }
+
+  .menu-list {
+    display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px;
+  }
+  .menu-item {
+    width: 100%; border: none; background: var(--card); border-radius: 20px;
+    box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer;
+    display: flex; align-items: center; gap: 12px; font-family: inherit;
+    text-align: left; transition: transform .12s;
+  }
+  .menu-item:active { transform: scale(.97); }
+  .menu-ic {
+    width: 42px; height: 42px; border-radius: 14px; background: #fff3e0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .menu-ic .ui-ic { width: 1.25rem; height: 1.25rem; }
+  .menu-tx { flex: 1; min-width: 0; }
+  .menu-title { display: block; font-size: 1rem; font-weight: 800; color: var(--text); }
+  .menu-desc { display: block; font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 3px; }
+  .menu-arrow { font-size: 1.35rem; font-weight: 800; color: #d2a679; flex-shrink: 0; }
+
+  .subpage-head {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+  }
+  .back-btn {
+    border: none; background: var(--card); color: var(--text);
+    padding: 10px 14px; border-radius: 14px; font-family: inherit;
+    font-size: .9rem; font-weight: 800; cursor: pointer; box-shadow: var(--shadow);
+    transition: transform .12s; flex-shrink: 0;
+  }
+  .back-btn:active { transform: scale(.94); }
+  .subpage-title { font-size: 1.15rem; font-weight: 900; }
 </style>
 </head>
 <body>
@@ -403,8 +453,8 @@
   </div>
 
   <div class="tabs">
-    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')"><img class="ui-ic tab-ic" src="icons/muscle.svg" alt="">做任务赚积分</button>
-    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">换奖励花积分</button>
+    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')"><img class="ui-ic tab-ic" src="icons/muscle.svg" alt="">完成任务</button>
+    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">兑换奖励</button>
   </div>
 
   <div class="sort-bar">
@@ -452,6 +502,18 @@
     <div class="stat-box"><div class="stat-num minus" id="setSpent">0</div><div class="stat-lb">累计消耗</div></div>
   </div>
 
+  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">功能</div>
+  <div class="menu-list">
+    <button type="button" class="menu-item" onclick="switchView('stats')">
+      <span class="menu-ic"><img class="ui-ic" src="icons/transaction-order.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">统计</span>
+        <span class="menu-desc" id="statsEntryDesc">查看完成记录</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+
   <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">管理</div>
   <div class="toolbar" style="margin-top:0">
     <button class="btn-soft" onclick="undoLast()"><img class="ui-ic" src="icons/undo.svg" alt="">撤销上一条</button>
@@ -459,6 +521,15 @@
   </div>
 
   <div class="env-footer" style="margin-top:18px"><span class="env-badge" id="envBadge"></span></div>
+  <footer>陪宝贝一起成长</footer>
+ </div>
+
+ <div id="statsView" style="display:none">
+  <div class="subpage-head">
+    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
+    <div class="subpage-title">统计</div>
+  </div>
+  <div class="task-stats" id="taskStats"></div>
   <footer>陪宝贝一起成长</footer>
  </div>
 </div>
@@ -822,7 +893,7 @@
   }
 
   let currentView = 'home';
-  const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView' };
+  const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView', stats: 'statsView' };
 
   function switchView(view) {
     currentView = view;
@@ -831,13 +902,14 @@
     });
     document.getElementById('navHome').classList.toggle('active', view === 'home');
     document.getElementById('navHistory').classList.toggle('active', view === 'history');
-    document.getElementById('navSettings').classList.toggle('active', view === 'settings');
+    document.getElementById('navSettings').classList.toggle('active', view === 'settings' || view === 'stats');
     if (view === 'history') {
       selectedDateKey = ymd(new Date());
       renderDateHeader();
       renderHistory();
     }
     if (view === 'settings') renderSettings();
+    if (view === 'stats') renderTaskStats();
     window.scrollTo(0, 0);
   }
 
@@ -849,6 +921,44 @@
     state.history.forEach(h => { if (h.delta > 0) earned += h.delta; else spent += -h.delta; });
     document.getElementById('setEarned').textContent = '+' + earned;
     document.getElementById('setSpent').textContent = '-' + spent;
+    const totalCount = state.history.length;
+    const descEl = document.getElementById('statsEntryDesc');
+    if (descEl) {
+      descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
+    }
+  }
+
+  function renderTaskStats() {
+    const el = document.getElementById('taskStats');
+    if (!el) return;
+    const earnStats = TASKS.map(t => ({ ...t, count: countOf(t.id) })).filter(t => t.count > 0);
+    const rewardStats = REWARDS.map(t => ({ ...t, count: countOf(t.id) })).filter(t => t.count > 0);
+    if (!earnStats.length && !rewardStats.length) {
+      el.innerHTML = '<div class="empty">还没有完成记录</div>';
+      return;
+    }
+    let html = '';
+    if (earnStats.length) {
+      html += '<div class="date-head">完成任务</div><div class="task-stat-list">';
+      earnStats.forEach(t => {
+        html += `<div class="task-stat-row">
+          <div class="task-stat-left"><span class="task-stat-emoji">${t.emoji}</span><span class="task-stat-name">${t.name}</span></div>
+          <span class="task-stat-count">${t.count}次</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    if (rewardStats.length) {
+      html += '<div class="date-head">兑换奖励</div><div class="task-stat-list">';
+      rewardStats.forEach(t => {
+        html += `<div class="task-stat-row">
+          <div class="task-stat-left"><span class="task-stat-emoji">${t.emoji}</span><span class="task-stat-name">${t.name}</span></div>
+          <span class="task-stat-count">${t.count}次</span>
+        </div>`;
+      });
+      html += '</div>';
+    }
+    el.innerHTML = html;
   }
 
   function saveProfile() {
@@ -953,28 +1063,26 @@
     const list = sortItems(currentTab === 'earn' ? TASKS : REWARDS);
     list.forEach(it => {
       const div = document.createElement('div');
-      const c = countOf(it.id);
       if (currentTab === 'earn') {
         div.className = 'item earn-item';
         div.innerHTML = `
-          ${c ? `<span class="count">${c}</span>` : ''}
+          <span class="pts">+${it.pts}</span>
           <span class="emoji">${it.emoji}</span>
-          <span class="name">${it.name}</span>
-          <span class="pts">+${it.pts}</span>`;
+          <span class="name">${it.name}</span>`;
         div.onclick = (e) => earn(it, e);
       } else {
         const locked = state.score < it.pts;
         div.className = 'item spend-item' + (locked ? ' locked' : '');
         div.innerHTML = `
-          ${c ? `<span class="count">${c}</span>` : ''}
+          <span class="pts">-${it.pts}</span>
           <span class="emoji">${it.emoji}</span>
-          <span class="name">${it.name}</span>
-          <span class="pts">-${it.pts}</span>`;
+          <span class="name">${it.name}</span>`;
         div.onclick = (e) => spend(it, e, locked);
       }
       grid.appendChild(div);
     });
     renderSettings();
+    if (currentView === 'stats') renderTaskStats();
     renderHistory();
   }
 
