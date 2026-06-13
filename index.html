@@ -111,6 +111,16 @@
   .tab.active.earn { background: linear-gradient(135deg, #ffb627, #ff9a3c); }
   .tab.active.spend { background: linear-gradient(135deg, #ff7b3d, #ff5e62); }
 
+  .sort-bar {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .sort-label {
+    font-size: .78rem; font-weight: 800; color: #b08a5e; flex-shrink: 0;
+  }
+  .sort-options { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .sort-pill { font-size: .72rem; padding: 6px 10px; }
+
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 480px) { .grid { gap: 10px; } }
 
@@ -435,9 +445,19 @@
     <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">换奖励花积分</button>
   </div>
 
+  <div class="sort-bar">
+    <span class="sort-label">排序</span>
+    <div class="sort-options" id="sortOptions">
+      <button type="button" class="filter-pill sort-pill" data-sort="default" onclick="setTaskSort('default')">默认</button>
+      <button type="button" class="filter-pill sort-pill" data-sort="pts-asc" onclick="setTaskSort('pts-asc')">分数从低到高</button>
+      <button type="button" class="filter-pill sort-pill" data-sort="pts-desc" onclick="setTaskSort('pts-desc')">分数从高到低</button>
+      <button type="button" class="filter-pill sort-pill" data-sort="name" onclick="setTaskSort('name')">名称</button>
+    </div>
+  </div>
+
   <div class="grid" id="grid"></div>
 
-  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
+  <footer>陪宝贝一起成长</footer>
  </div>
 
  <div id="historyView" style="display:none">
@@ -463,7 +483,7 @@
 
   <div class="history" id="history"></div>
 
-  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
+  <footer>陪宝贝一起成长</footer>
  </div>
 
  <div id="settingsView" style="display:none">
@@ -486,7 +506,7 @@
   </div>
 
   <div class="env-footer" style="margin-top:18px"><span class="env-badge" id="envBadge"></span></div>
-  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
+  <footer>陪宝贝一起成长</footer>
  </div>
 </div>
 
@@ -593,6 +613,7 @@
     { id: 'sleep',   emoji: '😴', name: '乖乖睡觉',   pts: 4 },
     { id: 'jump',    emoji: '🤽', name: '勇敢跳水',   pts: 10 },
     { id: 'dive',    emoji: '🌊', name: '勇敢潜水',   pts: 10 },
+    { id: 'learn',   emoji: '📚', name: '认真学习',   pts: 5 },
   ];
   const REWARDS = [
     { id: 'cartoon', emoji: '📺', name: '看动画片15分钟', pts: 10 },
@@ -639,6 +660,10 @@
 
   // ====== 数据存储 ======
   const KEY = 'kid_points_data_v1_' + ENV;
+  const SORT_KEY = 'kid_points_sort_v1_' + ENV;
+  const SORT_MODES = ['default', 'pts-asc', 'pts-desc', 'name'];
+  let taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
+    ? localStorage.getItem(SORT_KEY) : 'default';
   let state = loadLocal();
   let cloudRef = null;
   let applyingRemote = false;
@@ -1005,15 +1030,44 @@
     render();
   }
 
+  function setTaskSort(mode) {
+    if (!SORT_MODES.includes(mode)) return;
+    taskSort = mode;
+    localStorage.setItem(SORT_KEY, mode);
+    renderSortBar();
+    render();
+  }
+
+  function renderSortBar() {
+    document.querySelectorAll('.sort-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.sort === taskSort);
+    });
+  }
+
+  function sortItems(list) {
+    const items = list.slice();
+    switch (taskSort) {
+      case 'pts-asc':
+        return items.sort((a, b) => a.pts - b.pts || a.name.localeCompare(b.name, 'zh-CN'));
+      case 'pts-desc':
+        return items.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, 'zh-CN'));
+      case 'name':
+        return items.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+      default:
+        return items;
+    }
+  }
+
   function countOf(id) {
     return state.history.filter(h => h.id === id).length;
   }
 
   function render() {
     renderHeader();
+    renderSortBar();
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
-    const list = currentTab === 'earn' ? TASKS : REWARDS;
+    const list = sortItems(currentTab === 'earn' ? TASKS : REWARDS);
     list.forEach(it => {
       const div = document.createElement('div');
       const c = countOf(it.id);
