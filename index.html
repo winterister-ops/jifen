@@ -61,7 +61,32 @@
     transition: transform .25s;
   }
   .star-badge.bump { transform: scale(1.15); }
-  .star-badge .star-icon { font-size: 1.35rem; line-height: 1; }
+  .star-badge .star-icon { display: flex; align-items: center; line-height: 1; }
+  .ui-ic {
+    width: 1.25em; height: 1.25em; vertical-align: middle;
+    display: inline-block; object-fit: contain; flex-shrink: 0;
+  }
+  .ui-ic-sm { width: .9em; height: .9em; vertical-align: -2px; }
+  .nav-ic { display: flex; align-items: center; justify-content: center; }
+  .nav-ic .ui-ic { width: 1.5rem; height: 1.5rem; }
+  .tab .tab-ic { width: 1.15rem; height: 1.15rem; margin-right: 5px; vertical-align: -3px; }
+  .hp-title { display: flex; align-items: center; gap: 8px; }
+  .hp-title .ui-ic { width: 1.35rem; height: 1.35rem; }
+  .cal-btn { display: flex; align-items: center; justify-content: center; font-size: 0; }
+  .cal-btn .ui-ic { width: 1.35rem; height: 1.35rem; }
+  .section-title .ui-ic { width: 1.15rem; height: 1.15rem; }
+  .btn-soft, .profile-edit { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-soft .ui-ic { width: 1.05rem; height: 1.05rem; }
+  .profile-edit .ui-ic { width: 1.05rem; height: 1.05rem; }
+  .star-badge .ui-ic { width: 1.35rem; height: 1.35rem; }
+  footer {
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    text-align: center; color: #d2a679; font-size: .8rem; margin: 20px 0 8px;
+  }
+  .modal-emoji .ui-ic { width: 3rem; height: 3rem; }
+  .empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .empty .ui-ic { width: 2.2rem; height: 2.2rem; opacity: .55; }
+  .pop .pop-ic { width: 1.1em; height: 1.1em; vertical-align: -4px; margin-right: 2px; }
   .star-badge .score-num { font-size: 1.55rem; font-weight: 900; line-height: 1; }
   .env-badge {
     display: inline-block;
@@ -264,7 +289,7 @@
   @keyframes fall {
     to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
   }
-  footer { text-align: center; color: #d2a679; font-size: .8rem; margin: 20px 0 8px; }
+  footer .ui-ic { width: .95rem; height: .95rem; }
 
   /* 确认弹窗 */
   .modal-overlay {
@@ -343,7 +368,7 @@
     padding: 7px 4px; border-radius: 16px; font-family: inherit;
     color: #c0a584; transition: transform .12s, background .2s, color .2s;
   }
-  .nav-item .nav-ic { font-size: 1.5rem; line-height: 1; transition: transform .2s; }
+  .nav-item .nav-ic { line-height: 1; transition: transform .2s; }
   .nav-item .nav-tx { font-size: .74rem; font-weight: 800; }
   .nav-item:active { transform: scale(.9); }
   .nav-item.active { color: var(--accent); background: #fff3e0; }
@@ -399,25 +424,25 @@
         </div>
       </div>
       <div class="star-badge" id="starBadge">
-        <span class="star-icon">⭐</span>
+        <span class="star-icon"><img class="ui-ic" src="icons/star.svg" alt=""></span>
         <span class="score-num" id="scoreNum">0</span>
       </div>
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')">💪 做任务赚积分</button>
-    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')">🎁 换奖励花积分</button>
+    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')"><img class="ui-ic tab-ic" src="icons/muscle.svg" alt="">做任务赚积分</button>
+    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">换奖励花积分</button>
   </div>
 
   <div class="grid" id="grid"></div>
 
-  <footer>陪宝贝一起成长 💛</footer>
+  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
  </div>
 
  <div id="historyView" style="display:none">
   <div class="hp-header">
-    <div class="hp-title">📜 积分记录</div>
+    <div class="hp-title"><img class="ui-ic" src="icons/transaction-order.svg" alt="">积分记录</div>
   </div>
 
   <div class="hp-datebar">
@@ -426,7 +451,7 @@
       <div class="hp-date-stats" id="hpDateStats"></div>
     </div>
     <div class="hp-date-actions">
-      <button class="cal-btn cal-btn-sm" onclick="openCalendar()" title="选择其它日期">📅</button>
+      <button class="cal-btn cal-btn-sm" onclick="openCalendar()" title="选择其它日期"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
       <button class="filter-pill filter-today" id="todayBtn" onclick="goToToday()" style="display:none">今天</button>
     </div>
   </div>
@@ -438,14 +463,14 @@
 
   <div class="history" id="history"></div>
 
-  <footer>陪宝贝一起成长 💛</footer>
+  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
  </div>
 
  <div id="settingsView" style="display:none">
   <div class="profile-card">
     <div class="profile-avatar" id="setAvatar" onclick="openProfileModal()" title="点击修改头像">👧</div>
     <div class="profile-name" id="setName">宝贝</div>
-    <button class="profile-edit" onclick="openProfileModal()">✏️ 修改头像和昵称</button>
+    <button class="profile-edit" onclick="openProfileModal()"><img class="ui-ic" src="icons/edit.svg" alt="">修改头像和昵称</button>
   </div>
 
   <div class="stat-row">
@@ -454,27 +479,27 @@
     <div class="stat-box"><div class="stat-num minus" id="setSpent">0</div><div class="stat-lb">累计消耗</div></div>
   </div>
 
-  <div class="section-title">🛠️ 管理</div>
+  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">管理</div>
   <div class="toolbar" style="margin-top:0">
-    <button class="btn-soft" onclick="undoLast()">↩️ 撤销上一条</button>
-    <button class="btn-soft" onclick="clearAll()">🧹 全部清空</button>
+    <button class="btn-soft" onclick="undoLast()"><img class="ui-ic" src="icons/undo.svg" alt="">撤销上一条</button>
+    <button class="btn-soft" onclick="clearAll()"><img class="ui-ic" src="icons/clear.svg" alt="">全部清空</button>
   </div>
 
   <div class="env-footer" style="margin-top:18px"><span class="env-badge" id="envBadge"></span></div>
-  <footer>陪宝贝一起成长 💛</footer>
+  <footer>陪宝贝一起成长 <img class="ui-ic" src="icons/heart.svg" alt=""></footer>
  </div>
 </div>
 
 <nav class="bottom-nav">
   <div class="nav-inner">
     <button class="nav-item active" id="navHome" onclick="switchView('home')">
-      <span class="nav-ic">🏠</span><span class="nav-tx">首页</span>
+      <span class="nav-ic"><img class="ui-ic" src="icons/home.svg" alt=""></span><span class="nav-tx">首页</span>
     </button>
     <button class="nav-item" id="navHistory" onclick="switchView('history')">
-      <span class="nav-ic">📜</span><span class="nav-tx">记录</span>
+      <span class="nav-ic"><img class="ui-ic" src="icons/transaction-order.svg" alt=""></span><span class="nav-tx">记录</span>
     </button>
     <button class="nav-item" id="navSettings" onclick="switchView('settings')">
-      <span class="nav-ic">⭐</span><span class="nav-tx">我的</span>
+      <span class="nav-ic"><img class="ui-ic" src="icons/peoples.svg" alt=""></span><span class="nav-tx">我的</span>
     </button>
   </div>
 </nav>
@@ -513,7 +538,7 @@
 
 <div class="modal-overlay" id="clearModal" onclick="if(event.target===this) hideClearModal()">
   <div class="modal-box">
-    <div class="modal-emoji" id="clearModalEmoji">🧹</div>
+    <div class="modal-emoji" id="clearModalEmoji"><img class="ui-ic" src="icons/clear-format.svg" alt=""></div>
     <div class="modal-title" id="clearModalTitle">确定要清空吗？</div>
     <div class="modal-msg" id="clearModalMsg">将清空当前所有积分和记录。</div>
     <div class="modal-step" id="clearModalStep">第 1 步 / 共 2 步</div>
@@ -537,6 +562,10 @@
     '🐭', '🐮', '🐯', '🐰', '🐲', '🐍', '🐴', '🐑', '🐵', '🐔', '🐶', '🐷'
   ];
   let profilePickAvatar = DEFAULT_CHILD_AVATAR;
+
+  function ipIcon(name, cls = 'ui-ic') {
+    return `<img class="${cls}" src="icons/${name}.svg" alt="">`;
+  }
 
   function defaultProfile() {
     return { name: DEFAULT_CHILD_NAME, avatar: DEFAULT_CHILD_AVATAR };
@@ -715,7 +744,7 @@
     const net = list.reduce((s, x) => s + x.delta, 0);
     const cls = net >= 0 ? 'plus' : 'minus';
     const sign = net > 0 ? '+' : '';
-    return `共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ⭐`;
+    return `共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ${ipIcon('star', 'ui-ic-sm')}`;
   }
 
   function filteredHistory() {
@@ -763,8 +792,14 @@
       const target = bar.querySelector('.day-chip.active')
         || bar.querySelector('.today-chip')
         || bar.lastElementChild;
-      if (target) target.scrollIntoView({ inline: 'nearest', behavior: 'smooth' });
-      else bar.scrollLeft = bar.scrollWidth;
+      if (!target) {
+        bar.scrollLeft = bar.scrollWidth;
+        return;
+      }
+      const targetLeft = target.offsetLeft;
+      const targetWidth = target.offsetWidth;
+      const barWidth = bar.clientWidth;
+      bar.scrollLeft = targetLeft - (barWidth - targetWidth) / 2;
     });
   }
 
@@ -909,7 +944,7 @@
   function saveProfile() {
     const name = document.getElementById('profileNameInput').value.trim();
     if (!name) {
-      popup('请输入昵称', '#ff8fab', '✏️');
+      popup('请输入昵称', '#ff8fab', 'edit', true);
       return;
     }
     state.profile = { name: name.slice(0, 12), avatar: profilePickAvatar };
@@ -1016,8 +1051,8 @@
 
     if (!list.length) {
       h.innerHTML = showAll
-        ? '<div class="empty">还没有记录，快去做任务赚积分吧！🚀</div>'
-        : '<div class="empty">这一天还没有积分记录哦 📭</div>';
+        ? `<div class="empty">${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！</div>`
+        : `<div class="empty">${ipIcon('inbox')}这一天还没有积分记录哦</div>`;
       return;
     }
 
@@ -1064,7 +1099,7 @@
 
   function spend(it, e, locked) {
     if (locked) {
-      popup('积分不够哦', '#ff8fab', '😅');
+      popup('积分不够哦', '#ff8fab', 'caution', true);
       shakeScore();
       return;
     }
@@ -1087,7 +1122,7 @@
 
   const CLEAR_STEPS = [
     {
-      emoji: '🧹',
+      icon: 'clear-format',
       title: '确定要清空吗？',
       msg: '将清空当前所有积分和记录。',
       step: '第 1 步 / 共 2 步',
@@ -1095,7 +1130,7 @@
       danger: false
     },
     {
-      emoji: '⚠️',
+      icon: 'caution',
       title: '再次确认清空',
       msg: '清空后无法恢复，真的要全部清空吗？',
       step: '第 2 步 / 共 2 步',
@@ -1107,7 +1142,7 @@
   function showClearModalStep(step) {
     clearConfirmStep = step;
     const s = CLEAR_STEPS[step - 1];
-    document.getElementById('clearModalEmoji').textContent = s.emoji;
+    document.getElementById('clearModalEmoji').innerHTML = ipIcon(s.icon);
     document.getElementById('clearModalTitle').textContent = s.title;
     document.getElementById('clearModalMsg').textContent = s.msg;
     document.getElementById('clearModalStep').textContent = s.step;
@@ -1148,11 +1183,12 @@
     const el = document.getElementById('starBadge');
     el.animate([{transform:'scale(1)'},{transform:'scale(1.1) translateX(-4px)'},{transform:'scale(1.1) translateX(4px)'},{transform:'scale(1)'}],{duration:300});
   }
-  function popup(text, color, emoji) {
+  function popup(text, color, visual, asIcon) {
     const p = document.createElement('div');
     p.className = 'pop';
     p.style.color = color;
-    p.textContent = (emoji || '') + ' ' + text;
+    const prefix = asIcon ? ipIcon(visual, 'pop-ic') : ((visual || '') + ' ');
+    p.innerHTML = prefix + text;
     document.body.appendChild(p);
     setTimeout(() => p.remove(), 1000);
   }
