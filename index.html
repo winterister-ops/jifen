@@ -68,7 +68,7 @@
   .ui-ic-sm { width: .9em; height: .9em; vertical-align: -2px; }
   .nav-ic { display: flex; align-items: center; justify-content: center; }
   .nav-ic .ui-ic { width: 1.5rem; height: 1.5rem; }
-  .tab .tab-ic { width: 1.15rem; height: 1.15rem; margin-right: 5px; vertical-align: -3px; }
+  .tab .tab-ic { width: 1rem; height: 1rem; margin-right: 4px; vertical-align: -2px; }
   .cal-btn { display: flex; align-items: center; justify-content: center; font-size: 0; }
   .cal-btn .ui-ic { width: 1.35rem; height: 1.35rem; }
   .section-title .ui-ic { width: 1.15rem; height: 1.15rem; }
@@ -95,10 +95,10 @@
   .env-footer { text-align: center; margin: 4px 0 16px; }
 
   /* 标签切换 */
-  .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
   .tab {
-    flex: 1; padding: 14px; border: none; border-radius: 18px;
-    font-size: 1.05rem; font-weight: 700; cursor: pointer;
+    flex: 1; padding: 10px 8px; border: none; border-radius: 14px;
+    font-size: .92rem; font-weight: 700; cursor: pointer;
     background: #fff; color: var(--text); box-shadow: var(--shadow);
     transition: transform .15s, background .2s;
     font-family: inherit;
@@ -109,17 +109,40 @@
   .tab.active.spend { background: var(--accent); }
 
   .sort-bar {
-    display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
-    flex-wrap: wrap;
+    margin-bottom: 12px;
+    background: var(--card); border-radius: 14px;
+    box-shadow: var(--shadow); overflow: hidden;
   }
+  .sort-toggle {
+    width: 100%; border: none; background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 12px; font-family: inherit;
+  }
+  .sort-toggle:active { opacity: .75; }
   .sort-label {
-    font-size: .78rem; font-weight: 800; color: #b08a5e; flex-shrink: 0;
+    font-size: .76rem; font-weight: 800; color: #b08a5e; flex-shrink: 0;
   }
-  .sort-options { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .sort-current {
+    flex: 1; text-align: right; font-size: .72rem; font-weight: 700; color: #c9a882;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .sort-chevron {
+    font-size: .7rem; color: #c9a882; transition: transform .2s; flex-shrink: 0;
+  }
+  .sort-bar.expanded .sort-chevron { transform: rotate(180deg); }
+  .sort-options {
+    display: none; gap: 6px; flex-wrap: wrap;
+    padding: 0 12px 10px;
+  }
+  .sort-bar.expanded .sort-options { display: flex; }
   .sort-pill { font-size: .72rem; padding: 6px 10px; }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 480px) { .grid { gap: 10px; } }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 480px) { .grid { gap: 10px; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); } }
 
   .item {
     background: var(--card); border-radius: 22px; padding: 16px 12px;
@@ -457,8 +480,12 @@
     <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">兑换奖励</button>
   </div>
 
-  <div class="sort-bar">
-    <span class="sort-label">排序</span>
+  <div class="sort-bar" id="sortBar">
+    <button type="button" class="sort-toggle" onclick="toggleSortBar()">
+      <span class="sort-label">排序</span>
+      <span class="sort-current" id="sortCurrent">默认</span>
+      <span class="sort-chevron">▼</span>
+    </button>
     <div class="sort-options" id="sortOptions">
       <button type="button" class="filter-pill sort-pill" data-sort="default" onclick="setTaskSort('default')">默认</button>
       <button type="button" class="filter-pill sort-pill" data-sort="pts-asc" onclick="setTaskSort('pts-asc')">分数从低到高</button>
@@ -686,8 +713,10 @@
   const KEY = 'kid_points_data_v1_' + ENV;
   const SORT_KEY = 'kid_points_sort_v1_' + ENV;
   const SORT_MODES = ['default', 'pts-asc', 'pts-desc'];
+  const SORT_LABELS = { default: '默认', 'pts-asc': '分数从低到高', 'pts-desc': '分数从高到低' };
   let taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
     ? localStorage.getItem(SORT_KEY) : 'default';
+  let sortBarExpanded = false;
   let state = loadLocal();
   let cloudRef = null;
   let applyingRemote = false;
@@ -1025,6 +1054,11 @@
     render();
   }
 
+  function toggleSortBar() {
+    sortBarExpanded = !sortBarExpanded;
+    document.getElementById('sortBar').classList.toggle('expanded', sortBarExpanded);
+  }
+
   function setTaskSort(mode) {
     if (!SORT_MODES.includes(mode)) return;
     taskSort = mode;
@@ -1037,6 +1071,9 @@
     document.querySelectorAll('.sort-pill').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.sort === taskSort);
     });
+    const cur = document.getElementById('sortCurrent');
+    if (cur) cur.textContent = SORT_LABELS[taskSort] || '默认';
+    document.getElementById('sortBar').classList.toggle('expanded', sortBarExpanded);
   }
 
   function sortItems(list) {
