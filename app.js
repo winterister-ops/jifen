@@ -243,6 +243,7 @@ function switchView(view) {
   if (view === 'settings') renderSettings();
   if (view === 'stats') renderTaskStats();
   window.scrollTo(0, 0);
+  resetBottomNav();
 }
 
 function renderSettings() {
@@ -572,6 +573,40 @@ function confetti() {
     setTimeout(() => c.remove(), dur*1000 + 100);
   }
 }
+
+// 底部栏随滚动隐藏/展示（上滑隐藏，下滑展示，参考 X App）
+const bottomNav = document.querySelector('.bottom-nav');
+let navLastScrollY = 0;
+let navScrollTicking = false;
+
+function setBottomNavVisible(visible) {
+  if (bottomNav) bottomNav.classList.toggle('nav-hidden', !visible);
+}
+
+function resetBottomNav() {
+  navLastScrollY = window.scrollY;
+  setBottomNavVisible(true);
+}
+
+function onBottomNavScroll() {
+  if (navScrollTicking) return;
+  navScrollTicking = true;
+  requestAnimationFrame(() => {
+    const y = window.scrollY;
+    const delta = 6;
+    if (y <= 12) {
+      setBottomNavVisible(true);
+    } else if (y > navLastScrollY + delta) {
+      setBottomNavVisible(false);
+    } else if (y < navLastScrollY - delta) {
+      setBottomNavVisible(true);
+    }
+    navLastScrollY = y;
+    navScrollTicking = false;
+  });
+}
+
+window.addEventListener('scroll', onBottomNavScroll, { passive: true });
 
 render();
 { const s = envStatusText(); setStatus(s.text, s.dev); }

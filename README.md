@@ -28,6 +28,11 @@
 - **撤销上一条**：误操作时可撤回最近一条记录并恢复积分
 - **全部清空**：两步确认后清空所有积分和记录（保留宝贝资料）
 
+### 导航与交互
+
+- **底部 Tab**：首页 · 记录 · 我的（「我的」内可进入统计子页）
+- **滚动隐藏**：参考 X App，页面上滑时底部栏滑出隐藏，下滑时重新展示；回到顶部或切换 Tab 时自动恢复显示
+
 ### 数据与同步
 
 - **本地存储**：数据保存在浏览器 `localStorage`，离线可用
@@ -41,7 +46,10 @@
 
 ```
 jifen/
-├── index.html          # 应用主体（HTML + CSS + JS 单文件）
+├── index.html          # 页面结构与模态框
+├── styles.css          # 样式（含底部栏滚动动画）
+├── app.js              # 业务逻辑与 UI 渲染
+├── data.js             # 任务/奖励配置、Firebase 与环境常量
 ├── icons/              # IconPark 功能入口图标（Apache 2.0）
 │   ├── home.svg
 │   ├── transaction-order.svg
@@ -50,11 +58,9 @@ jifen/
 └── README.md
 ```
 
-底部导航三个 Tab：**首页** · **记录** · **我的**（「我的」内可进入统计子页）
-
 ## 自定义任务与奖励
 
-在 `index.html` 中修改 `TASKS` 和 `REWARDS` 数组即可，每项包含：
+在 `data.js` 中修改 `TASKS` 和 `REWARDS` 数组即可，每项包含：
 
 | 字段 | 说明 |
 |------|------|
@@ -92,18 +98,19 @@ python3 -m http.server 8080
 
 将整个 `jifen` 目录部署到任意静态托管服务（如 GitHub Pages、Vercel、Cloudflare Pages）即可。部署到线上域名后自动切换为生产环境。
 
-如需独立开发环境 Firebase 项目，在 `index.html` 的 `firebaseConfigDev` 中填入配置；留空则开发环境复用线上 Firebase，但数据路径仍为 `mybaby-dev`。
+如需独立开发环境 Firebase 项目，在 `data.js` 的 `firebaseConfigDev` 中填入配置；留空则开发环境复用线上 Firebase，但数据路径仍为 `mybaby-dev`。
 
 ## 技术说明
 
 | 项目 | 说明 |
 |------|------|
 | 架构 | 单页应用，纯 HTML / CSS / JavaScript，无构建工具 |
+| 文件划分 | `index.html` 结构 · `styles.css` 样式 · `app.js` 逻辑 · `data.js` 配置 |
 | 存储 | localStorage + Firebase Realtime Database |
 | UI 图标 | [IconPark](https://iconpark.oceanengine.com/)（Apache 2.0），页面功能入口使用 |
 | 任务图标 | Emoji，保留在任务卡片和历史记录中 |
 | 布局 | 首页任务网格使用 CSS `auto-fill` + `minmax` 自适应列数，内容区最大宽度 720px |
-| 适配 | 移动端优先，支持 safe-area 底部导航 |
+| 适配 | 移动端优先，底部栏支持 safe-area；滚动时自动隐藏/展示 |
 
 ## 图标许可
 

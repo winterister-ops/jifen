@@ -341,6 +341,12 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   border: 1px solid rgba(255,226,191,.85);
   box-shadow: 0 4px 20px rgba(200,140,60,.18), 0 8px 32px rgba(107,74,43,.08);
   padding: 8px 12px;
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  will-change: transform;
+}
+.bottom-nav.nav-hidden {
+  transform: translateX(-50%) translateY(calc(100% + 20px));
+  pointer-events: none;
 }
 .nav-inner {
   width: 100%; max-width: 720px; display: flex; gap: 6px;
