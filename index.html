@@ -7,16 +7,16 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
-    --bg1: #fef6ff;
-    --bg2: #eef7ff;
+    --bg1: #fff8ed;
+    --bg2: #ffe8c9;
     --card: #ffffff;
-    --accent: #ff8fab;
-    --accent2: #ffd166;
-    --green: #06d6a0;
-    --blue: #4cc9f0;
-    --purple: #b794f6;
-    --text: #4a4a6a;
-    --shadow: 0 8px 24px rgba(120,110,160,.15);
+    --accent: #ff7b3d;
+    --accent2: #ffc233;
+    --green: #f0a202;
+    --blue: #ffb627;
+    --purple: #ff9f1c;
+    --text: #6b4a2b;
+    --shadow: 0 8px 24px rgba(200,140,60,.18);
   }
   body {
     font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
@@ -30,7 +30,7 @@
 
   /* 顶部栏 */
   .score-card {
-    background: linear-gradient(135deg, #8aa7ff, #b79cf2);
+    background: linear-gradient(135deg, #ff9a3c, #ffc94d);
     border-radius: 28px;
     padding: 20px;
     color: #fff;
@@ -94,8 +94,8 @@
   }
   .tab:active { transform: scale(.95); }
   .tab.active { color: #fff; }
-  .tab.active.earn { background: linear-gradient(135deg, var(--green), #4cc9f0); }
-  .tab.active.spend { background: linear-gradient(135deg, var(--accent2), var(--accent)); }
+  .tab.active.earn { background: linear-gradient(135deg, #ffb627, #ff9a3c); }
+  .tab.active.spend { background: linear-gradient(135deg, #ff7b3d, #ff5e62); }
 
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   @media (max-width: 480px) { .grid { gap: 10px; } }
@@ -130,7 +130,7 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 12px; border-radius: 14px;
   }
-  .log:nth-child(odd) { background: #faf7ff; }
+  .log:nth-child(odd) { background: #fff5e6; }
   .log .left { display: flex; align-items: center; gap: 10px; font-size: .95rem; }
   .log .le { font-size: 1.4rem; }
   .log .time { font-size: .72rem; color: #aaa; }
@@ -138,6 +138,100 @@
   .log .delta.plus { color: var(--green); }
   .log .delta.minus { color: var(--accent); }
   .empty { text-align: center; color: #bbb; padding: 24px; }
+
+  /* 积分记录入口按钮 */
+  .history-entry {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; margin-top: 18px; padding: 16px;
+    border: none; border-radius: 20px; cursor: pointer;
+    background: var(--card); color: var(--text);
+    font-family: inherit; font-size: 1.08rem; font-weight: 800;
+    box-shadow: var(--shadow); transition: transform .12s;
+  }
+  .history-entry:active { transform: scale(.97); }
+  .history-entry-count {
+    background: var(--accent); color: #fff;
+    min-width: 24px; height: 24px; padding: 0 8px; border-radius: 999px;
+    font-size: .8rem; display: inline-flex; align-items: center; justify-content: center;
+  }
+
+  /* 积分记录页面 */
+  .hp-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .hp-back {
+    border: none; background: var(--card); box-shadow: var(--shadow);
+    border-radius: 14px; padding: 10px 16px; font-family: inherit; font-weight: 800;
+    color: var(--text); cursor: pointer; font-size: 1.1rem; line-height: 1;
+  }
+  .hp-back:active { transform: scale(.94); }
+  .hp-title { font-size: 1.25rem; font-weight: 800; }
+
+  .week-scroll {
+    display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .week-scroll::-webkit-scrollbar { height: 0; }
+  .day-chip {
+    flex: 0 0 auto; min-width: 60px; padding: 9px 12px; border-radius: 16px;
+    background: var(--card); box-shadow: var(--shadow); cursor: pointer;
+    text-align: center; border: 2px solid transparent; transition: transform .12s;
+  }
+  .day-chip:active { transform: scale(.94); }
+  .day-chip .dc-top { font-size: .82rem; font-weight: 800; white-space: nowrap; }
+  .day-chip .dc-bot { font-size: .72rem; color: #b08a5e; margin-top: 2px; white-space: nowrap; }
+  .day-chip.active {
+    background: linear-gradient(135deg, #ff9a3c, #ffc94d); color: #fff;
+    border-color: rgba(255,255,255,.6);
+  }
+  .day-chip.active .dc-bot { color: rgba(255,255,255,.92); }
+
+  .date-more {
+    width: 100%; margin: 10px 0 2px; padding: 12px; border: none; border-radius: 16px;
+    background: #fff0d6; color: var(--text); font-family: inherit; font-weight: 700;
+    cursor: pointer; font-size: .92rem; box-shadow: var(--shadow);
+  }
+  .date-more:active { transform: scale(.97); }
+
+  /* 自定义日历 */
+  .cal-box { max-width: 360px; }
+  .cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+  .cal-nav {
+    border: none; background: #fff0d6; color: var(--text); border-radius: 12px;
+    width: 38px; height: 38px; font-size: 1.05rem; font-weight: 800; cursor: pointer;
+    font-family: inherit; flex: 0 0 auto; line-height: 1;
+  }
+  .cal-nav:active { transform: scale(.9); }
+  .cal-title { flex: 1; text-align: center; font-size: 1.08rem; font-weight: 800; }
+  .cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
+  .cal-week span { text-align: center; font-size: .78rem; font-weight: 700; color: #b08a5e; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-cell {
+    aspect-ratio: 1; border: none; background: transparent; border-radius: 12px;
+    font-family: inherit; font-size: .95rem; font-weight: 700; color: var(--text);
+    cursor: pointer; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cal-cell.blank { visibility: hidden; cursor: default; }
+  .cal-cell:active { transform: scale(.9); }
+  .cal-cell .dot {
+    position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+  }
+  .cal-cell.today { box-shadow: inset 0 0 0 2px var(--accent2); }
+  .cal-cell.sel {
+    background: linear-gradient(135deg, #ff9a3c, #ffc94d); color: #fff;
+  }
+  .cal-cell.sel .dot { background: #fff; }
+
+  .hp-summary {
+    text-align: center; font-size: .92rem; font-weight: 700;
+    color: var(--text); margin: 12px 0; min-height: 1.2em;
+  }
+  .hp-summary .net.plus { color: var(--green); }
+  .hp-summary .net.minus { color: var(--accent); }
+  .date-head {
+    font-size: .82rem; font-weight: 800; color: #b0772f;
+    padding: 12px 12px 4px;
+  }
 
   .toolbar { display: flex; gap: 10px; margin-top: 14px; }
   .btn-soft {
@@ -165,7 +259,7 @@
   @keyframes fall {
     to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
   }
-  footer { text-align: center; color: #c5c0d8; font-size: .8rem; margin: 20px 0 8px; }
+  footer { text-align: center; color: #d2a679; font-size: .8rem; margin: 20px 0 8px; }
 
   /* 确认弹窗 */
   .modal-overlay {
@@ -177,6 +271,7 @@
     transition: opacity .2s, visibility .2s;
   }
   .modal-overlay.show { opacity: 1; visibility: visible; }
+  #clearModal { z-index: 110; }
   .modal-box {
     background: #fff; border-radius: 28px; padding: 28px 24px;
     max-width: 340px; width: 100%; text-align: center;
@@ -198,12 +293,12 @@
     transition: transform .12s;
   }
   .modal-btn:active { transform: scale(.96); }
-  .modal-btn.cancel { background: #f0ecff; color: var(--text); }
+  .modal-btn.cancel { background: #fff0d6; color: var(--text); }
   .modal-btn.confirm { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; }
   .modal-btn.danger { background: linear-gradient(135deg, #ff6b8a, #e63956); color: #fff; }
 
   .profile-input {
-    width: 100%; padding: 12px 14px; border: 2px solid #ece6ff;
+    width: 100%; padding: 12px 14px; border: 2px solid #ffe2bf;
     border-radius: 14px; font-size: 1rem; font-family: inherit;
     color: var(--text); margin-bottom: 14px; outline: none;
     text-align: center; font-weight: 700;
@@ -214,19 +309,20 @@
     margin-bottom: 20px;
   }
   .emoji-opt {
-    aspect-ratio: 1; border: 2px solid #ece6ff; border-radius: 14px;
-    background: #faf7ff; font-size: 1.6rem; cursor: pointer;
+    aspect-ratio: 1; border: 2px solid #ffe2bf; border-radius: 14px;
+    background: #fff7ec; font-size: 1.6rem; cursor: pointer;
     font-family: inherit; transition: transform .12s, border-color .12s;
   }
   .emoji-opt:active { transform: scale(.92); }
   .emoji-opt.selected {
-    border-color: var(--purple); background: #f0ecff;
-    box-shadow: 0 0 0 2px rgba(183,148,246,.35);
+    border-color: var(--purple); background: #fff0d6;
+    box-shadow: 0 0 0 2px rgba(255,159,28,.35);
   }
 </style>
 </head>
 <body>
 <div class="wrap">
+ <div id="mainView">
   <div class="score-card">
     <div class="header-row">
       <div class="header-left">
@@ -250,7 +346,28 @@
 
   <div class="grid" id="grid"></div>
 
-  <div class="section-title">📜 积分记录</div>
+  <button class="history-entry" onclick="openHistory()">
+    <span>📜 积分记录</span>
+    <span class="history-entry-count" id="historyEntryCount">0</span>
+  </button>
+
+  <footer>陪宝贝一起成长 💛</footer>
+
+  <div class="env-footer"><span class="env-badge" id="envBadge"></span></div>
+ </div>
+
+ <div id="historyView" style="display:none">
+  <div class="hp-header">
+    <button class="hp-back" onclick="closeHistory()">←</button>
+    <div class="hp-title">📜 积分记录</div>
+  </div>
+
+  <div class="week-scroll" id="weekBar"></div>
+
+  <button class="date-more" id="dateMoreBtn" onclick="openCalendar()">📅 选择其它年月日</button>
+
+  <div class="hp-summary" id="hpSummary"></div>
+
   <div class="history" id="history"></div>
 
   <div class="toolbar">
@@ -259,8 +376,7 @@
   </div>
 
   <footer>陪宝贝一起成长 💛</footer>
-
-  <div class="env-footer"><span class="env-badge" id="envBadge"></span></div>
+ </div>
 </div>
 
 <div class="modal-overlay" id="profileModal" onclick="if(event.target===this) hideProfileModal()">
@@ -271,6 +387,26 @@
     <div class="modal-btns">
       <button class="modal-btn cancel" onclick="hideProfileModal()">取消</button>
       <button class="modal-btn confirm" onclick="saveProfile()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="calModal" onclick="if(event.target===this) hideCalendar()">
+  <div class="modal-box cal-box">
+    <div class="cal-head">
+      <button class="cal-nav" onclick="calShift(-12)" title="上一年">«</button>
+      <button class="cal-nav" onclick="calShift(-1)" title="上个月">‹</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button class="cal-nav" onclick="calShift(1)" title="下个月">›</button>
+      <button class="cal-nav" onclick="calShift(12)" title="下一年">»</button>
+    </div>
+    <div class="cal-week">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideCalendar()">取消</button>
+      <button class="modal-btn confirm" onclick="calPickToday()">回到今天</button>
     </div>
   </div>
 </div>
@@ -437,6 +573,149 @@
     document.getElementById('profileModal').classList.remove('show');
   }
 
+  // ====== 积分记录页面 + 日期筛选 ======
+  let selectedDateKey = ymd(new Date()); // 'YYYY-MM-DD' 或 'all'
+
+  function ymd(d) {
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+
+  // 旧记录可能没有 ts，尽量从 "M月D日 HH:MM" 解析（按当前年份）
+  function entryDate(log) {
+    if (typeof log.ts === 'number') return new Date(log.ts);
+    const m = /(\d+)月(\d+)日\s+(\d+):(\d+)/.exec(log.time || '');
+    if (m) {
+      const now = new Date();
+      return new Date(now.getFullYear(), +m[1] - 1, +m[2], +m[3], +m[4]);
+    }
+    return null;
+  }
+  function entryDateKey(log) {
+    const d = entryDate(log);
+    return d ? ymd(d) : 'unknown';
+  }
+
+  const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+  function dateHeadLabel(key) {
+    if (key === 'unknown') return '更早的记录';
+    const [y, mo, da] = key.split('-').map(Number);
+    const d = new Date(y, mo - 1, da);
+    const today = ymd(new Date());
+    const yest = ymd(new Date(Date.now() - 86400000));
+    let prefix = key === today ? '今天 · ' : (key === yest ? '昨天 · ' : '');
+    return prefix + `${mo}月${da}日 ${WEEKDAYS[d.getDay()]}`;
+  }
+
+  function renderWeekBar() {
+    const bar = document.getElementById('weekBar');
+    if (!bar) return;
+    bar.innerHTML = '';
+    const today = new Date();
+    const todayKey = ymd(today);
+    const yestKey = ymd(new Date(Date.now() - 86400000));
+
+    const makeChip = (top, bot, key) => {
+      const c = document.createElement('div');
+      c.className = 'day-chip' + (key === selectedDateKey ? ' active' : '');
+      c.innerHTML = `<div class="dc-top">${top}</div><div class="dc-bot">${bot}</div>`;
+      c.onclick = () => { selectedDateKey = key; renderWeekBar(); renderHistory(); };
+      bar.appendChild(c);
+    };
+
+    makeChip('全部', '所有记录', 'all');
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
+      const key = ymd(d);
+      const top = key === todayKey ? '今天' : (key === yestKey ? '昨天' : WEEKDAYS[d.getDay()]);
+      makeChip(top, `${d.getMonth() + 1}/${d.getDate()}`, key);
+    }
+    // 选中的日期若不在最近一周内，补一个高亮卡片，方便看到当前筛选
+    if (selectedDateKey !== 'all' && selectedDateKey !== 'unknown') {
+      const exists = Array.from(bar.querySelectorAll('.day-chip.active')).length > 0;
+      if (!exists) {
+        const [y, mo, da] = selectedDateKey.split('-').map(Number);
+        const d = new Date(y, mo - 1, da);
+        makeChip(WEEKDAYS[d.getDay()], `${mo}/${da}`, selectedDateKey);
+      }
+    }
+  }
+
+  // ====== 自定义日历选择器 ======
+  let calYear, calMonth; // calMonth: 0-11
+
+  function openCalendar() {
+    let base;
+    if (selectedDateKey !== 'all' && selectedDateKey !== 'unknown') {
+      const [y, m] = selectedDateKey.split('-').map(Number);
+      base = new Date(y, m - 1, 1);
+    } else {
+      base = new Date();
+    }
+    calYear = base.getFullYear();
+    calMonth = base.getMonth();
+    renderCalendar();
+    document.getElementById('calModal').classList.add('show');
+  }
+  function hideCalendar() {
+    document.getElementById('calModal').classList.remove('show');
+  }
+  function calShift(deltaMonths) {
+    const d = new Date(calYear, calMonth + deltaMonths, 1);
+    calYear = d.getFullYear();
+    calMonth = d.getMonth();
+    renderCalendar();
+  }
+  function calSelect(key) {
+    selectedDateKey = key;
+    hideCalendar();
+    renderWeekBar();
+    renderHistory();
+  }
+  function calPickToday() {
+    calSelect(ymd(new Date()));
+  }
+  function renderCalendar() {
+    document.getElementById('calTitle').textContent = `${calYear}年${calMonth + 1}月`;
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+    const startDow = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const todayKey = ymd(new Date());
+    const recDays = new Set(state.history.map(entryDateKey));
+
+    for (let i = 0; i < startDow; i++) {
+      const b = document.createElement('div');
+      b.className = 'cal-cell blank';
+      grid.appendChild(b);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = ymd(new Date(calYear, calMonth, day));
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cal-cell'
+        + (key === todayKey ? ' today' : '')
+        + (key === selectedDateKey ? ' sel' : '');
+      cell.innerHTML = day + (recDays.has(key) ? '<i class="dot"></i>' : '');
+      cell.onclick = () => calSelect(key);
+      grid.appendChild(cell);
+    }
+  }
+
+  function openHistory() {
+    selectedDateKey = ymd(new Date());
+    document.getElementById('mainView').style.display = 'none';
+    document.getElementById('historyView').style.display = '';
+    renderWeekBar();
+    renderHistory();
+    window.scrollTo(0, 0);
+  }
+  function closeHistory() {
+    document.getElementById('historyView').style.display = 'none';
+    document.getElementById('mainView').style.display = '';
+    window.scrollTo(0, 0);
+  }
+
   function saveProfile() {
     const name = document.getElementById('profileNameInput').value.trim();
     if (!name) {
@@ -532,17 +811,43 @@
       }
       grid.appendChild(div);
     });
+    const cntEl = document.getElementById('historyEntryCount');
+    if (cntEl) {
+      cntEl.textContent = state.history.length;
+      cntEl.style.display = state.history.length ? '' : 'none';
+    }
     renderHistory();
   }
 
   function renderHistory() {
     const h = document.getElementById('history');
-    if (!state.history.length) {
-      h.innerHTML = '<div class="empty">还没有记录，快去做任务赚积分吧！🚀</div>';
+    if (!h) return;
+    const summary = document.getElementById('hpSummary');
+
+    let list = state.history.slice();
+    const showAll = selectedDateKey === 'all';
+    if (!showAll) list = list.filter(log => entryDateKey(log) === selectedDateKey);
+
+    if (summary) summary.innerHTML = buildSummary(list, showAll);
+
+    if (!list.length) {
+      h.innerHTML = showAll
+        ? '<div class="empty">还没有记录，快去做任务赚积分吧！🚀</div>'
+        : '<div class="empty">这一天还没有积分记录哦 📭</div>';
       return;
     }
+
     h.innerHTML = '';
-    state.history.slice().reverse().slice(0, 30).forEach(log => {
+    let lastKey = null;
+    list.slice().reverse().forEach(log => {
+      const key = entryDateKey(log);
+      if (showAll && key !== lastKey) {
+        lastKey = key;
+        const head = document.createElement('div');
+        head.className = 'date-head';
+        head.textContent = dateHeadLabel(key);
+        h.appendChild(head);
+      }
       const row = document.createElement('div');
       row.className = 'log';
       const plus = log.delta > 0;
@@ -559,6 +864,15 @@
     });
   }
 
+  function buildSummary(list, showAll) {
+    const scope = showAll ? '全部记录' : dateHeadLabel(selectedDateKey);
+    if (!list.length) return scope + ' · 暂无记录';
+    const net = list.reduce((s, x) => s + x.delta, 0);
+    const cls = net >= 0 ? 'plus' : 'minus';
+    const sign = net > 0 ? '+' : '';
+    return `${scope} · 共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ⭐`;
+  }
+
   function nowStr() {
     const d = new Date();
     const p = n => String(n).padStart(2, '0');
@@ -567,7 +881,7 @@
 
   function earn(it, e) {
     state.score += it.pts;
-    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr() });
+    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
     save();
     bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();
     render();
@@ -580,7 +894,7 @@
       return;
     }
     state.score -= it.pts;
-    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr() });
+    state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
     save();
     bump(); popup('-' + it.pts, '#ff8fab', it.emoji);
     render();
@@ -668,7 +982,7 @@
     setTimeout(() => p.remove(), 1000);
   }
   function confetti() {
-    const colors = ['#ff8fab','#ffd166','#06d6a0','#4cc9f0','#b794f6'];
+    const colors = ['#ff7b3d','#ffc233','#ffb627','#ff9a3c','#ff5e62'];
     for (let i = 0; i < 24; i++) {
       const c = document.createElement('div');
       c.className = 'confetti';
