@@ -22,7 +22,7 @@
     background: var(--bg1);
     color: var(--text);
     min-height: 100vh;
-    padding: 16px 16px calc(82px + env(safe-area-inset-bottom));
+    padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
     overflow-x: hidden;
   }
   .wrap { max-width: 720px; margin: 0 auto; }
@@ -320,13 +320,16 @@
 
   /* 底部导航栏 */
   .bottom-nav {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: calc(100% - 32px); max-width: 720px; z-index: 80;
     display: flex; justify-content: center;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 -6px 22px rgba(200,140,60,.16);
-    border-top-left-radius: 24px; border-top-right-radius: 24px;
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.95);
+    backdrop-filter: blur(12px);
+    border-radius: 24px;
+    border: 1px solid rgba(255,226,191,.85);
+    box-shadow: 0 4px 20px rgba(200,140,60,.18), 0 8px 32px rgba(107,74,43,.08);
+    padding: 8px 12px;
   }
   .nav-inner {
     width: 100%; max-width: 720px; display: flex; gap: 6px;
@@ -410,7 +413,6 @@
       <button type="button" class="filter-pill sort-pill" data-sort="default" onclick="setTaskSort('default')">默认</button>
       <button type="button" class="filter-pill sort-pill" data-sort="pts-asc" onclick="setTaskSort('pts-asc')">分数从低到高</button>
       <button type="button" class="filter-pill sort-pill" data-sort="pts-desc" onclick="setTaskSort('pts-desc')">分数从高到低</button>
-      <button type="button" class="filter-pill sort-pill" data-sort="name" onclick="setTaskSort('name')">名称</button>
     </div>
   </div>
 
@@ -612,7 +614,7 @@
   // ====== 数据存储 ======
   const KEY = 'kid_points_data_v1_' + ENV;
   const SORT_KEY = 'kid_points_sort_v1_' + ENV;
-  const SORT_MODES = ['default', 'pts-asc', 'pts-desc', 'name'];
+  const SORT_MODES = ['default', 'pts-asc', 'pts-desc'];
   let taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
     ? localStorage.getItem(SORT_KEY) : 'default';
   let state = loadLocal();
@@ -934,8 +936,6 @@
         return items.sort((a, b) => a.pts - b.pts || a.name.localeCompare(b.name, 'zh-CN'));
       case 'pts-desc':
         return items.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, 'zh-CN'));
-      case 'name':
-        return items.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
       default:
         return items;
     }
