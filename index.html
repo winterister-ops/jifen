@@ -28,33 +28,59 @@
   }
   .wrap { max-width: 720px; margin: 0 auto; }
 
-  /* 顶部积分卡 */
+  /* 顶部栏 */
   .score-card {
     background: linear-gradient(135deg, #8aa7ff, #b79cf2);
     border-radius: 28px;
-    padding: 28px 24px;
-    text-align: center;
+    padding: 20px;
     color: #fff;
     box-shadow: var(--shadow);
     position: relative;
     overflow: hidden;
     margin-bottom: 18px;
   }
-  .score-card h1 { font-size: 1.3rem; font-weight: 700; text-shadow: 0 2px 6px rgba(0,0,0,.15); letter-spacing: 1px; }
-  .score-num {
-    font-size: 4.6rem;
-    font-weight: 900;
-    line-height: 1;
-    margin: 8px 0 4px;
-    text-shadow: 0 4px 12px rgba(0,0,0,.2);
+  .header-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .header-left {
+    display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;
+  }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(255,255,255,.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.85rem;
+    border: 2px solid rgba(255,255,255,.5);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .avatar:active { transform: scale(.92); }
+  .welcome { cursor: pointer; min-width: 0; }
+  .welcome:active { opacity: .85; }
+  .welcome .greet {
+    font-size: 1.05rem; font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0,0,0,.12);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .welcome .sub { font-size: .78rem; opacity: .88; margin-top: 3px; }
+  .star-badge {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0;
+    background: rgba(255,255,255,.28);
+    padding: 8px 14px; border-radius: 999px;
+    backdrop-filter: blur(4px);
     transition: transform .25s;
   }
-  .score-num.bump { transform: scale(1.25); }
-  .score-card .star { font-size: 1.6rem; }
-  .float-emoji {
-    position: absolute; bottom: 8px; font-size: 2rem; opacity: .35;
+  .star-badge.bump { transform: scale(1.15); }
+  .star-badge .star-icon { font-size: 1.35rem; line-height: 1; }
+  .star-badge .score-num { font-size: 1.55rem; font-weight: 900; line-height: 1; }
+  .env-badge {
+    position: absolute; bottom: 8px; right: 12px;
+    font-size: .58rem; padding: 2px 7px; border-radius: 999px;
+    background: rgba(255,255,255,.18); color: rgba(255,255,255,.75);
+    font-weight: 600;
   }
-  .float-emoji.l { left: 14px; } .float-emoji.r { right: 14px; }
+  .env-badge.dev { background: rgba(255,240,168,.28); color: rgba(255,248,220,.9); }
 
   /* 标签切换 */
   .tabs { display: flex; gap: 10px; margin-bottom: 16px; }
@@ -139,16 +165,82 @@
     to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
   }
   footer { text-align: center; color: #c5c0d8; font-size: .8rem; margin: 20px 0 8px; }
+
+  /* 确认弹窗 */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(74, 74, 106, .45);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; visibility: hidden;
+    transition: opacity .2s, visibility .2s;
+  }
+  .modal-overlay.show { opacity: 1; visibility: visible; }
+  .modal-box {
+    background: #fff; border-radius: 28px; padding: 28px 24px;
+    max-width: 340px; width: 100%; text-align: center;
+    box-shadow: 0 16px 48px rgba(120,110,160,.25);
+    transform: scale(.9); transition: transform .2s;
+  }
+  .modal-overlay.show .modal-box { transform: scale(1); }
+  .modal-emoji { font-size: 3rem; margin-bottom: 12px; }
+  .modal-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 10px; }
+  .modal-msg { font-size: .95rem; color: #888; line-height: 1.5; margin-bottom: 8px; }
+  .modal-step {
+    font-size: .78rem; color: var(--purple); font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn {
+    flex: 1; padding: 14px; border: none; border-radius: 16px;
+    font-size: .95rem; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: transform .12s;
+  }
+  .modal-btn:active { transform: scale(.96); }
+  .modal-btn.cancel { background: #f0ecff; color: var(--text); }
+  .modal-btn.confirm { background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; }
+  .modal-btn.danger { background: linear-gradient(135deg, #ff6b8a, #e63956); color: #fff; }
+
+  .profile-input {
+    width: 100%; padding: 12px 14px; border: 2px solid #ece6ff;
+    border-radius: 14px; font-size: 1rem; font-family: inherit;
+    color: var(--text); margin-bottom: 14px; outline: none;
+    text-align: center; font-weight: 700;
+  }
+  .profile-input:focus { border-color: var(--purple); }
+  .emoji-picker {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    margin-bottom: 20px;
+  }
+  .emoji-opt {
+    aspect-ratio: 1; border: 2px solid #ece6ff; border-radius: 14px;
+    background: #faf7ff; font-size: 1.6rem; cursor: pointer;
+    font-family: inherit; transition: transform .12s, border-color .12s;
+  }
+  .emoji-opt:active { transform: scale(.92); }
+  .emoji-opt.selected {
+    border-color: var(--purple); background: #f0ecff;
+    box-shadow: 0 0 0 2px rgba(183,148,246,.35);
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="score-card">
-    <span class="float-emoji l">🌈</span>
-    <span class="float-emoji r">⭐</span>
-    <h1>⭐ 星星银行 ⭐</h1>
-    <div class="score-num" id="scoreNum">0</div>
-    <div id="syncStatus" style="margin-top:6px;font-size:.8rem;opacity:.9;"></div>
+    <div class="header-row">
+      <div class="header-left">
+        <div class="avatar" id="avatar" onclick="openProfileModal()" title="点击修改头像">👧</div>
+        <div class="welcome" onclick="openProfileModal()" title="点击修改昵称">
+          <div class="greet" id="welcomeGreet">你好，宝贝！</div>
+          <div class="sub" id="welcomeSub">星星银行 · 点击可修改头像和昵称</div>
+        </div>
+      </div>
+      <div class="star-badge" id="starBadge">
+        <span class="star-icon">⭐</span>
+        <span class="score-num" id="scoreNum">0</span>
+      </div>
+    </div>
+    <div class="env-badge" id="envBadge"></div>
   </div>
 
   <div class="tabs">
@@ -169,14 +261,64 @@
   <footer>陪宝贝一起成长 💛</footer>
 </div>
 
+<div class="modal-overlay" id="profileModal" onclick="if(event.target===this) hideProfileModal()">
+  <div class="modal-box">
+    <div class="modal-title">修改宝贝信息</div>
+    <input class="profile-input" id="profileNameInput" type="text" maxlength="12" placeholder="宝贝昵称" onkeydown="if(event.key==='Enter')saveProfile()">
+    <div class="emoji-picker" id="emojiPicker"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideProfileModal()">取消</button>
+      <button class="modal-btn confirm" onclick="saveProfile()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="clearModal" onclick="if(event.target===this) hideClearModal()">
+  <div class="modal-box">
+    <div class="modal-emoji" id="clearModalEmoji">🧹</div>
+    <div class="modal-title" id="clearModalTitle">确定要清空吗？</div>
+    <div class="modal-msg" id="clearModalMsg">将清空当前所有积分和记录。</div>
+    <div class="modal-step" id="clearModalStep">第 1 步 / 共 2 步</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideClearModal()">取消</button>
+      <button class="modal-btn confirm" id="clearModalOk" onclick="onClearConfirm()">确定清空</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase 云同步 SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+  // ====== 宝贝信息默认值（首次使用或未设置时） ======
+  const DEFAULT_CHILD_NAME = '宝贝';
+  const DEFAULT_CHILD_AVATAR = '👧';
+  // 头像：0-12 岁男孩女孩 + 十二生肖
+  const AVATAR_OPTIONS = [
+    '👶', '👦', '👧', '🧒',
+    '🐭', '🐮', '🐯', '🐰', '🐲', '🐍', '🐴', '🐑', '🐵', '🐔', '🐶', '🐷'
+  ];
+  let profilePickAvatar = DEFAULT_CHILD_AVATAR;
+
+  function defaultProfile() {
+    return { name: DEFAULT_CHILD_NAME, avatar: DEFAULT_CHILD_AVATAR };
+  }
+
+  function normalizeProfile(p) {
+    if (p && typeof p.name === 'string' && p.name.trim()) {
+      return {
+        name: p.name.trim().slice(0, 12),
+        avatar: AVATAR_OPTIONS.includes(p.avatar) ? p.avatar : DEFAULT_CHILD_AVATAR
+      };
+    }
+    return defaultProfile();
+  }
+
   // ====== 可自由修改的任务和奖励 ======
   const TASKS = [
     { id: 'wash',    emoji: '🧼', name: '自己洗手',   pts: 2 },
     { id: 'eat',     emoji: '🍚', name: '自己吃饭',   pts: 5 },
+    { id: 'veggie',  emoji: '🥬', name: '吃蔬菜',     pts: 4 },
     { id: 'brush',   emoji: '🪥', name: '认真刷牙',   pts: 3 },
     { id: 'dress',   emoji: '👕', name: '自己穿衣服', pts: 5 },
     { id: 'shoes',   emoji: '👟', name: '自己穿鞋',   pts: 3 },
@@ -193,9 +335,15 @@
     { id: 'park',    emoji: '🎡', name: '去游乐场玩',     pts: 50 },
   ];
 
-  // ====== ① 在这里粘贴你的 Firebase 配置（开启多设备同步）======
-  // 不填也能用：留空时是「单机模式」，数据存本机；填好后自动开启云同步。
-  const firebaseConfig = {
+  // ====== 环境隔离：本地开发 vs 线上真实 ======
+  // localhost / 127.0.0.1 / 直接打开本地文件 → 开发环境
+  // 部署到 GitHub Pages 等线上域名 → 线上环境
+  const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname)
+    || location.protocol === 'file:';
+  const ENV = IS_LOCAL ? 'dev' : 'prod';
+
+  // 线上 Firebase 配置（真实积分，勿在本地乱测时可忽略此项）
+  const firebaseConfigProd = {
     apiKey: "AIzaSyBSfzrKexHnCDOQ3k8vTSJ8oGqRtlh95tk",
     authDomain: "baby-points-9a82c.firebaseapp.com",
     databaseURL: "https://baby-points-9a82c-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -204,11 +352,26 @@
     messagingSenderId: "524651272617",
     appId: "1:524651272617:web:b827922fafbc5e083c4cb8"
   };
-  // 同一个「家庭代号」的所有设备共享同一份积分，可自定义（建议英文/数字）
-  const FAMILY = "mybaby";
+  // 开发 Firebase 配置（可选：创建独立 dev 项目后粘贴；留空则复用线上项目但走独立数据路径）
+  const firebaseConfigDev = {
+    apiKey: "",
+    authDomain: "",
+    databaseURL: "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: ""
+  };
+
+  const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
+    ? firebaseConfigDev
+    : firebaseConfigProd;
+
+  // 家庭代号：dev / prod 各一份，互不影响
+  const FAMILY = ENV === 'dev' ? 'mybaby-dev' : 'mybaby';
 
   // ====== 数据存储 ======
-  const KEY = 'kid_points_data_v1';
+  const KEY = 'kid_points_data_v1_' + ENV;
   let state = loadLocal();
   let cloudRef = null;
   let applyingRemote = false;
@@ -216,9 +379,13 @@
   function loadLocal() {
     try {
       const d = JSON.parse(localStorage.getItem(KEY));
-      if (d && typeof d.score === 'number') { if (!Array.isArray(d.history)) d.history = []; return d; }
+      if (d && typeof d.score === 'number') {
+        if (!Array.isArray(d.history)) d.history = [];
+        d.profile = normalizeProfile(d.profile);
+        return d;
+      }
     } catch(e){}
-    return { score: 0, history: [] };
+    return { score: 0, history: [], profile: defaultProfile() };
   }
   function saveLocal() { localStorage.setItem(KEY, JSON.stringify(state)); }
 
@@ -229,13 +396,75 @@
     }
   }
 
-  function setStatus(text, color) {
-    const el = document.getElementById('syncStatus');
-    if (el) { el.textContent = text; el.style.color = color; }
+  function welcomeText() {
+    const name = state.profile.name;
+    const h = new Date().getHours();
+    if (h < 12) return '早上好，' + name + '！';
+    if (h < 18) return '下午好，' + name + '！';
+    return '晚上好，' + name + '！';
+  }
+
+  function renderHeader() {
+    document.getElementById('scoreNum').textContent = state.score;
+    document.getElementById('welcomeGreet').textContent = welcomeText();
+    document.getElementById('avatar').textContent = state.profile.avatar;
+  }
+
+  function renderEmojiPicker() {
+    const grid = document.getElementById('emojiPicker');
+    grid.innerHTML = '';
+    AVATAR_OPTIONS.forEach(em => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'emoji-opt' + (em === profilePickAvatar ? ' selected' : '');
+      btn.textContent = em;
+      btn.onclick = () => { profilePickAvatar = em; renderEmojiPicker(); };
+      grid.appendChild(btn);
+    });
+  }
+
+  function openProfileModal() {
+    profilePickAvatar = state.profile.avatar;
+    document.getElementById('profileNameInput').value = state.profile.name;
+    renderEmojiPicker();
+    document.getElementById('profileModal').classList.add('show');
+    setTimeout(() => document.getElementById('profileNameInput').focus(), 200);
+  }
+
+  function hideProfileModal() {
+    document.getElementById('profileModal').classList.remove('show');
+  }
+
+  function saveProfile() {
+    const name = document.getElementById('profileNameInput').value.trim();
+    if (!name) {
+      popup('请输入昵称', '#ff8fab', '✏️');
+      return;
+    }
+    state.profile = { name: name.slice(0, 12), avatar: profilePickAvatar };
+    save();
+    renderHeader();
+    hideProfileModal();
+  }
+
+  function setStatus(text, isDev) {
+    const el = document.getElementById('envBadge');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('dev', !!isDev);
+  }
+
+  function envStatusText() {
+    if (ENV === 'prod') return { text: '线上', dev: false };
+    return { text: '开发', dev: true };
   }
 
   function initCloud() {
-    if (!firebaseConfig.databaseURL) { setStatus('📱 单机模式（未配置同步）', '#ffffff'); return; }
+    if (!firebaseConfig.databaseURL) {
+      const s = envStatusText();
+      setStatus(s.text, s.dev);
+      return;
+    }
     try {
       firebase.initializeApp(firebaseConfig);
       cloudRef = firebase.database().ref('families/' + FAMILY);
@@ -243,16 +472,21 @@
       cloudRef.on('value', snap => {
         const val = snap.val();
         if (val && typeof val.score === 'number') {
-          state = { score: val.score, history: Array.isArray(val.history) ? val.history : [] };
+          state = {
+            score: val.score,
+            history: Array.isArray(val.history) ? val.history : [],
+            profile: normalizeProfile(val.profile)
+          };
           saveLocal();
           applyingRemote = true; render(); applyingRemote = false;
         } else if (first) {
           cloudRef.set(state); // 云端为空时，把本机数据作为初始上传
         }
         first = false;
-        setStatus('☁️ 已开启多设备同步', '#ffffff');
-      }, err => { console.warn(err); setStatus('⚠️ 云连接失败，暂用单机', '#fff0a8'); });
-    } catch(e) { console.warn(e); setStatus('⚠️ 云配置有误，暂用单机', '#fff0a8'); }
+        const s = envStatusText();
+        setStatus(s.text, s.dev);
+      }, err => { console.warn(err); setStatus('离线', ENV === 'dev'); });
+    } catch(e) { console.warn(e); setStatus('离线', ENV === 'dev'); }
   }
 
   let currentTab = 'earn';
@@ -269,7 +503,7 @@
   }
 
   function render() {
-    document.getElementById('scoreNum').textContent = state.score;
+    renderHeader();
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
     const list = currentTab === 'earn' ? TASKS : REWARDS;
@@ -358,21 +592,70 @@
     render();
   }
 
+  let clearConfirmStep = 1;
+
+  const CLEAR_STEPS = [
+    {
+      emoji: '🧹',
+      title: '确定要清空吗？',
+      msg: '将清空当前所有积分和记录。',
+      step: '第 1 步 / 共 2 步',
+      btn: '继续',
+      danger: false
+    },
+    {
+      emoji: '⚠️',
+      title: '再次确认清空',
+      msg: '清空后无法恢复，真的要全部清空吗？',
+      step: '第 2 步 / 共 2 步',
+      btn: '确认全部清空',
+      danger: true
+    }
+  ];
+
+  function showClearModalStep(step) {
+    clearConfirmStep = step;
+    const s = CLEAR_STEPS[step - 1];
+    document.getElementById('clearModalEmoji').textContent = s.emoji;
+    document.getElementById('clearModalTitle').textContent = s.title;
+    document.getElementById('clearModalMsg').textContent = s.msg;
+    document.getElementById('clearModalStep').textContent = s.step;
+    const okBtn = document.getElementById('clearModalOk');
+    okBtn.textContent = s.btn;
+    okBtn.className = 'modal-btn ' + (s.danger ? 'danger' : 'confirm');
+    document.getElementById('clearModal').classList.add('show');
+  }
+
+  function hideClearModal() {
+    document.getElementById('clearModal').classList.remove('show');
+    clearConfirmStep = 1;
+  }
+
   function clearAll() {
-    if (!confirm('确定要清空所有积分和记录吗？')) return;
-    state = { score: 0, history: [] };
+    if (!state.score && !state.history.length) return;
+    showClearModalStep(1);
+  }
+
+  function onClearConfirm() {
+    if (clearConfirmStep === 1) {
+      showClearModalStep(2);
+      return;
+    }
+    state = { score: 0, history: [], profile: state.profile };
     save();
     render();
+    hideClearModal();
   }
 
   // ====== 动画效果 ======
   function bump() {
-    const el = document.getElementById('scoreNum');
+    const el = document.getElementById('starBadge');
     el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+    setTimeout(() => el.classList.remove('bump'), 300);
   }
   function shakeScore() {
-    const el = document.getElementById('scoreNum');
-    el.animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(8px)'},{transform:'translateX(0)'}],{duration:300});
+    const el = document.getElementById('starBadge');
+    el.animate([{transform:'scale(1)'},{transform:'scale(1.1) translateX(-4px)'},{transform:'scale(1.1) translateX(4px)'},{transform:'scale(1)'}],{duration:300});
   }
   function popup(text, color, emoji) {
     const p = document.createElement('div');
@@ -398,6 +681,7 @@
   }
 
   render();
+  { const s = envStatusText(); setStatus(s.text, s.dev); }
   initCloud();
 </script>
 </body>
