@@ -20,6 +20,7 @@ const TASKS = [
   { id: 'jump',    emoji: '🤽', name: '勇敢跳水',   pts: 10 },
   { id: 'dive',    emoji: '🌊', name: '勇敢潜水',   pts: 10 },
   { id: 'learn',   emoji: '📚', name: '认真学习',   pts: 5 },
+  { id: 'photo',   emoji: '📷', name: '配合摄影',   pts: 50 },
 ];
 const REWARDS = [
   { id: 'cartoon', emoji: '📺', name: '看动画片15分钟', pts: 10 },
