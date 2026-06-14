@@ -6,7 +6,7 @@
 
 ### 首页
 
-- **做任务赚积分**：点击任务卡片即可加分，支持 11 项预设任务（洗手、吃饭、刷牙、睡觉等）
+- **做任务赚积分**：点击任务卡片即可加分，支持 12 项预设任务（洗手、吃饭、刷牙、睡觉等）
 - **换奖励花积分**：切换到奖励 Tab，用积分兑换动画片、零食、玩具、游乐场等奖励
 - **自适应网格**：任务/奖励卡片随屏幕宽度自动调整列数，越宽显示越多列
 - **排序**：默认收起，点击展开后可按默认顺序或积分高低排序，选择会保存在本地
@@ -110,10 +110,22 @@ python3 -m http.server 8080
 | 文件划分 | `index.html` 结构 · `styles.css` 样式 · `app.js` 逻辑 · `data.js` 配置 |
 | 存储 | localStorage + Firebase Realtime Database |
 | UI 图标 | [IconPark](https://iconpark.oceanengine.com/)（Apache 2.0），页面功能入口使用 |
+| 字体 | 中文正文 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)，数字 [Fredoka](https://fonts.google.com/specimen/Fredoka)；均通过 Google Fonts CDN 加载，详见下方「字体许可」 |
 | 任务图标 | Emoji，保留在任务卡片和历史记录中 |
 | 布局 | 首页任务网格使用 CSS `auto-fill` + `minmax` 自适应列数，内容区最大宽度 720px |
 | 适配 | 移动端优先，底部栏支持 safe-area；滚动时自动隐藏/展示 |
 | 震动 | 使用 [Vibration API](https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API)；Android 支持较好，iOS Safari 支持有限 |
+
+## 字体许可
+
+页面通过 [Google Fonts](https://fonts.google.com/) CDN 加载两套开源字体，均可免费商用：
+
+| 字体 | 用途 | 授权 |
+|------|------|------|
+| [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC) | 中文正文、按钮、标签等 UI 文字 | [SIL Open Font License 1.1](https://openfontlicense.org/) |
+| [Fredoka](https://fonts.google.com/specimen/Fredoka) | 积分、角标、统计等数字展示 | [SIL Open Font License 1.1](https://openfontlicense.org/) |
+
+字体在 `styles.css` 中通过 CSS 变量 `--font-body` 与 `--font-num` 分别指定，避免依赖苹方、微软雅黑等系统专有字体。
 
 ## 图标许可
 

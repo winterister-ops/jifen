@@ -9,9 +9,11 @@
   --purple: #ff9f1c;
   --text: #6b4a2b;
   --shadow: 0 8px 24px rgba(200,140,60,.18);
+  --font-body: "Noto Sans SC", sans-serif;
+  --font-num: "Fredoka", sans-serif;
 }
 body {
-  font-family: "Comic Sans MS", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg1);
   color: var(--text);
   min-height: 100vh;
@@ -78,7 +80,8 @@ footer {
 .empty .ui-ic { width: 2.2rem; height: 2.2rem; opacity: .55; }
 .pop .pop-ic { width: 1.1em; height: 1.1em; vertical-align: -4px; margin-right: 2px; }
 .star-badge .score-num {
-  font-size: 1.55rem; font-weight: 900; line-height: 1;
+  font-family: var(--font-num);
+  font-size: 1.55rem; font-weight: 700; line-height: 1;
   display: inline-block; min-width: 1.2em; text-align: center;
 }
 .star-badge .score-num.score-pulse { animation: scorePulse .5s ease-out; }
@@ -158,9 +161,10 @@ footer {
 .item .emoji { font-size: 2.6rem; display: block; margin-bottom: 6px; }
 .item .name { font-size: 1.05rem; font-weight: 700; }
 .item .pts {
+  font-family: var(--font-num);
   position: absolute; top: 8px; right: 8px;
   padding: 4px 10px; border-radius: 999px;
-  font-size: .75rem; font-weight: 800; color: #fff;
+  font-size: .75rem; font-weight: 600; color: #fff;
 }
 .earn-item .pts { background: var(--green); }
 .spend-item .pts { background: var(--accent); }
@@ -177,7 +181,7 @@ footer {
 .log .left { display: flex; align-items: center; gap: 10px; font-size: .95rem; }
 .log .le { font-size: 1.4rem; }
 .log .time { font-size: .72rem; color: #aaa; }
-.log .delta { font-weight: 800; font-size: 1rem; }
+.log .delta { font-family: var(--font-num); font-weight: 600; font-size: 1rem; }
 .log .delta.plus { color: var(--green); }
 .log .delta.minus { color: var(--accent); }
 .empty { text-align: center; color: #bbb; padding: 24px; }
@@ -194,6 +198,10 @@ footer {
 }
 .hp-date-stats {
   font-size: .82rem; font-weight: 700; color: #b08a5e; margin-top: 4px;
+}
+.hp-date-stats .net {
+  font-family: var(--font-num);
+  font-weight: 600;
 }
 .hp-date-stats .net.plus { color: var(--green); }
 .hp-date-stats .net.minus { color: var(--accent); }
@@ -233,7 +241,7 @@ footer {
 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .cal-cell {
   aspect-ratio: 1; border: none; background: transparent; border-radius: 12px;
-  font-family: inherit; font-size: .95rem; font-weight: 700; color: var(--text);
+  font-family: var(--font-num); font-size: .95rem; font-weight: 700; color: var(--text);
   cursor: pointer; position: relative;
   display: flex; align-items: center; justify-content: center;
 }
@@ -264,8 +272,9 @@ footer {
 
 /* 飘出的积分提示 */
 .pop {
+  font-family: var(--font-num);
   position: fixed; left: 50%; top: 30%; transform: translateX(-50%);
-  font-size: 3rem; font-weight: 900; pointer-events: none; z-index: 50;
+  font-size: 3rem; font-weight: 700; pointer-events: none; z-index: 50;
   animation: popUp 1s ease-out forwards;
 }
 @keyframes popUp {
@@ -405,7 +414,7 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   background: var(--card); border-radius: 20px; padding: 16px 8px;
   text-align: center; box-shadow: var(--shadow);
 }
-.stat-num { font-size: 1.4rem; font-weight: 900; }
+.stat-num { font-family: var(--font-num); font-size: 1.4rem; font-weight: 700; }
 .stat-num.plus { color: var(--green); }
 .stat-num.minus { color: var(--accent); }
 .stat-lb { font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 4px; }
@@ -426,8 +435,9 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .task-stat-count {
+  font-family: var(--font-num);
   flex-shrink: 0; background: var(--purple); color: #fff;
-  font-size: .78rem; font-weight: 800; min-width: 28px; height: 28px;
+  font-size: .78rem; font-weight: 600; min-width: 28px; height: 28px;
   border-radius: 999px; display: flex; align-items: center; justify-content: center;
   padding: 0 8px;
 }
