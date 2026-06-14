@@ -62,6 +62,7 @@ const FAMILY = ENV === 'dev' ? 'mybaby-dev' : 'mybaby';
 
 const KEY = 'kid_points_data_v1_' + ENV;
 const SORT_KEY = 'kid_points_sort_v1_' + ENV;
+const VIBRATION_KEY = 'kid_points_vibration_v1_' + ENV;
 const SORT_MODES = ['default', 'pts-asc', 'pts-desc'];
 const SORT_LABELS = { default: '默认', 'pts-asc': '分数从低到高', 'pts-desc': '分数从高到低' };
 

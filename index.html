@@ -79,6 +79,21 @@
     <div class="stat-box"><div class="stat-num minus" id="setSpent">0</div><div class="stat-lb">累计消耗</div></div>
   </div>
 
+  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
+  <div class="menu-list">
+    <div class="menu-item menu-item-static">
+      <span class="menu-ic"><img class="ui-ic" src="icons/shake.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">震动反馈</span>
+        <span class="menu-desc">完成任务和兑换奖励时振动</span>
+      </span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="vibrationToggle" onchange="toggleVibration()">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
   <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">功能</div>
   <div class="menu-list">
     <button type="button" class="menu-item" onclick="switchView('stats')">

@@ -20,6 +20,7 @@ function normalizeProfile(p) {
 
 let taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
   ? localStorage.getItem(SORT_KEY) : 'default';
+let vibrationEnabled = localStorage.getItem(VIBRATION_KEY) !== '0';
 let sortBarExpanded = false;
 let state = loadLocal();
 let cloudRef = null;
@@ -259,6 +260,15 @@ function renderSettings() {
   if (descEl) {
     descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
   }
+  const vibToggle = document.getElementById('vibrationToggle');
+  if (vibToggle) vibToggle.checked = vibrationEnabled;
+}
+
+function toggleVibration() {
+  const vibToggle = document.getElementById('vibrationToggle');
+  vibrationEnabled = !!vibToggle?.checked;
+  localStorage.setItem(VIBRATION_KEY, vibrationEnabled ? '1' : '0');
+  if (vibrationEnabled) vibrateFeedback('earn');
 }
 
 function renderTaskStats() {
@@ -480,6 +490,7 @@ function earn(it, e) {
   state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
   save();
   bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();
+  vibrateFeedback('earn');
   render();
 }
 
@@ -511,6 +522,7 @@ function confirmSpend() {
   state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
   save();
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji);
+  vibrateFeedback('spend');
   render();
 }
 
@@ -559,6 +571,12 @@ function onClearConfirm() {
 }
 
 // ====== 动画效果 ======
+function vibrateFeedback(kind) {
+  if (!vibrationEnabled || typeof navigator.vibrate !== 'function') return;
+  const pattern = kind === 'earn' ? [35, 40, 55] : [50, 30, 50, 30, 70];
+  try { navigator.vibrate(pattern); } catch (e) {}
+}
+
 function bump() {
   const el = document.getElementById('starBadge');
   el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
