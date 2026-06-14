@@ -54,8 +54,18 @@ function welcomeText() {
   return '晚上好，' + name + '！';
 }
 
+let lastDisplayedScore = null;
+let scoreAnimFrame = null;
+
 function renderHeader() {
-  document.getElementById('scoreNum').textContent = state.score;
+  const scoreEl = document.getElementById('scoreNum');
+  const newScore = state.score;
+  if (lastDisplayedScore !== null && lastDisplayedScore !== newScore) {
+    animateScoreNum(lastDisplayedScore, newScore);
+  } else {
+    scoreEl.textContent = newScore;
+  }
+  lastDisplayedScore = newScore;
   document.getElementById('welcomeGreet').textContent = welcomeText();
   document.getElementById('avatar').textContent = state.profile.avatar;
 }
@@ -571,6 +581,30 @@ function onClearConfirm() {
 }
 
 // ====== 动画效果 ======
+function animateScoreNum(from, to) {
+  const el = document.getElementById('scoreNum');
+  if (scoreAnimFrame) cancelAnimationFrame(scoreAnimFrame);
+  const dir = to > from ? 'up' : 'down';
+  el.classList.remove('score-up', 'score-down', 'score-pulse');
+  void el.offsetWidth;
+  el.classList.add(dir === 'up' ? 'score-up' : 'score-down', 'score-pulse');
+  const duration = Math.min(350 + Math.abs(to - from) * 40, 700);
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (t < 1) {
+      scoreAnimFrame = requestAnimationFrame(tick);
+    } else {
+      el.textContent = to;
+      scoreAnimFrame = null;
+      setTimeout(() => el.classList.remove('score-up', 'score-down', 'score-pulse'), 450);
+    }
+  }
+  scoreAnimFrame = requestAnimationFrame(tick);
+}
+
 function vibrateFeedback(kind) {
   if (!vibrationEnabled || typeof navigator.vibrate !== 'function') return;
   const pattern = kind === 'earn' ? [35, 40, 55] : [50, 30, 50, 30, 70];

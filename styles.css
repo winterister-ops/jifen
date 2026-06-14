@@ -77,7 +77,18 @@ footer {
 .empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty .ui-ic { width: 2.2rem; height: 2.2rem; opacity: .55; }
 .pop .pop-ic { width: 1.1em; height: 1.1em; vertical-align: -4px; margin-right: 2px; }
-.star-badge .score-num { font-size: 1.55rem; font-weight: 900; line-height: 1; }
+.star-badge .score-num {
+  font-size: 1.55rem; font-weight: 900; line-height: 1;
+  display: inline-block; min-width: 1.2em; text-align: center;
+}
+.star-badge .score-num.score-pulse { animation: scorePulse .5s ease-out; }
+.star-badge .score-num.score-up { text-shadow: 0 0 8px rgba(255, 245, 157, .9); }
+.star-badge .score-num.score-down { text-shadow: 0 0 8px rgba(255, 180, 200, .85); }
+@keyframes scorePulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
 .env-badge {
   display: inline-block;
   font-size: .62rem; padding: 3px 10px; border-radius: 999px;
