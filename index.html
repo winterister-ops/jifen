@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="has-bottom-nav">
 <div class="wrap">
  <div id="mainView">
   <div class="score-card">
@@ -82,18 +82,20 @@
     <div class="stat-box"><div class="stat-num minus" id="setSpent">0</div><div class="stat-lb">累计消耗</div></div>
   </div>
 
-  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
-  <div class="menu-list">
-    <div class="menu-item menu-item-static">
-      <span class="menu-ic"><img class="ui-ic" src="icons/shake.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">震动反馈</span>
-        <span class="menu-desc">完成任务和兑换奖励时振动</span>
-      </span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="vibrationToggle" onchange="toggleVibration()">
-        <span class="toggle-slider"></span>
-      </label>
+  <div id="settingsSection">
+    <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
+    <div class="menu-list">
+      <div class="menu-item menu-item-static" id="vibrationSetting">
+        <span class="menu-ic"><img class="ui-ic" src="icons/shake.svg" alt=""></span>
+        <span class="menu-tx">
+          <span class="menu-title">震动反馈</span>
+          <span class="menu-desc">完成任务和兑换奖励时振动</span>
+        </span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="vibrationToggle" onchange="toggleVibration()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
     </div>
   </div>
 

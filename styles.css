@@ -17,8 +17,11 @@ body {
   background: var(--bg1);
   color: var(--text);
   min-height: 100vh;
-  padding: 16px 16px calc(96px + env(safe-area-inset-bottom));
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
   overflow-x: hidden;
+}
+body.has-bottom-nav {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
 .wrap { max-width: 720px; margin: 0 auto; }
 

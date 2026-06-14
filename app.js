@@ -20,7 +20,13 @@ function normalizeProfile(p) {
 
 let taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
   ? localStorage.getItem(SORT_KEY) : 'default';
-let vibrationEnabled = localStorage.getItem(VIBRATION_KEY) !== '0';
+function isIOS() {
+  if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) return true;
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+
+const vibrationSupported = !isIOS() && typeof navigator.vibrate === 'function';
+let vibrationEnabled = vibrationSupported && localStorage.getItem(VIBRATION_KEY) !== '0';
 let sortBarExpanded = false;
 let state = loadLocal();
 let cloudRef = null;
@@ -237,6 +243,7 @@ function renderCalendar() {
 
 let currentView = 'home';
 const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView', stats: 'statsView' };
+const PRIMARY_VIEWS = new Set(['home', 'history', 'settings']);
 
 function switchView(view) {
   currentView = view;
@@ -246,6 +253,10 @@ function switchView(view) {
   document.getElementById('navHome').classList.toggle('active', view === 'home');
   document.getElementById('navHistory').classList.toggle('active', view === 'history');
   document.getElementById('navSettings').classList.toggle('active', view === 'settings' || view === 'stats');
+  const showNav = PRIMARY_VIEWS.has(view);
+  document.body.classList.toggle('has-bottom-nav', showNav);
+  if (showNav) resetBottomNav();
+  else setBottomNavVisible(false);
   if (view === 'history') {
     selectedDateKey = ymd(new Date());
     renderDateHeader();
@@ -254,7 +265,6 @@ function switchView(view) {
   if (view === 'settings') renderSettings();
   if (view === 'stats') renderTaskStats();
   window.scrollTo(0, 0);
-  resetBottomNav();
 }
 
 function renderSettings() {
@@ -270,6 +280,14 @@ function renderSettings() {
   if (descEl) {
     descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
   }
+  updateSettingsSection();
+}
+
+function updateSettingsSection() {
+  const section = document.getElementById('settingsSection');
+  const vibSetting = document.getElementById('vibrationSetting');
+  if (vibSetting) vibSetting.style.display = vibrationSupported ? '' : 'none';
+  if (section) section.style.display = vibrationSupported ? '' : 'none';
   const vibToggle = document.getElementById('vibrationToggle');
   if (vibToggle) vibToggle.checked = vibrationEnabled;
 }
@@ -606,7 +624,7 @@ function animateScoreNum(from, to) {
 }
 
 function vibrateFeedback(kind) {
-  if (!vibrationEnabled || typeof navigator.vibrate !== 'function') return;
+  if (!vibrationSupported || !vibrationEnabled) return;
   const pattern = kind === 'earn' ? [35, 40, 55] : [50, 30, 50, 30, 70];
   try { navigator.vibrate(pattern); } catch (e) {}
 }
@@ -659,6 +677,7 @@ function resetBottomNav() {
 }
 
 function onBottomNavScroll() {
+  if (!PRIMARY_VIEWS.has(currentView)) return;
   if (navScrollTicking) return;
   navScrollTicking = true;
   requestAnimationFrame(() => {
@@ -678,6 +697,7 @@ function onBottomNavScroll() {
 
 window.addEventListener('scroll', onBottomNavScroll, { passive: true });
 
+updateSettingsSection();
 render();
 { const s = envStatusText(); setStatus(s.text, s.dev); }
 initCloud();
