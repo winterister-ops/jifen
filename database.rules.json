@@ -1,12 +1,10 @@
 {
   "rules": {
-    "shared": {
-      ".read": true,
-      ".write": true
-    },
     "users": {
-      ".read": true,
-      ".write": true
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
     }
   }
 }

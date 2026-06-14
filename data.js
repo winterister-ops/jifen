@@ -59,12 +59,18 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
   ? firebaseConfigDev
   : firebaseConfigProd;
 
-// ====== 云端数据存放路径（无需登录，固定单用户）======
-// 原来登录后数据保存在 users/<你的uid>/data。
-// 想直接复用已有数据：在 Firebase 控制台 Realtime Database 展开 users，
-// 复制那串 uid，把下面改成 'users/你的uid/data' 即可（无需搬数据）。
-// 想用全新的干净路径：保持 'shared/data'，并按 README 把旧数据复制过来。
-const CLOUD_PATH = 'users/pIKZFHskwJaUW1eknQI4UxNpSc12/data';
+// ====== 解锁账号 + 数据路径（按环境隔离）======
+// 数据存在 users/<uid>/data，<uid> 必须等于登录账号的 uid（数据库规则要求）。
+// 线上用线上账号；本地调试用另一个账号，读写各自路径，互不影响真实数据。
+// OWNER_EMAIL_DEV 填了才启用本地隔离；留空则本地也用线上账号+路径（会动到真实数据）。
+const OWNER_EMAIL_PROD = 'winterister@gmail.com';
+const OWNER_EMAIL_DEV = 'nickarlin2016@outlook.com'; // 本地账号（uid 2YrQ...）
+const CLOUD_PATH_PROD = 'users/pIKZFHskwJaUW1eknQI4UxNpSc12/data';
+const CLOUD_PATH_DEV = 'users/2YrQ8TGvenSTlWGwQH2NlEx4PyO2/data';
+
+const USE_DEV_ACCOUNT = ENV === 'dev' && !!OWNER_EMAIL_DEV;
+const OWNER_EMAIL = USE_DEV_ACCOUNT ? OWNER_EMAIL_DEV : OWNER_EMAIL_PROD;
+const CLOUD_PATH = USE_DEV_ACCOUNT ? CLOUD_PATH_DEV : CLOUD_PATH_PROD;
 
 const KEY = 'kid_points_data_v1_' + ENV;
 const SORT_KEY = 'kid_points_sort_v1_' + ENV;

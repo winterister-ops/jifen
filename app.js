@@ -526,6 +526,8 @@ function initCloud() {
   }
 }
 
+let currentUser = null;
+
 function startApp() {
   state = loadLocal();
   lastDisplayedScore = null;
@@ -533,6 +535,80 @@ function startApp() {
   switchView('home');
   updateSettingsSection();
   render();
+}
+
+function showAuthView() {
+  const authView = document.getElementById('authView');
+  const appRoot = document.getElementById('appRoot');
+  if (authView) authView.style.display = 'flex';
+  if (appRoot) appRoot.style.display = 'none';
+  document.body.classList.remove('has-bottom-nav');
+  setTimeout(() => {
+    const input = document.getElementById('pinInput');
+    if (input) input.focus();
+  }, 200);
+}
+
+function hideAuthView() {
+  const authView = document.getElementById('authView');
+  const appRoot = document.getElementById('appRoot');
+  if (authView) authView.style.display = 'none';
+  if (appRoot) appRoot.style.display = '';
+}
+
+function setAuthError(msg) {
+  const el = document.getElementById('authError');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.display = msg ? '' : 'none';
+}
+
+function pinErrorText(err) {
+  const code = (err && err.code) || '';
+  if (code === 'auth/wrong-password' || code === 'auth/invalid-credential'
+      || code === 'auth/invalid-login-credentials') return 'PIN 码不正确，请重试';
+  if (code === 'auth/too-many-requests') return '尝试次数过多，请稍后再试';
+  if (code === 'auth/network-request-failed') return '网络连接失败，请检查网络后重试';
+  if (code === 'auth/user-not-found' || code === 'auth/invalid-email') return '账号配置有误，请检查 OWNER_EMAIL';
+  return '解锁失败，请重试';
+}
+
+function submitPin() {
+  const input = document.getElementById('pinInput');
+  const btn = document.getElementById('pinSubmitBtn');
+  const pin = (input ? input.value : '').trim();
+  if (!pin) { setAuthError('请输入 PIN 码'); return; }
+  if (!firebaseReady) { setAuthError('云服务未配置，无法解锁'); return; }
+  setAuthError('');
+  if (btn) { btn.disabled = true; btn.textContent = '解锁中…'; }
+  firebase.auth().signInWithEmailAndPassword(OWNER_EMAIL, pin)
+    .then(() => { if (input) input.value = ''; })
+    .catch(err => {
+      console.warn('解锁失败', err);
+      setAuthError(pinErrorText(err));
+    })
+    .finally(() => {
+      if (btn) { btn.disabled = false; btn.textContent = '解锁'; }
+    });
+}
+
+function lockApp() {
+  if (!firebaseReady) return;
+  firebase.auth().signOut().catch(err => console.warn('锁定失败', err));
+}
+
+function onAuthChanged(user) {
+  currentUser = user || null;
+  if (user) {
+    setAuthError('');
+    hideAuthView();
+    startApp();
+  } else {
+    tearDownCloud();
+    state = defaultState();
+    lastDisplayedScore = null;
+    showAuthView();
+  }
 }
 
 function initFirebase() {
@@ -547,7 +623,17 @@ function initFirebase() {
   } else {
     firebaseReady = false;
   }
-  startApp();
+
+  if (firebaseReady) {
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      .catch(err => console.warn('设置登录持久化失败', err))
+      .finally(() => {
+        firebase.auth().onAuthStateChanged(onAuthChanged);
+      });
+  } else {
+    showAuthView();
+    setAuthError('云服务未配置，无法解锁');
+  }
 }
 
 let currentTab = 'earn';

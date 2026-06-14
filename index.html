@@ -10,7 +10,18 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="appRoot">
+<div id="authView" class="auth-view">
+  <div class="auth-card">
+    <div class="auth-logo"><img class="auth-star" src="icons/star.svg" alt=""></div>
+    <div class="auth-title">星星银行</div>
+    <div class="auth-sub">请输入 PIN 码解锁</div>
+    <input class="profile-input auth-input" id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN 码" onkeydown="if(event.key==='Enter')submitPin()">
+    <button class="auth-btn primary" id="pinSubmitBtn" onclick="submitPin()">解锁</button>
+    <div class="auth-error" id="authError" style="display:none"></div>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
 <div class="wrap">
  <div id="mainView">
   <div class="score-card">
@@ -118,6 +129,18 @@
     <button class="btn-soft" onclick="clearAll()"><img class="ui-ic" src="icons/clear.svg" alt="">全部清空</button>
   </div>
 
+  <div class="section-title"><img class="ui-ic" src="icons/lock.svg" alt="">账户</div>
+  <div class="menu-list">
+    <button type="button" class="menu-item" onclick="lockApp()">
+      <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">锁定应用</span>
+        <span class="menu-desc">退出并返回 PIN 码界面</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+
   <div class="env-footer" style="margin-top:18px"><span class="env-badge" id="envBadge"></span></div>
   <footer>陪宝贝一起成长</footer>
  </div>
@@ -206,6 +229,7 @@
 
 <!-- Firebase 云同步 SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
