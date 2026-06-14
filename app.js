@@ -483,12 +483,30 @@ function earn(it, e) {
   render();
 }
 
+let pendingSpendItem = null;
+
 function spend(it, e, locked) {
   if (locked) {
     popup('积分不够哦', '#ff8fab', 'caution', true);
     shakeScore();
     return;
   }
+  pendingSpendItem = it;
+  document.getElementById('spendModalEmoji').textContent = it.emoji;
+  document.getElementById('spendModalMsg').textContent =
+    `将消耗 ${it.pts} 颗星星兑换「${it.name}」`;
+  document.getElementById('spendModal').classList.add('show');
+}
+
+function hideSpendModal() {
+  document.getElementById('spendModal').classList.remove('show');
+  pendingSpendItem = null;
+}
+
+function confirmSpend() {
+  const it = pendingSpendItem;
+  if (!it) return;
+  hideSpendModal();
   state.score -= it.pts;
   state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
   save();

@@ -157,6 +157,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="spendModal" onclick="if(event.target===this) hideSpendModal()">
+  <div class="modal-box">
+    <div class="modal-emoji" id="spendModalEmoji"></div>
+    <div class="modal-title">确定要兑换吗？</div>
+    <div class="modal-msg" id="spendModalMsg"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hideSpendModal()">取消</button>
+      <button class="modal-btn confirm" onclick="confirmSpend()">确定兑换</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="clearModal" onclick="if(event.target===this) hideClearModal()">
   <div class="modal-box">
     <div class="modal-emoji" id="clearModalEmoji"><img class="ui-ic" src="icons/clear-format.svg" alt=""></div>
