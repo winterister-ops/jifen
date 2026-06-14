@@ -36,8 +36,97 @@ let currentUid = null;
 let currentUser = null;
 let firebaseReady = false;
 
+function defaultMeta() {
+  return { lastClearAt: 0, profileUpdatedAt: 0, updatedAt: 0 };
+}
+
 function defaultState() {
-  return { score: 0, history: [], profile: defaultProfile() };
+  return { score: 0, history: [], profile: defaultProfile(), revokedEids: [], meta: defaultMeta() };
+}
+
+function newEid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function historyEid(h, index) {
+  if (h.eid) return h.eid;
+  return 'legacy_' + (h.ts || 0) + '_' + index + '_' + h.id + '_' + h.delta;
+}
+
+function touchMeta() {
+  state.meta = { ...defaultMeta(), ...state.meta, updatedAt: Date.now() };
+}
+
+function applyClearAndRevoked(history, lastClearAt, revokedSet) {
+  return history.filter(h => {
+    if (revokedSet.has(h.eid)) return false;
+    if (lastClearAt && (h.ts || 0) <= lastClearAt) return false;
+    return true;
+  });
+}
+
+function normalizeState(raw, forMerge) {
+  if (!raw || typeof raw.score !== 'number') return defaultState();
+  const history = (Array.isArray(raw.history) ? raw.history : []).map((h, i) => ({
+    id: h.id,
+    emoji: h.emoji,
+    name: h.name,
+    delta: h.delta,
+    time: h.time,
+    ts: h.ts,
+    eid: historyEid(h, i)
+  }));
+  const meta = { ...defaultMeta(), ...(raw.meta || {}) };
+  const revokedEids = Array.isArray(raw.revokedEids) ? raw.revokedEids : [];
+  const profile = normalizeProfile(raw.profile);
+  if (forMerge) {
+    return { score: raw.score, history, profile, revokedEids, meta };
+  }
+  const filtered = applyClearAndRevoked(history, meta.lastClearAt, new Set(revokedEids))
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const score = filtered.reduce((s, h) => s + h.delta, 0);
+  return { score, history: filtered, profile, revokedEids, meta };
+}
+
+function mergeStates(localRaw, remoteRaw) {
+  const local = normalizeState(localRaw, true);
+  const remote = normalizeState(remoteRaw, true);
+  const lastClearAt = Math.max(local.meta.lastClearAt, remote.meta.lastClearAt);
+  const revokedEids = [...new Set([...local.revokedEids, ...remote.revokedEids])];
+  const revokedSet = new Set(revokedEids);
+  const byEid = new Map();
+  [...local.history, ...remote.history].forEach(h => byEid.set(h.eid, h));
+  const history = applyClearAndRevoked([...byEid.values()], lastClearAt, revokedSet)
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const score = history.reduce((s, h) => s + h.delta, 0);
+  const profile = local.meta.profileUpdatedAt >= remote.meta.profileUpdatedAt
+    ? local.profile : remote.profile;
+  return {
+    score,
+    history,
+    profile,
+    revokedEids,
+    meta: {
+      lastClearAt,
+      profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
+      updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt, Date.now())
+    }
+  };
+}
+
+function stateFingerprint(s) {
+  const n = normalizeState(s);
+  return JSON.stringify({
+    score: n.score,
+    history: n.history.map(h => h.eid + ':' + h.delta),
+    profile: n.profile,
+    revoked: [...n.revokedEids].sort(),
+    meta: n.meta
+  });
+}
+
+function stateEqual(a, b) {
+  return stateFingerprint(a) === stateFingerprint(b);
 }
 
 function localKey(uid) {
@@ -48,11 +137,7 @@ function loadLocal(uid) {
   if (!uid) return defaultState();
   try {
     const d = JSON.parse(localStorage.getItem(localKey(uid)));
-    if (d && typeof d.score === 'number') {
-      if (!Array.isArray(d.history)) d.history = [];
-      d.profile = normalizeProfile(d.profile);
-      return d;
-    }
+    if (d && typeof d.score === 'number') return normalizeState(d);
   } catch(e){}
   return defaultState();
 }
@@ -62,11 +147,36 @@ function saveLocal() {
   localStorage.setItem(localKey(currentUid), JSON.stringify(state));
 }
 
+let cloudPushPending = false;
+
+function pushToCloud() {
+  if (!cloudRef || applyingRemote || cloudPushPending) return;
+  cloudPushPending = true;
+  cloudRef.transaction(current => {
+    const remote = current ? normalizeState(current, true) : null;
+    return remote ? mergeStates(state, remote) : normalizeState(state);
+  }, (error, committed, snapshot) => {
+    cloudPushPending = false;
+    if (error) {
+      console.warn('云同步写入失败', error);
+      return;
+    }
+    if (committed && snapshot) {
+      const merged = normalizeState(snapshot.val());
+      if (!stateEqual(state, merged)) {
+        applyingRemote = true;
+        state = merged;
+        saveLocal();
+        render();
+        applyingRemote = false;
+      }
+    }
+  });
+}
+
 function save() {
   saveLocal();
-  if (cloudRef && !applyingRemote) {
-    cloudRef.set(state).catch(err => console.warn('云同步写入失败', err));
-  }
+  pushToCloud();
 }
 
 function welcomeText() {
@@ -358,6 +468,7 @@ function saveProfile() {
     return;
   }
   state.profile = { name: name.slice(0, 12), avatar: profilePickAvatar };
+  state.meta = { ...defaultMeta(), ...state.meta, profileUpdatedAt: Date.now(), updatedAt: Date.now() };
   save();
   renderHeader();
   renderSettings();
@@ -397,15 +508,20 @@ function initCloud(uid) {
     cloudUnsubscribe = cloudRef.on('value', snap => {
       const val = snap.val();
       if (val && typeof val.score === 'number') {
-        state = {
-          score: val.score,
-          history: Array.isArray(val.history) ? val.history : [],
-          profile: normalizeProfile(val.profile)
-        };
-        saveLocal();
-        applyingRemote = true; render(); applyingRemote = false;
+        const merged = mergeStates(state, val);
+        if (!stateEqual(state, merged)) {
+          applyingRemote = true;
+          state = merged;
+          saveLocal();
+          render();
+          applyingRemote = false;
+          const remoteNorm = normalizeState(val, true);
+          if (!stateEqual(merged, remoteNorm)) {
+            cloudRef.set(merged).catch(err => console.warn('云同步合并回写失败', err));
+          }
+        }
       } else if (first) {
-        cloudRef.set(state);
+        cloudRef.set(normalizeState(state));
       }
       first = false;
       const s = envStatusText();
@@ -710,7 +826,8 @@ function nowStr() {
 
 function earn(it, e) {
   state.score += it.pts;
-  state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
+  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
+  touchMeta();
   save();
   bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();
   vibrateFeedback('earn');
@@ -742,7 +859,8 @@ function confirmSpend() {
   if (!it) return;
   hideSpendModal();
   state.score -= it.pts;
-  state.history.push({ id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
+  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
+  touchMeta();
   save();
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji);
   vibrateFeedback('spend');
@@ -752,7 +870,10 @@ function confirmSpend() {
 function undoLast() {
   if (!state.history.length) return;
   const last = state.history.pop();
+  if (!Array.isArray(state.revokedEids)) state.revokedEids = [];
+  state.revokedEids.push(last.eid || historyEid(last, state.history.length));
   state.score -= last.delta;
+  touchMeta();
   save();
   render();
 }
@@ -787,7 +908,13 @@ function onClearConfirm() {
     showClearModalStep(2);
     return;
   }
-  state = { score: 0, history: [], profile: state.profile };
+  state = {
+    score: 0,
+    history: [],
+    profile: state.profile,
+    revokedEids: [],
+    meta: { ...defaultMeta(), ...state.meta, lastClearAt: Date.now(), updatedAt: Date.now() }
+  };
   save();
   render();
   hideClearModal();
