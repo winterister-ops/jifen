@@ -46,17 +46,8 @@ function localKey(uid) {
 
 function loadLocal(uid) {
   if (!uid) return defaultState();
-  const key = localKey(uid);
   try {
-    let raw = localStorage.getItem(key);
-    if (!raw) {
-      const legacy = localStorage.getItem(KEY);
-      if (legacy) {
-        localStorage.setItem(key, legacy);
-        raw = legacy;
-      }
-    }
-    const d = JSON.parse(raw);
+    const d = JSON.parse(localStorage.getItem(localKey(uid)));
     if (d && typeof d.score === 'number') {
       if (!Array.isArray(d.history)) d.history = [];
       d.profile = normalizeProfile(d.profile);
