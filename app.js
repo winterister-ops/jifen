@@ -478,10 +478,10 @@ function envStatusText() {
 }
 
 function tearDownCloud() {
-  if (cloudUnsubscribe) {
-    cloudUnsubscribe();
-    cloudUnsubscribe = null;
+  if (cloudRef && cloudUnsubscribe) {
+    try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
   }
+  cloudUnsubscribe = null;
   cloudRef = null;
 }
 
@@ -537,7 +537,13 @@ function startApp() {
   render();
 }
 
+function hideSplash() {
+  const el = document.getElementById('splashView');
+  if (el) el.style.display = 'none';
+}
+
 function showAuthView() {
+  hideSplash();
   const authView = document.getElementById('authView');
   const appRoot = document.getElementById('appRoot');
   if (authView) authView.style.display = 'flex';
@@ -550,6 +556,7 @@ function showAuthView() {
 }
 
 function hideAuthView() {
+  hideSplash();
   const authView = document.getElementById('authView');
   const appRoot = document.getElementById('appRoot');
   if (authView) authView.style.display = 'none';
@@ -594,6 +601,10 @@ function submitPin() {
 
 function lockApp() {
   if (!firebaseReady) return;
+  tearDownCloud();
+  state = defaultState();
+  lastDisplayedScore = null;
+  showAuthView();
   firebase.auth().signOut().catch(err => console.warn('锁定失败', err));
 }
 
