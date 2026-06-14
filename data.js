@@ -59,6 +59,13 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
   ? firebaseConfigDev
   : firebaseConfigProd;
 
+// ====== 云端数据存放路径（无需登录，固定单用户）======
+// 原来登录后数据保存在 users/<你的uid>/data。
+// 想直接复用已有数据：在 Firebase 控制台 Realtime Database 展开 users，
+// 复制那串 uid，把下面改成 'users/你的uid/data' 即可（无需搬数据）。
+// 想用全新的干净路径：保持 'shared/data'，并按 README 把旧数据复制过来。
+const CLOUD_PATH = 'users/pIKZFHskwJaUW1eknQI4UxNpSc12/data';
+
 const KEY = 'kid_points_data_v1_' + ENV;
 const SORT_KEY = 'kid_points_sort_v1_' + ENV;
 const VIBRATION_KEY = 'kid_points_vibration_v1_' + ENV;

@@ -37,40 +37,69 @@
 
 ### 数据与同步
 
+- **无需登录**：打开网页即用，单用户场景，不再有账号 / 登录流程
 - **本地存储**：数据保存在浏览器 `localStorage`，离线可用；排序偏好、震动开关等本机设置也保存在本地
-- **账号登录**：Firebase Auth 邮箱密码登录，未登录无法使用应用
-- **云端同步**：登录后数据写入 Firebase Realtime Database 的 `users/{uid}/data`，多设备自动同步
+- **云端同步**：数据写入 Firebase Realtime Database 的固定路径（默认 `shared/data`，由 `data.js` 的 `CLOUD_PATH` 决定），多设备自动同步
 - **冲突合并**：多设备同时操作时，按记录条目合并（不丢积分记录）；撤销、清空、资料修改也会同步合并
 - **环境隔离**：
   - 本地开发（`localhost` / `127.0.0.1` / 直接打开文件）→ 开发环境
   - 部署到线上域名 → 生产环境
-  - 开发与生产使用独立的本地存储 key，互不影响；不同登录账号数据相互隔离
+  - 开发与生产使用独立的本地存储 key，互不影响
 
 ## Firebase 配置（首次部署必做）
 
-1. **启用邮箱登录**  
-   [Firebase Console](https://console.firebase.google.com/) → Authentication → Sign-in method → **Email/Password** → 启用
+> 已移除账号登录。应用直接读写 Firebase 固定路径，所以数据库规则要允许匿名读写。
+> 这是单用户、低敏感（孩子积分）场景下的取舍：任何拿到网址的人都能读写该路径。
+> `apiKey`、`databaseURL` 本来就在前端代码里公开，安全级别与之相当。
 
-2. **发布数据库规则**  
+1. **发布数据库规则**  
    Realtime Database → Rules，粘贴 `database.rules.json` 内容并发布：
 
    ```json
    {
      "rules": {
-       "users": {
-         "$uid": {
-           ".read": "auth != null && auth.uid === $uid",
-           ".write": "auth != null && auth.uid === $uid"
-         }
-       }
+       "shared": { ".read": true, ".write": true },
+       "users":  { ".read": true, ".write": true }
      }
    }
    ```
 
-3. **API Key 限制**（若尚未配置）  
-   Google Cloud Console → Credentials → 限制 HTTP Referrer 为 GitHub Pages 域名，并限制 Firebase 相关 API
+2. **关闭邮箱登录（可选）**  
+   不再使用账号系统，可在 Authentication → Sign-in method 把 Email/Password 关闭。
 
-> 旧版 `families/mybaby` 路径的数据不会自动迁移。如需保留，请在 Firebase Console 手动复制到 `users/{你的uid}/data`。
+3. **API Key 限制**（推荐）  
+   Google Cloud Console → Credentials → 限制 HTTP Referrer 为你的部署域名，并限制 Firebase 相关 API，降低被滥用风险。
+
+## 恢复已创建的账号数据
+
+原来登录后，数据保存在 `users/<你的uid>/data`。改成免登录后，有两种方式找回它：
+
+### 方式一：直接指向旧数据（推荐，无需搬数据）
+
+1. [Firebase Console](https://console.firebase.google.com/) → Realtime Database → **Data** 标签
+2. 展开 `users`，下面那串长长的 key 就是你的 `uid`，点开 `users/<uid>/data` 确认是你的积分数据，复制这串 `uid`
+3. 打开 `data.js`，把 `CLOUD_PATH` 改成你的路径：
+
+   ```javascript
+   const CLOUD_PATH = 'users/你的uid/data';
+   ```
+
+4. 确认上面的数据库规则已发布，刷新网页即可看到原来的积分
+
+### 方式二：复制到新的 `shared/data` 路径
+
+保持 `data.js` 里 `CLOUD_PATH = 'shared/data'`，把旧数据搬过去：
+
+1. Realtime Database → 进入 `users/<uid>/data`，点该节点右侧 ⋮ → **Export JSON**，得到一个 `.json` 文件
+2. 编辑该文件，在外层包一层，使其变成：
+
+   ```json
+   { "shared": { "data": { /* 这里是导出的原内容 */ } } }
+   ```
+
+3. 回到数据库 **根节点**，点 ⋮ → **Import JSON** 选择该文件
+   （⚠️ Import 会覆盖所在节点；在根节点导入只含 `shared` 的文件不会动到 `users`，但导入前最好先 Export 一份整库备份）
+4. 刷新网页确认数据已同步
 
 ## 页面结构
 
@@ -156,7 +185,7 @@ python3 -m http.server 8080
 |------|------|
 | 架构 | 单页应用，纯 HTML / CSS / JavaScript，无构建工具 |
 | 文件划分 | `index.html` 结构 · `styles.css` 样式 · `app.js` 逻辑 · `data.js` 配置 |
-| 存储 | localStorage + Firebase Auth + Realtime Database |
+| 存储 | localStorage + Firebase Realtime Database（免登录，固定路径同步） |
 | UI 图标 | [IconPark](https://iconpark.oceanengine.com/)（Apache 2.0），页面功能入口使用 |
 | 字体 | 中文正文 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)，数字 [Fredoka](https://fonts.google.com/specimen/Fredoka)；均通过 Google Fonts CDN 加载，详见下方「字体许可」 |
 | 任务图标 | Emoji，保留在任务卡片和历史记录中 |
