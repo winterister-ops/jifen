@@ -498,3 +498,79 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 }
 .back-btn:active { transform: scale(.94); }
 .subpage-title { font-size: 1.15rem; font-weight: 900; }
+
+/* 登录页 */
+.auth-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+}
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--card);
+  border-radius: 28px;
+  padding: 32px 24px 28px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.auth-logo {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+.auth-star { width: 2.2rem; height: 2.2rem; filter: brightness(0) invert(1); }
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.auth-sub {
+  font-size: .88rem;
+  color: #b08a5e;
+  font-weight: 700;
+  margin-bottom: 22px;
+}
+.auth-input { text-align: left; font-weight: 600; }
+.auth-btn {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .12s, opacity .2s;
+  margin-bottom: 10px;
+}
+.auth-btn:active:not(:disabled) { transform: scale(.97); }
+.auth-btn:disabled { opacity: .6; cursor: not-allowed; }
+.auth-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+.auth-btn.link {
+  background: transparent;
+  color: var(--accent);
+  font-size: .92rem;
+  padding: 10px;
+  margin-bottom: 0;
+}
+.auth-error {
+  margin-top: 14px;
+  font-size: .88rem;
+  font-weight: 700;
+  color: #e63956;
+  line-height: 1.45;
+}

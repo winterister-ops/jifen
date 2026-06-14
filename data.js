@@ -58,8 +58,6 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
   ? firebaseConfigDev
   : firebaseConfigProd;
 
-const FAMILY = ENV === 'dev' ? 'mybaby-dev' : 'mybaby';
-
 const KEY = 'kid_points_data_v1_' + ENV;
 const SORT_KEY = 'kid_points_sort_v1_' + ENV;
 const VIBRATION_KEY = 'kid_points_vibration_v1_' + ENV;

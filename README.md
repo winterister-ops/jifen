@@ -38,11 +38,38 @@
 ### 数据与同步
 
 - **本地存储**：数据保存在浏览器 `localStorage`，离线可用；排序偏好、震动开关等本机设置也保存在本地
-- **云端同步**：接入 Firebase Realtime Database，多设备自动同步
+- **账号登录**：Firebase Auth 邮箱密码登录，未登录无法使用应用
+- **云端同步**：登录后数据写入 Firebase Realtime Database 的 `users/{uid}/data`，多设备自动同步
 - **环境隔离**：
   - 本地开发（`localhost` / `127.0.0.1` / 直接打开文件）→ 开发环境
   - 部署到线上域名 → 生产环境
-  - 开发与生产使用独立的本地存储 key 和云端数据路径，互不影响
+  - 开发与生产使用独立的本地存储 key，互不影响；不同登录账号数据相互隔离
+
+## Firebase 配置（首次部署必做）
+
+1. **启用邮箱登录**  
+   [Firebase Console](https://console.firebase.google.com/) → Authentication → Sign-in method → **Email/Password** → 启用
+
+2. **发布数据库规则**  
+   Realtime Database → Rules，粘贴 `database.rules.json` 内容并发布：
+
+   ```json
+   {
+     "rules": {
+       "users": {
+         "$uid": {
+           ".read": "auth != null && auth.uid === $uid",
+           ".write": "auth != null && auth.uid === $uid"
+         }
+       }
+     }
+   }
+   ```
+
+3. **API Key 限制**（若尚未配置）  
+   Google Cloud Console → Credentials → 限制 HTTP Referrer 为 GitHub Pages 域名，并限制 Firebase 相关 API
+
+> 旧版 `families/mybaby` 路径的数据不会自动迁移。如需保留，请在 Firebase Console 手动复制到 `users/{你的uid}/data`。
 
 ## 页面结构
 
@@ -52,6 +79,7 @@ jifen/
 ├── styles.css          # 样式（含底部栏滚动动画）
 ├── app.js              # 业务逻辑与 UI 渲染
 ├── data.js             # 任务/奖励配置、Firebase 与环境常量
+├── database.rules.json # Realtime Database 安全规则（需在 Console 发布）
 ├── icons/              # IconPark 功能入口图标（Apache 2.0）
 │   ├── home.svg
 │   ├── transaction-order.svg
@@ -100,7 +128,7 @@ python3 -m http.server 8080
 
 将整个 `jifen` 目录部署到任意静态托管服务（如 GitHub Pages、Vercel、Cloudflare Pages）即可。部署到线上域名后自动切换为生产环境。
 
-如需独立开发环境 Firebase 项目，在 `data.js` 的 `firebaseConfigDev` 中填入配置；留空则开发环境复用线上 Firebase，但数据路径仍为 `mybaby-dev`。
+如需独立开发环境 Firebase 项目，在 `data.js` 的 `firebaseConfigDev` 中填入配置；留空则开发环境复用线上 Firebase。
 
 ## 技术说明
 
@@ -108,7 +136,7 @@ python3 -m http.server 8080
 |------|------|
 | 架构 | 单页应用，纯 HTML / CSS / JavaScript，无构建工具 |
 | 文件划分 | `index.html` 结构 · `styles.css` 样式 · `app.js` 逻辑 · `data.js` 配置 |
-| 存储 | localStorage + Firebase Realtime Database |
+| 存储 | localStorage + Firebase Auth + Realtime Database |
 | UI 图标 | [IconPark](https://iconpark.oceanengine.com/)（Apache 2.0），页面功能入口使用 |
 | 字体 | 中文正文 [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC)，数字 [Fredoka](https://fonts.google.com/specimen/Fredoka)；均通过 Google Fonts CDN 加载，详见下方「字体许可」 |
 | 任务图标 | Emoji，保留在任务卡片和历史记录中 |

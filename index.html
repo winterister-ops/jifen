@@ -9,7 +9,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="has-bottom-nav">
+<body>
+<div id="authView" class="auth-view">
+  <div class="auth-card">
+    <div class="auth-logo"><img class="ui-ic auth-star" src="icons/star.svg" alt=""></div>
+    <h1 class="auth-title">星星银行</h1>
+    <p class="auth-sub" id="authSub">登录后多设备同步积分</p>
+    <div id="authLoginPanel">
+      <input class="profile-input auth-input" id="loginEmail" type="email" autocomplete="email" placeholder="邮箱" onkeydown="if(event.key==='Enter')authLogin()">
+      <input class="profile-input auth-input" id="loginPassword" type="password" autocomplete="current-password" placeholder="密码" onkeydown="if(event.key==='Enter')authLogin()">
+      <button type="button" class="auth-btn primary" id="loginBtn" onclick="authLogin()">登录</button>
+      <button type="button" class="auth-btn link" onclick="showAuthRegister()">还没有账号？注册</button>
+    </div>
+    <div id="authRegisterPanel" style="display:none">
+      <input class="profile-input auth-input" id="regEmail" type="email" autocomplete="email" placeholder="邮箱" onkeydown="if(event.key==='Enter')authRegister()">
+      <input class="profile-input auth-input" id="regPassword" type="password" autocomplete="new-password" placeholder="密码（至少 6 位）" onkeydown="if(event.key==='Enter')authRegister()">
+      <input class="profile-input auth-input" id="regPassword2" type="password" autocomplete="new-password" placeholder="确认密码" onkeydown="if(event.key==='Enter')authRegister()">
+      <button type="button" class="auth-btn primary" id="registerBtn" onclick="authRegister()">注册</button>
+      <button type="button" class="auth-btn link" onclick="showAuthLogin()">已有账号？去登录</button>
+    </div>
+    <p class="auth-error" id="authError" style="display:none"></p>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none">
 <div class="wrap">
  <div id="mainView">
   <div class="score-card">
@@ -111,6 +134,25 @@
     </button>
   </div>
 
+  <div class="section-title"><img class="ui-ic" src="icons/peoples.svg" alt="">账号</div>
+  <div class="menu-list">
+    <div class="menu-item menu-item-static">
+      <span class="menu-ic"><img class="ui-ic" src="icons/peoples.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title" id="accountEmail">—</span>
+        <span class="menu-desc">当前登录账号</span>
+      </span>
+    </div>
+    <button type="button" class="menu-item" onclick="authLogout()">
+      <span class="menu-ic"><img class="ui-ic" src="icons/clear.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">退出登录</span>
+        <span class="menu-desc">退出后需重新登录才能云同步</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+
   <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">管理</div>
   <div class="toolbar" style="margin-top:0">
     <button class="btn-soft" onclick="undoLast()"><img class="ui-ic" src="icons/undo.svg" alt="">撤销上一条</button>
@@ -144,6 +186,7 @@
     </button>
   </div>
 </nav>
+</div>
 
 <div class="modal-overlay" id="profileModal" onclick="if(event.target===this) hideProfileModal()">
   <div class="modal-box">
@@ -204,6 +247,7 @@
 
 <!-- Firebase 云同步 SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>

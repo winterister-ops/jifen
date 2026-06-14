@@ -28,22 +28,48 @@ function isIOS() {
 const vibrationSupported = !isIOS() && typeof navigator.vibrate === 'function';
 let vibrationEnabled = vibrationSupported && localStorage.getItem(VIBRATION_KEY) !== '0';
 let sortBarExpanded = false;
-let state = loadLocal();
+let state = defaultState();
 let cloudRef = null;
+let cloudUnsubscribe = null;
 let applyingRemote = false;
+let currentUid = null;
+let currentUser = null;
+let firebaseReady = false;
 
-function loadLocal() {
+function defaultState() {
+  return { score: 0, history: [], profile: defaultProfile() };
+}
+
+function localKey(uid) {
+  return KEY + '_' + uid;
+}
+
+function loadLocal(uid) {
+  if (!uid) return defaultState();
+  const key = localKey(uid);
   try {
-    const d = JSON.parse(localStorage.getItem(KEY));
+    let raw = localStorage.getItem(key);
+    if (!raw) {
+      const legacy = localStorage.getItem(KEY);
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        raw = legacy;
+      }
+    }
+    const d = JSON.parse(raw);
     if (d && typeof d.score === 'number') {
       if (!Array.isArray(d.history)) d.history = [];
       d.profile = normalizeProfile(d.profile);
       return d;
     }
   } catch(e){}
-  return { score: 0, history: [], profile: defaultProfile() };
+  return defaultState();
 }
-function saveLocal() { localStorage.setItem(KEY, JSON.stringify(state)); }
+
+function saveLocal() {
+  if (!currentUid) return;
+  localStorage.setItem(localKey(currentUid), JSON.stringify(state));
+}
 
 function save() {
   saveLocal();
@@ -280,6 +306,8 @@ function renderSettings() {
   if (descEl) {
     descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
   }
+  const emailEl = document.getElementById('accountEmail');
+  if (emailEl) emailEl.textContent = currentUser?.email || '—';
   updateSettingsSection();
 }
 
@@ -357,17 +385,25 @@ function envStatusText() {
   return { text: '开发', dev: true };
 }
 
-function initCloud() {
-  if (!firebaseConfig.databaseURL) {
+function tearDownCloud() {
+  if (cloudUnsubscribe) {
+    cloudUnsubscribe();
+    cloudUnsubscribe = null;
+  }
+  cloudRef = null;
+}
+
+function initCloud(uid) {
+  tearDownCloud();
+  if (!firebaseReady || !firebaseConfig.databaseURL || !uid) {
     const s = envStatusText();
     setStatus(s.text, s.dev);
     return;
   }
   try {
-    firebase.initializeApp(firebaseConfig);
-    cloudRef = firebase.database().ref('families/' + FAMILY);
+    cloudRef = firebase.database().ref('users/' + uid + '/data');
     let first = true;
-    cloudRef.on('value', snap => {
+    cloudUnsubscribe = cloudRef.on('value', snap => {
       const val = snap.val();
       if (val && typeof val.score === 'number') {
         state = {
@@ -378,13 +414,181 @@ function initCloud() {
         saveLocal();
         applyingRemote = true; render(); applyingRemote = false;
       } else if (first) {
-        cloudRef.set(state); // 云端为空时，把本机数据作为初始上传
+        cloudRef.set(state);
       }
       first = false;
       const s = envStatusText();
       setStatus(s.text, s.dev);
-    }, err => { console.warn(err); setStatus('离线', ENV === 'dev'); });
-  } catch(e) { console.warn(e); setStatus('离线', ENV === 'dev'); }
+    }, err => {
+      console.warn(err);
+      setStatus('离线', ENV === 'dev');
+    });
+  } catch(e) {
+    console.warn(e);
+    setStatus('离线', ENV === 'dev');
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  if (!el) return;
+  if (msg) {
+    el.textContent = msg;
+    el.style.display = '';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+}
+
+function setAuthBusy(busy) {
+  ['loginBtn', 'registerBtn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = busy;
+  });
+}
+
+function authErrorMessage(err) {
+  const code = err?.code || '';
+  const map = {
+    'auth/invalid-email': '邮箱格式不正确',
+    'auth/user-disabled': '该账号已被禁用',
+    'auth/user-not-found': '账号不存在',
+    'auth/wrong-password': '密码错误',
+    'auth/invalid-credential': '邮箱或密码错误',
+    'auth/email-already-in-use': '该邮箱已注册',
+    'auth/weak-password': '密码至少需要 6 位',
+    'auth/too-many-requests': '尝试次数过多，请稍后再试',
+    'auth/network-request-failed': '网络错误，请检查网络后重试'
+  };
+  return map[code] || err?.message || '操作失败，请重试';
+}
+
+function showAuthLogin() {
+  document.getElementById('authLoginPanel').style.display = '';
+  document.getElementById('authRegisterPanel').style.display = 'none';
+  document.getElementById('authSub').textContent = '登录后多设备同步积分';
+  showAuthError('');
+}
+
+function showAuthRegister() {
+  document.getElementById('authLoginPanel').style.display = 'none';
+  document.getElementById('authRegisterPanel').style.display = '';
+  document.getElementById('authSub').textContent = '注册家长账号，保护积分数据';
+  showAuthError('');
+}
+
+function showAuthScreen() {
+  document.getElementById('authView').style.display = '';
+  document.getElementById('appRoot').style.display = 'none';
+  document.body.classList.remove('has-bottom-nav');
+}
+
+function showAppScreen() {
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('appRoot').style.display = '';
+  document.body.classList.add('has-bottom-nav');
+}
+
+async function authLogin() {
+  if (!firebaseReady) return;
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) {
+    showAuthError('请输入邮箱和密码');
+    return;
+  }
+  showAuthError('');
+  setAuthBusy(true);
+  try {
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+  } catch (err) {
+    showAuthError(authErrorMessage(err));
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+async function authRegister() {
+  if (!firebaseReady) return;
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+  if (!email || !password) {
+    showAuthError('请填写邮箱和密码');
+    return;
+  }
+  if (password.length < 6) {
+    showAuthError('密码至少需要 6 位');
+    return;
+  }
+  if (password !== password2) {
+    showAuthError('两次输入的密码不一致');
+    return;
+  }
+  showAuthError('');
+  setAuthBusy(true);
+  try {
+    await firebase.auth().createUserWithEmailAndPassword(email, password);
+  } catch (err) {
+    showAuthError(authErrorMessage(err));
+  } finally {
+    setAuthBusy(false);
+  }
+}
+
+async function authLogout() {
+  if (!firebaseReady) return;
+  tearDownCloud();
+  try {
+    await firebase.auth().signOut();
+  } catch (err) {
+    popup('退出失败', '#ff8fab', 'caution', true);
+  }
+}
+
+function onUserSignedIn(user) {
+  currentUser = user;
+  currentUid = user.uid;
+  state = loadLocal(currentUid);
+  lastDisplayedScore = null;
+  showAppScreen();
+  initCloud(currentUid);
+  switchView('home');
+  updateSettingsSection();
+  render();
+}
+
+function onUserSignedOut() {
+  tearDownCloud();
+  currentUser = null;
+  currentUid = null;
+  state = defaultState();
+  lastDisplayedScore = null;
+  showAuthScreen();
+  showAuthLogin();
+}
+
+function initFirebase() {
+  if (!firebaseConfig.databaseURL) {
+    firebaseReady = false;
+    showAuthError('Firebase 未配置，无法登录');
+    showAuthScreen();
+    return;
+  }
+  try {
+    firebase.initializeApp(firebaseConfig);
+    firebaseReady = true;
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) onUserSignedIn(user);
+      else onUserSignedOut();
+    });
+  } catch (e) {
+    console.warn(e);
+    firebaseReady = false;
+    showAuthError('Firebase 初始化失败');
+    showAuthScreen();
+  }
 }
 
 let currentTab = 'earn';
@@ -697,7 +901,4 @@ function onBottomNavScroll() {
 
 window.addEventListener('scroll', onBottomNavScroll, { passive: true });
 
-updateSettingsSection();
-render();
-{ const s = envStatusText(); setStatus(s.text, s.dev); }
-initCloud();
+initFirebase();
