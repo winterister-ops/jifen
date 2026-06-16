@@ -8,6 +8,8 @@ Thumbs.db
 
 # Firebase CLI 本地缓存
 .firebase/
+firebase-debug.log
+firebase-debug.*.log
 
 # Node 依赖（若以后本地安装）
 node_modules/
