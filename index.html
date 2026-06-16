@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.32">
+<link rel="stylesheet" href="styles.css?v=0.0.34">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -17,10 +17,36 @@
   <div class="auth-card">
     <div class="auth-logo"><img class="auth-star" src="icons/star.svg" alt=""></div>
     <div class="auth-title">星星银行</div>
-    <div class="auth-sub">请输入 PIN 码解锁</div>
-    <input class="profile-input auth-input" id="pinInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN 码" onkeydown="if(event.key==='Enter')submitPin()">
-    <button class="auth-btn primary" id="pinSubmitBtn" onclick="submitPin()">解锁</button>
+
+    <div id="authLoginPanel">
+      <div class="auth-sub">请登录家长账号</div>
+      <input class="profile-input auth-input" id="emailInput" type="email" autocomplete="username" placeholder="邮箱" onkeydown="if(event.key==='Enter')document.getElementById('passwordInput').focus()">
+      <input class="profile-input auth-input auth-input-gap" id="passwordInput" type="password" autocomplete="current-password" placeholder="密码" onkeydown="if(event.key==='Enter')submitLogin()">
+      <button class="auth-btn primary" id="loginBtn" onclick="submitLogin()">登录</button>
+      <button type="button" class="auth-btn link" onclick="showForgotPanel()">忘记密码？</button>
+    </div>
+
+    <div id="authForgotSendPanel" style="display:none">
+      <div class="auth-sub">输入注册邮箱，我们将发送验证码</div>
+      <input class="profile-input auth-input" id="resetEmailInput" type="email" autocomplete="username" placeholder="邮箱" onkeydown="if(event.key==='Enter')submitForgotPassword()">
+      <button class="auth-btn primary" id="forgotBtn" onclick="submitForgotPassword()">发送验证码</button>
+      <button type="button" class="auth-btn link" onclick="showLoginPanel()">返回登录</button>
+    </div>
+
+    <div id="authResetPanel" style="display:none">
+      <div class="auth-sub">请输入邮件验证码并设置新密码</div>
+      <p class="auth-hint" id="resetEmailHint"></p>
+      <input class="profile-input auth-input" id="resetCodeInput" type="text" inputmode="text" autocomplete="one-time-code" placeholder="邮件验证码" onkeydown="if(event.key==='Enter')document.getElementById('resetNewPasswordInput').focus()">
+      <input class="profile-input auth-input auth-input-gap" id="resetNewPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少 6 位）" onkeydown="if(event.key==='Enter')document.getElementById('resetConfirmPasswordInput').focus()">
+      <input class="profile-input auth-input auth-input-gap" id="resetConfirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" onkeydown="if(event.key==='Enter')submitResetPassword()">
+      <button class="auth-btn primary" id="resetPasswordBtn" onclick="submitResetPassword()">确认重置密码</button>
+      <button type="button" class="auth-btn link" onclick="showForgotSendPanel()">重新发送验证码</button>
+      <button type="button" class="auth-btn link" onclick="showLoginPanel()">返回登录</button>
+      <p class="auth-hint">点击邮件中的重置链接可自动跳回本页并填入验证码；也可复制链接里 <strong>oobCode=</strong> 后面的一串字符</p>
+    </div>
+
     <div class="auth-error" id="authError" style="display:none"></div>
+    <div class="auth-success" id="authSuccess" style="display:none"></div>
   </div>
 </div>
 
@@ -134,11 +160,19 @@
 
   <div class="section-title"><img class="ui-ic" src="icons/lock.svg" alt="">账户</div>
   <div class="menu-list">
-    <button type="button" class="menu-item" onclick="lockApp()">
+    <button type="button" class="menu-item" onclick="openPasswordModal()">
+      <span class="menu-ic"><img class="ui-ic" src="icons/setting-two.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">修改密码</span>
+        <span class="menu-desc">更改当前账号的登录密码</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+    <button type="button" class="menu-item" onclick="logoutApp()">
       <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
       <span class="menu-tx">
-        <span class="menu-title">锁定应用</span>
-        <span class="menu-desc">退出并返回 PIN 码界面</span>
+        <span class="menu-title">退出登录</span>
+        <span class="menu-desc">退出当前账号，返回登录界面</span>
       </span>
       <span class="menu-arrow">›</span>
     </button>
@@ -171,6 +205,20 @@
     </button>
   </div>
 </nav>
+</div>
+
+<div class="modal-overlay" id="passwordModal" onclick="if(event.target===this) hidePasswordModal()">
+  <div class="modal-box">
+    <div class="modal-title">修改密码</div>
+    <input class="profile-input modal-input" id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码">
+    <input class="profile-input modal-input" id="newPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少 6 位）">
+    <input class="profile-input modal-input" id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" onkeydown="if(event.key==='Enter')submitChangePassword()">
+    <div class="modal-error" id="passwordModalError" style="display:none"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="hidePasswordModal()">取消</button>
+      <button class="modal-btn confirm" id="passwordModalOk" onclick="submitChangePassword()">确认修改</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="profileModal" onclick="if(event.target===this) hideProfileModal()">
@@ -235,6 +283,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
-<script src="app.js?v=0.0.32"></script>
+<script src="app.js?v=0.0.34"></script>
 </body>
 </html>

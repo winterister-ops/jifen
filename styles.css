@@ -315,6 +315,15 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .modal-emoji { font-size: 3rem; margin-bottom: 12px; }
 .modal-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 10px; }
 .modal-msg { font-size: .95rem; color: #888; line-height: 1.5; margin-bottom: 8px; }
+.modal-input { width: 100%; margin-bottom: 10px; }
+.modal-input:last-of-type { margin-bottom: 0; }
+.modal-error {
+  font-size: .88rem;
+  font-weight: 700;
+  color: #e63956;
+  line-height: 1.45;
+  margin: 10px 0 4px;
+}
 .modal-step {
   font-size: .78rem; color: var(--purple); font-weight: 700;
   margin-bottom: 20px;
@@ -565,7 +574,16 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   font-weight: 700;
   margin-bottom: 22px;
 }
+.auth-hint {
+  font-size: .8rem;
+  color: #b08a5e;
+  line-height: 1.5;
+  margin: 0 0 14px;
+  text-align: left;
+}
+.auth-hint strong { font-weight: 800; }
 .auth-input { text-align: left; font-weight: 600; }
+.auth-input-gap { margin-top: 10px; }
 .auth-btn {
   width: 100%;
   border: none;
@@ -597,5 +615,12 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   font-size: .88rem;
   font-weight: 700;
   color: #e63956;
+  line-height: 1.45;
+}
+.auth-success {
+  margin-top: 14px;
+  font-size: .88rem;
+  font-weight: 700;
+  color: #2a9d5c;
   line-height: 1.45;
 }

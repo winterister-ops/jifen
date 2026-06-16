@@ -59,22 +59,10 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
   ? firebaseConfigDev
   : firebaseConfigProd;
 
-// ====== 解锁账号 + 数据路径（按环境隔离）======
+// ====== 云数据与本地缓存（按登录用户 uid 隔离）======
 // 数据存在 users/<uid>/data，<uid> 必须等于登录账号的 uid（数据库规则要求）。
-// 线上用线上账号；本地调试用另一个账号，读写各自路径，互不影响真实数据。
-// OWNER_EMAIL_DEV 填了才启用本地隔离；留空则本地也用线上账号+路径（会动到真实数据）。
-const OWNER_EMAIL_PROD = 'winterister@gmail.com';
-const OWNER_EMAIL_DEV = 'nickarlin2016@outlook.com'; // 本地账号（uid 2YrQ...）
-const CLOUD_PATH_PROD = 'users/pIKZFHskwJaUW1eknQI4UxNpSc12/data';
-const CLOUD_PATH_DEV = 'users/2YrQ8TGvenSTlWGwQH2NlEx4PyO2/data';
-
-const USE_DEV_ACCOUNT = ENV === 'dev' && !!OWNER_EMAIL_DEV;
-const OWNER_EMAIL = USE_DEV_ACCOUNT ? OWNER_EMAIL_DEV : OWNER_EMAIL_PROD;
-const CLOUD_PATH = USE_DEV_ACCOUNT ? CLOUD_PATH_DEV : CLOUD_PATH_PROD;
-
-const KEY = 'kid_points_data_v1_' + ENV;
-const SORT_KEY = 'kid_points_sort_v1_' + ENV;
-const VIBRATION_KEY = 'kid_points_vibration_v1_' + ENV;
+// 新账号在 Firebase Console → Authentication → Add user 创建，不支持前端自助注册。
+const STORAGE_PREFIX = 'kid_points_v1_' + ENV + '_';
 const SORT_MODES = ['default', 'pts-asc', 'pts-desc'];
 const SORT_LABELS = { default: '默认', 'pts-asc': '分数从低到高', 'pts-desc': '分数从高到低' };
 
