@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+
+# Firebase CLI 本地缓存
+.firebase/
+
+# Node 依赖（若以后本地安装）
+node_modules/
+
+# 环境变量与本地密钥（切勿提交）
+.env
+.env.*
+*-firebase-adminsdk-*.json
+serviceAccountKey.json
+
+# 编辑器 / IDE 本地配置
+.vscode/
+.idea/
+*.swp
+*.swo
