@@ -66,12 +66,12 @@ function applyClearAndRevoked(history, lastClearAt, revokedSet) {
 function normalizeState(raw, forMerge) {
   if (!raw || typeof raw.score !== 'number') return defaultState();
   const history = (Array.isArray(raw.history) ? raw.history : []).map((h, i) => ({
-    id: h.id,
-    emoji: h.emoji,
-    name: h.name,
-    delta: h.delta,
-    time: h.time,
-    ts: h.ts,
+    id: h.id ?? '',
+    emoji: h.emoji ?? '',
+    name: h.name ?? '',
+    delta: typeof h.delta === 'number' ? h.delta : 0,
+    time: h.time ?? '',
+    ts: typeof h.ts === 'number' ? h.ts : (entryDate(h)?.getTime() || 0),
     eid: historyEid(h, i)
   }));
   const meta = { ...defaultMeta(), ...(raw.meta || {}) };
