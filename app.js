@@ -175,12 +175,11 @@ function save() {
   pushToCloud();
 }
 
-function welcomeText() {
-  const name = state.profile.name;
+function greetingText() {
   const h = new Date().getHours();
-  if (h < 12) return '早上好，' + name + '！';
-  if (h < 18) return '下午好，' + name + '！';
-  return '晚上好，' + name + '！';
+  if (h < 12) return '早上好！';
+  if (h < 18) return '下午好！';
+  return '晚上好！';
 }
 
 let lastDisplayedScore = null;
@@ -195,7 +194,8 @@ function renderHeader() {
     scoreEl.textContent = newScore;
   }
   lastDisplayedScore = newScore;
-  document.getElementById('welcomeGreet').textContent = welcomeText();
+  document.getElementById('welcomeName').textContent = state.profile.name;
+  document.getElementById('welcomeSub').textContent = greetingText();
   document.getElementById('avatar').textContent = state.profile.avatar;
 }
 
@@ -366,20 +366,12 @@ function renderCalendar() {
 
 let currentView = 'home';
 const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView', stats: 'statsView' };
-const PRIMARY_VIEWS = new Set(['home', 'history', 'settings']);
 
 function switchView(view) {
   currentView = view;
   Object.keys(VIEW_IDS).forEach(v => {
     document.getElementById(VIEW_IDS[v]).style.display = v === view ? '' : 'none';
   });
-  document.getElementById('navHome').classList.toggle('active', view === 'home');
-  document.getElementById('navHistory').classList.toggle('active', view === 'history');
-  document.getElementById('navSettings').classList.toggle('active', view === 'settings' || view === 'stats');
-  const showNav = PRIMARY_VIEWS.has(view);
-  document.body.classList.toggle('has-bottom-nav', showNav);
-  if (showNav) resetBottomNav();
-  else setBottomNavVisible(false);
   if (view === 'history') {
     selectedDateKey = ymd(new Date());
     renderDateHeader();
@@ -399,6 +391,10 @@ function renderSettings() {
   document.getElementById('setEarned').textContent = '+' + earned;
   document.getElementById('setSpent').textContent = '-' + spent;
   const totalCount = state.history.length;
+  const historyDescEl = document.getElementById('historyEntryDesc');
+  if (historyDescEl) {
+    historyDescEl.textContent = totalCount ? `共 ${totalCount} 条记录` : '按日期查看记录';
+  }
   const descEl = document.getElementById('statsEntryDesc');
   if (descEl) {
     descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
@@ -584,7 +580,6 @@ function showAuthShell() {
   const appRoot = document.getElementById('appRoot');
   if (authView) authView.style.display = 'flex';
   if (appRoot) appRoot.style.display = 'none';
-  document.body.classList.remove('has-bottom-nav');
 }
 
 function showAuthView() {
@@ -1185,40 +1180,5 @@ function confetti() {
     setTimeout(() => c.remove(), dur*1000 + 100);
   }
 }
-
-// 底部栏随滚动隐藏/展示（上滑隐藏，下滑展示，参考 X App）
-const bottomNav = document.querySelector('.bottom-nav');
-let navLastScrollY = 0;
-let navScrollTicking = false;
-
-function setBottomNavVisible(visible) {
-  if (bottomNav) bottomNav.classList.toggle('nav-hidden', !visible);
-}
-
-function resetBottomNav() {
-  navLastScrollY = window.scrollY;
-  setBottomNavVisible(true);
-}
-
-function onBottomNavScroll() {
-  if (!PRIMARY_VIEWS.has(currentView)) return;
-  if (navScrollTicking) return;
-  navScrollTicking = true;
-  requestAnimationFrame(() => {
-    const y = window.scrollY;
-    const delta = 6;
-    if (y <= 12) {
-      setBottomNavVisible(true);
-    } else if (y > navLastScrollY + delta) {
-      setBottomNavVisible(false);
-    } else if (y < navLastScrollY - delta) {
-      setBottomNavVisible(true);
-    }
-    navLastScrollY = y;
-    navScrollTicking = false;
-  });
-}
-
-window.addEventListener('scroll', onBottomNavScroll, { passive: true });
 
 initFirebase();
