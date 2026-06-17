@@ -183,7 +183,7 @@ function renderTaskStats() {
 function saveProfile() {
   const name = document.getElementById('profileNameInput').value.trim();
   if (!name) {
-    popup('请输入昵称', '#ff8fab', 'edit', true);
+    toast('请输入昵称', 'error');
     return;
   }
   state.profile = { name: name.slice(0, 12), avatar: profilePickAvatar };
@@ -278,7 +278,7 @@ function earn(it, e) {
 
 function spend(it, e, locked) {
   if (locked) {
-    popup('积分不够哦', '#ff8fab', 'caution', true);
+    toast('积分不够哦', 'error');
     shakeScore();
     return;
   }
@@ -302,7 +302,7 @@ function confirmSpend() {
   state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
   touchMeta();
   save();
-  bump(); popup('-' + it.pts, '#ff8fab', it.emoji);
+  bump(); popup('-' + it.pts, '#ff8fab', it.emoji); confetti();
   vibrateFeedback('spend');
   render();
 }
@@ -408,6 +408,31 @@ function popup(text, color, visual, asIcon) {
   p.innerHTML = prefix + text;
   document.body.appendChild(p);
   setTimeout(() => p.remove(), 1000);
+}
+
+let toastHideTimer = null;
+
+function toast(text, kind) {
+  let wrap = document.getElementById('toastWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'toastWrap';
+    wrap.className = 'toast-wrap';
+    wrap.innerHTML = '<div class="toast" id="toastEl"></div>';
+    document.body.appendChild(wrap);
+  }
+  const el = document.getElementById('toastEl');
+  if (!el) return;
+  if (toastHideTimer) clearTimeout(toastHideTimer);
+
+  el.className = 'toast' + (kind ? ' ' + kind : '');
+  el.textContent = text;
+
+  wrap.classList.remove('show');
+  void wrap.offsetWidth;
+  wrap.classList.add('show');
+
+  toastHideTimer = setTimeout(() => wrap.classList.remove('show'), 2200);
 }
 
 function confetti() {

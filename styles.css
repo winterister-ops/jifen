@@ -297,7 +297,7 @@ footer {
 }
 .btn-soft:active { transform: scale(.96); }
 
-/* 飘出的积分提示 */
+/* 飘出的积分提示（仅赚花积分时使用） */
 .pop {
   font-family: var(--font-num);
   position: fixed; left: 50%; top: 30%; transform: translateX(-50%);
@@ -316,6 +316,38 @@ footer {
 @keyframes fall {
   to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
 }
+
+/* 底部胶囊 Toast（除赚花积分外的提示） */
+.toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 200;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(calc(100% + 24px));
+  opacity: 0;
+  transition: transform .38s cubic-bezier(.2, .9, .3, 1), opacity .38s ease;
+}
+.toast-wrap.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.toast {
+  display: inline-block;
+  padding: 11px 20px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font-size: .88rem;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  border: 2px solid #ffe2bf;
+  max-width: calc(100vw - 32px);
+  white-space: nowrap;
+}
+.toast.success { border-color: #b8f0d8; color: #2a9d6a; }
+.toast.error { border-color: #ffc8d8; color: #d4567a; }
+
 footer .ui-ic { width: .95rem; height: .95rem; }
 
 /* 确认弹窗 */

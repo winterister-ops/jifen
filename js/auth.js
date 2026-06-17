@@ -273,7 +273,7 @@ function submitChangePassword() {
     .then(() => currentUser.updatePassword(next))
     .then(() => {
       hidePasswordModal();
-      popup('密码已修改', '#06d6a0', 'edit', true);
+      toast('密码已修改', 'success');
     })
     .catch(err => {
       console.warn('修改密码失败', err);
