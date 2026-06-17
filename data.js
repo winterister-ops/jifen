@@ -1,3 +1,6 @@
+// ====== 应用版本（「我的」页展示，发版时同步更新 index.html 中 ?v= 参数） ======
+const APP_VERSION = '0.0.39';
+
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
 const DEFAULT_CHILD_AVATAR = '👧';
