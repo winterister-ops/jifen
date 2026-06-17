@@ -266,7 +266,20 @@ function render() {
   renderHistory();
 }
 
+function lastEarnTimeForTask(taskId) {
+  for (let i = state.history.length - 1; i >= 0; i--) {
+    const h = state.history[i];
+    if (h.id === taskId && h.delta > 0) return h.ts || 0;
+  }
+  return 0;
+}
+
 function earn(it, e) {
+  const lastTs = lastEarnTimeForTask(it.id);
+  if (lastTs && Date.now() - lastTs < EARN_COOLDOWN_MS) {
+    toast('刚刚已经做过啦');
+    return;
+  }
   state.score += it.pts;
   state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
   touchMeta();

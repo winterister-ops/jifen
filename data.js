@@ -1,5 +1,5 @@
 // ====== 应用版本（「我的」页展示，发版时同步更新 index.html 中 ?v= 参数） ======
-const APP_VERSION = '0.0.41';
+const APP_VERSION = '0.0.42';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
@@ -68,6 +68,9 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
 const STORAGE_PREFIX = 'kid_points_v1_' + ENV + '_';
 const SORT_MODES = ['default', 'pts-asc', 'pts-desc'];
 const SORT_LABELS = { default: '默认', 'pts-asc': '分数从低到高', 'pts-desc': '分数从高到低' };
+
+// 同一任务赚积分后的冷却时间（毫秒），防误触连点
+const EARN_COOLDOWN_MS = 60 * 1000;
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
 
