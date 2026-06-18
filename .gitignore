@@ -27,5 +27,10 @@ serviceAccountKey.json
 *.swp
 *.swo
 
-# 本地测试依赖（puppeteer 等，非应用运行时依赖）
+# 本地测试依赖（playwright 等，非应用运行时依赖）
+# package-lock.json 不提交；需要锁定版本时可移除此行并提交 lock 文件
 package-lock.json
+test-results/
+playwright-report/
+
+# .cursor/ 已整体忽略（含 hooks 运行时 .test-* 临时文件）

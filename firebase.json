@@ -9,7 +9,11 @@
       "firebase-debug.log",
       "firebase-debug.*.log",
       "README.md",
-      ".cursor/**"
+      ".cursor/**",
+      "tests/**",
+      "package.json",
+      "package-lock.json",
+      "playwright.config.js"
     ],
     "rewrites": [
       {
