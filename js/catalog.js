@@ -20,12 +20,12 @@ function findCatalogItem(type, id) {
   return catalogList(type).find(it => it.id === id) || null;
 }
 
-function newCatalogId() {
-  return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function sortItemsByPtsAsc(items) {
+  return items.slice().sort((a, b) => a.pts - b.pts || a.name.localeCompare(b.name, 'zh-CN'));
 }
 
-function catalogManageBackView() {
-  return 'settings';
+function newCatalogId() {
+  return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
 
 function openCatalogManage(type) {
@@ -43,7 +43,7 @@ function renderCatalogManage() {
   if (countEl) countEl.textContent = `已启用 ${enabledCount} / 共 ${items.length} 项`;
 
   listEl.innerHTML = '';
-  items.forEach(it => {
+  sortItemsByPtsAsc(items).forEach(it => {
     const row = document.createElement('div');
     row.className = 'catalog-row' + (it.enabled ? '' : ' disabled');
     row.innerHTML = `

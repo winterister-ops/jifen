@@ -142,35 +142,6 @@ footer {
 .tab.active.earn { background: var(--blue); }
 .tab.active.spend { background: var(--accent); }
 
-.sort-bar {
-  margin-bottom: 12px;
-  background: var(--card); border-radius: 14px;
-  box-shadow: var(--shadow); overflow: hidden;
-}
-.sort-toggle {
-  width: 100%; border: none; background: transparent; cursor: pointer;
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 12px; font-family: inherit;
-}
-.sort-toggle:active { opacity: .75; }
-.sort-label {
-  font-size: .76rem; font-weight: 800; color: #b08a5e; flex-shrink: 0;
-}
-.sort-current {
-  flex: 1; text-align: right; font-size: .72rem; font-weight: 700; color: #c9a882;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sort-chevron {
-  font-size: .7rem; color: #c9a882; transition: transform .2s; flex-shrink: 0;
-}
-.sort-bar.expanded .sort-chevron { transform: rotate(180deg); }
-.sort-options {
-  display: none; gap: 6px; flex-wrap: wrap;
-  padding: 0 12px 10px;
-}
-.sort-bar.expanded .sort-options { display: flex; }
-.sort-pill { font-size: .72rem; padding: 6px 10px; }
-
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -643,8 +614,17 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 /* 任务 / 奖励管理 */
 .catalog-hint {
   font-size: .82rem; font-weight: 700; color: #b08a5e;
-  margin-bottom: 10px; padding: 0 4px;
+  padding: 0 4px; flex: 1; min-width: 0;
 }
+.catalog-manage-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 10px; position: sticky; top: 0; z-index: 50;
+  background: var(--bg1); padding: 4px 0 8px;
+}
+.catalog-add-pill {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+}
+.catalog-add-pill .ui-ic { width: .95rem; height: .95rem; }
 .catalog-list {
   display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;
 }
@@ -674,13 +654,6 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .catalog-pts { display: block; font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 2px; }
 .catalog-edit-ic { font-size: 1.2rem; font-weight: 800; color: #d2a679; flex-shrink: 0; padding-right: 4px; }
 .catalog-toggle { flex-shrink: 0; margin-right: 8px; }
-.catalog-add-btn {
-  width: 100%; border: 2px dashed #e8c99a; background: #fff7ec;
-  color: var(--accent); border-radius: 18px; padding: 14px;
-  font-family: inherit; font-size: .95rem; font-weight: 800;
-  cursor: pointer; transition: transform .12s, background .15s;
-}
-.catalog-add-btn:active { transform: scale(.97); background: #fff0d6; }
 #catalogEmojiPicker { grid-template-columns: repeat(6, 1fr); max-height: 180px; overflow-y: auto; }
 #catalogEditModal .modal-btns { flex-wrap: wrap; margin-top: 4px; }
 #catalogEditModal .modal-btn.danger { flex: 1 1 100%; margin-bottom: 4px; }

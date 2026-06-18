@@ -1,8 +1,6 @@
 // ====== 界面渲染与交互 ======
 
 let profilePickAvatar = DEFAULT_CHILD_AVATAR;
-let taskSort = 'default';
-let sortBarExpanded = false;
 let lastDisplayedScore = null;
 let scoreAnimFrame = null;
 let currentView = 'home';
@@ -169,66 +167,43 @@ function switchTab(t) {
   render();
 }
 
-function toggleSortBar() {
-  sortBarExpanded = !sortBarExpanded;
-  document.getElementById('sortBar').classList.toggle('expanded', sortBarExpanded);
-}
-
-function setTaskSort(mode) {
-  if (!SORT_MODES.includes(mode)) return;
-  taskSort = mode;
-  if (SORT_KEY) localStorage.setItem(SORT_KEY, mode);
-  renderSortBar();
-  render();
-}
-
-function renderSortBar() {
-  document.querySelectorAll('.sort-pill').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.sort === taskSort);
-  });
-  const cur = document.getElementById('sortCurrent');
-  if (cur) cur.textContent = SORT_LABELS[taskSort] || '默认';
-  document.getElementById('sortBar').classList.toggle('expanded', sortBarExpanded);
-}
-
-function sortItems(list) {
-  const items = list.slice();
-  switch (taskSort) {
-    case 'pts-asc':
-      return items.sort((a, b) => a.pts - b.pts || a.name.localeCompare(b.name, 'zh-CN'));
-    case 'pts-desc':
-      return items.sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, 'zh-CN'));
-    default:
-      return items;
+function buildCatalogItemEl(it, mode) {
+  const div = document.createElement('div');
+  if (mode === 'earn') {
+    div.className = 'item earn-item';
+    div.innerHTML = `
+      <span class="pts">+${it.pts}</span>
+      <span class="emoji">${it.emoji}</span>
+      <span class="name">${it.name}</span>`;
+    div.onclick = () => earn(it);
+  } else {
+    const locked = state.score < it.pts;
+    div.className = 'item spend-item' + (locked ? ' locked' : '');
+    div.innerHTML = `
+      <span class="pts">-${it.pts}</span>
+      <span class="emoji">${it.emoji}</span>
+      <span class="name">${it.name}</span>`;
+    div.onclick = () => spend(it, null, locked);
   }
+  return div;
 }
 
 function render() {
   renderHeader();
-  renderSortBar();
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-  const list = sortItems(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
-  list.forEach(it => {
-    const div = document.createElement('div');
-    if (currentTab === 'earn') {
-      div.className = 'item earn-item';
-      div.innerHTML = `
-        <span class="pts">+${it.pts}</span>
-        <span class="emoji">${it.emoji}</span>
-        <span class="name">${it.name}</span>`;
-      div.onclick = (e) => earn(it, e);
-    } else {
-      const locked = state.score < it.pts;
-      div.className = 'item spend-item' + (locked ? ' locked' : '');
-      div.innerHTML = `
-        <span class="pts">-${it.pts}</span>
-        <span class="emoji">${it.emoji}</span>
-        <span class="name">${it.name}</span>`;
-      div.onclick = (e) => spend(it, e, locked);
+  let grid = document.getElementById('grid');
+  if (!grid) {
+    grid = document.getElementById('catalogSections');
+    if (grid) {
+      grid.id = 'grid';
+      grid.className = 'grid';
     }
-    grid.appendChild(div);
-  });
+  }
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  const mode = currentTab === 'earn' ? 'earn' : 'spend';
+  const list = sortItemsByPtsAsc(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
+  list.forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
   renderSettings();
   renderHistory();
 }

@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.46';
+const CACHE_VERSION = '0.0.49';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -9,6 +9,7 @@ const PRECACHE_URLS = [
   '/data.js',
   '/js/sync.js',
   '/js/history.js',
+  '/js/catalog.js',
   '/js/ui.js',
   '/js/auth.js',
   '/js/pwa.js',
@@ -17,6 +18,7 @@ const PRECACHE_URLS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/muscle.svg',
+  '/icons/plus.svg',
   '/icons/gift.svg',
   '/icons/calendar.svg',
   '/icons/edit.svg',

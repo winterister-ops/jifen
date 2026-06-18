@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.47">
+<link rel="stylesheet" href="styles.css?v=0.0.49">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -82,19 +82,6 @@
   <div class="tabs">
     <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')"><img class="ui-ic tab-ic" src="icons/muscle.svg" alt="">完成任务</button>
     <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">兑换奖励</button>
-  </div>
-
-  <div class="sort-bar" id="sortBar">
-    <button type="button" class="sort-toggle" onclick="toggleSortBar()">
-      <span class="sort-label">排序</span>
-      <span class="sort-current" id="sortCurrent">默认</span>
-      <span class="sort-chevron">▼</span>
-    </button>
-    <div class="sort-options" id="sortOptions">
-      <button type="button" class="filter-pill sort-pill" data-sort="default" onclick="setTaskSort('default')">默认</button>
-      <button type="button" class="filter-pill sort-pill" data-sort="pts-asc" onclick="setTaskSort('pts-asc')">分数从低到高</button>
-      <button type="button" class="filter-pill sort-pill" data-sort="pts-desc" onclick="setTaskSort('pts-desc')">分数从高到低</button>
-    </div>
   </div>
 
   <div class="grid" id="grid"></div>
@@ -230,25 +217,33 @@
   <footer>陪宝贝一起成长</footer>
  </div>
 
- <div id="taskManageView" style="display:none">
+ <div id="taskManageView" class="catalog-manage-view" style="display:none">
   <div class="subpage-head">
     <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
     <div class="subpage-title">任务管理</div>
   </div>
-  <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
+  <div class="catalog-manage-bar">
+    <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
+    <button type="button" class="filter-pill catalog-add-pill" onclick="openCatalogEditModal('tasks')">
+      <img class="ui-ic" src="icons/plus.svg" alt="">添加
+    </button>
+  </div>
   <div class="catalog-list" id="taskManageList"></div>
-  <button type="button" class="catalog-add-btn" onclick="openCatalogEditModal('tasks')">+ 添加任务</button>
   <footer>陪宝贝一起成长</footer>
  </div>
 
- <div id="rewardManageView" style="display:none">
+ <div id="rewardManageView" class="catalog-manage-view" style="display:none">
   <div class="subpage-head">
     <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
     <div class="subpage-title">奖励管理</div>
   </div>
-  <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
+  <div class="catalog-manage-bar">
+    <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
+    <button type="button" class="filter-pill catalog-add-pill" onclick="openCatalogEditModal('rewards')">
+      <img class="ui-ic" src="icons/plus.svg" alt="">添加
+    </button>
+  </div>
   <div class="catalog-list" id="rewardManageList"></div>
-  <button type="button" class="catalog-add-btn" onclick="openCatalogEditModal('rewards')">+ 添加奖励</button>
   <footer>陪宝贝一起成长</footer>
  </div>
 
@@ -344,11 +339,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
-<script src="js/sync.js?v=0.0.47"></script>
-<script src="js/history.js?v=0.0.47"></script>
-<script src="js/catalog.js?v=0.0.47"></script>
-<script src="js/ui.js?v=0.0.47"></script>
-<script src="js/auth.js?v=0.0.47"></script>
-<script src="js/pwa.js?v=0.0.47"></script>
+<script src="js/sync.js?v=0.0.49"></script>
+<script src="js/history.js?v=0.0.49"></script>
+<script src="js/catalog.js?v=0.0.49"></script>
+<script src="js/ui.js?v=0.0.49"></script>
+<script src="js/auth.js?v=0.0.49"></script>
+<script src="js/pwa.js?v=0.0.49"></script>
 </body>
 </html>

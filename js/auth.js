@@ -296,7 +296,6 @@ function logoutApp() {
   if (!firebaseReady) return;
   tearDownCloud();
   KEY = null;
-  SORT_KEY = null;
   VIBRATION_KEY = null;
   state = defaultState();
   lastDisplayedScore = null;
@@ -314,7 +313,6 @@ function onAuthChanged(user) {
   } else {
     tearDownCloud();
     KEY = null;
-    SORT_KEY = null;
     VIBRATION_KEY = null;
     state = defaultState();
     lastDisplayedScore = null;

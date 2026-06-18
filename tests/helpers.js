@@ -73,7 +73,7 @@ async function goHome(page) {
 
 async function addCatalogItem(page, { type, name, pts }) {
   const viewSel = type === 'rewards' ? '#rewardManageView' : '#taskManageView';
-  await page.locator(`${viewSel} .catalog-add-btn`).click();
+  await page.locator(`${viewSel} .catalog-add-pill`).click();
   await expect(page.locator('#catalogEditModal')).toHaveClass(/show/);
   await page.locator('#catalogNameInput').fill(name);
   await page.locator('#catalogPtsInput').fill(String(pts));

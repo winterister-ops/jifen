@@ -1,7 +1,6 @@
 // ====== 状态与云同步 ======
 
 let KEY = null;
-let SORT_KEY = null;
 let VIBRATION_KEY = null;
 let state = defaultState();
 let cloudRef = null;
@@ -85,9 +84,10 @@ function normalizeCatalogList(rawList, defaults, presetIds) {
 }
 
 function normalizeCatalog(raw) {
+  const base = raw && typeof raw === 'object' ? raw : {};
   return {
-    tasks: normalizeCatalogList(raw?.tasks, DEFAULT_TASKS, presetTaskIds()),
-    rewards: normalizeCatalogList(raw?.rewards, DEFAULT_REWARDS, presetRewardIds())
+    tasks: normalizeCatalogList(base.tasks, DEFAULT_TASKS, presetTaskIds()),
+    rewards: normalizeCatalogList(base.rewards, DEFAULT_REWARDS, presetRewardIds())
   };
 }
 
@@ -296,10 +296,7 @@ function tearDownCloud() {
 
 function storageKeysForUser(uid) {
   KEY = STORAGE_PREFIX + uid;
-  SORT_KEY = STORAGE_PREFIX + uid + '_sort';
   VIBRATION_KEY = STORAGE_PREFIX + uid + '_vibration';
-  taskSort = SORT_MODES.includes(localStorage.getItem(SORT_KEY))
-    ? localStorage.getItem(SORT_KEY) : 'default';
   vibrationEnabled = vibrationSupported && localStorage.getItem(VIBRATION_KEY) !== '0';
 }
 

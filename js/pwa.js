@@ -10,7 +10,7 @@ function isStandalone() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?v=0.0.46').catch(err => {
+    navigator.serviceWorker.register('/sw.js?v=0.0.49').catch(err => {
       console.warn('Service Worker 注册失败', err);
     });
   });
