@@ -124,6 +124,7 @@ function updateSettingsSection() {
   if (vibSetting) vibSetting.style.display = vibrationSupported ? '' : 'none';
   const vibToggle = document.getElementById('vibrationToggle');
   if (vibToggle) vibToggle.checked = vibrationEnabled;
+  if (typeof updatePwaInstallUI === 'function') updatePwaInstallUI();
 }
 
 function toggleVibration() {

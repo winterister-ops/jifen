@@ -344,7 +344,12 @@ function initFirebase() {
   }
 
   if (firebaseReady) {
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+    const isPwa = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+    const persistence = isPwa
+      ? firebase.auth.Auth.Persistence.LOCAL
+      : firebase.auth.Auth.Persistence.SESSION;
+    firebase.auth().setPersistence(persistence)
       .catch(err => console.warn('设置登录持久化失败', err))
       .finally(() => {
         firebase.auth().onAuthStateChanged(onAuthChanged);

@@ -206,6 +206,9 @@ function setStatus(text, isDev) {
 }
 
 function getEnvStatus() {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return { text: '离线', dev: false };
+  }
   return lastEnvStatus || envStatusText();
 }
 
@@ -237,6 +240,16 @@ function storageKeysForUser(uid) {
 
 function cloudPathForUser(user) {
   return `users/${user.uid}/data`;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    if (currentUser && typeof initCloud === 'function') initCloud();
+    else if (typeof renderAppMeta === 'function') renderAppMeta();
+  });
+  window.addEventListener('offline', () => {
+    if (typeof renderAppMeta === 'function') renderAppMeta();
+  });
 }
 
 function initCloud() {
