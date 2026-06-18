@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.44">
+<link rel="stylesheet" href="styles.css?v=0.0.45">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -108,12 +108,19 @@
     </div>
     <div class="hp-date-actions">
       <button class="filter-pill" id="allToggle" onclick="toggleAllFilter()">全部</button>
-      <button class="cal-btn cal-btn-sm" onclick="openCalendar()" title="选择其它日期"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
+      <button class="cal-btn cal-btn-sm" id="hpCalBtn" onclick="openCalendar()" title="选择其它日期"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
       <button class="filter-pill filter-today" id="todayBtn" onclick="goToToday()" style="display:none">今天</button>
+      <button class="filter-pill" id="historyEditBtn" onclick="enterHistoryEdit()">编辑</button>
+      <button class="filter-pill" id="historyCancelEditBtn" onclick="exitHistoryEdit()" style="display:none">取消</button>
     </div>
   </div>
 
   <div class="history" id="history"></div>
+
+  <div class="hp-editbar" id="hpEditBar" style="display:none">
+    <button type="button" class="btn-soft" id="hpSelectAllBtn" onclick="selectAllVisibleHistory()">全选</button>
+    <button type="button" class="btn-soft hp-edit-delete" id="hpDeleteBtn" onclick="showDeleteConfirmModal()" disabled>删除</button>
+  </div>
 
   <footer>陪宝贝一起成长</footer>
  </div>
@@ -152,16 +159,10 @@
       <span class="menu-ic"><img class="ui-ic" src="icons/calendar.svg" alt=""></span>
       <span class="menu-tx">
         <span class="menu-title">记录</span>
-        <span class="menu-desc" id="historyEntryDesc">按日期查看记录</span>
+        <span class="menu-desc" id="historyEntryDesc">查看与编辑积分记录</span>
       </span>
       <span class="menu-arrow">›</span>
     </button>
-  </div>
-
-  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">管理</div>
-  <div class="toolbar" style="margin-top:0">
-    <button class="btn-soft" onclick="undoLast()"><img class="ui-ic" src="icons/undo.svg" alt="">撤销上一条</button>
-    <button class="btn-soft" onclick="clearAll()"><img class="ui-ic" src="icons/clear.svg" alt="">全部清空</button>
   </div>
 
   <div class="section-title"><img class="ui-ic" src="icons/lock.svg" alt="">账户</div>
@@ -251,15 +252,14 @@
   </div>
 </div>
 
-<div class="modal-overlay" id="clearModal" onclick="if(event.target===this) hideClearModal()">
+<div class="modal-overlay" id="deleteModal" onclick="if(event.target===this) hideDeleteConfirmModal()">
   <div class="modal-box">
-    <div class="modal-emoji" id="clearModalEmoji"><img class="ui-ic" src="icons/clear-format.svg" alt=""></div>
-    <div class="modal-title" id="clearModalTitle">确定要清空吗？</div>
-    <div class="modal-msg" id="clearModalMsg">将清空当前所有积分和记录。</div>
-    <div class="modal-step" id="clearModalStep">第 1 步 / 共 2 步</div>
+    <div class="modal-emoji" id="deleteModalEmoji"><img class="ui-ic" src="icons/caution.svg" alt=""></div>
+    <div class="modal-title">确定删除记录吗？</div>
+    <div class="modal-msg" id="deleteModalMsg"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hideClearModal()">取消</button>
-      <button class="modal-btn confirm" id="clearModalOk" onclick="onClearConfirm()">确定清空</button>
+      <button class="modal-btn cancel" onclick="hideDeleteConfirmModal()">取消</button>
+      <button class="modal-btn danger" onclick="confirmDeleteSelected()">确认删除</button>
     </div>
   </div>
 </div>
@@ -269,9 +269,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
-<script src="js/sync.js?v=0.0.44"></script>
-<script src="js/history.js?v=0.0.44"></script>
-<script src="js/ui.js?v=0.0.44"></script>
-<script src="js/auth.js?v=0.0.44"></script>
+<script src="js/sync.js?v=0.0.45"></script>
+<script src="js/history.js?v=0.0.45"></script>
+<script src="js/ui.js?v=0.0.45"></script>
+<script src="js/auth.js?v=0.0.45"></script>
 </body>
 </html>

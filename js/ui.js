@@ -8,7 +8,6 @@ let scoreAnimFrame = null;
 let currentView = 'home';
 let currentTab = 'earn';
 let pendingSpendItem = null;
-let clearConfirmStep = 1;
 
 const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView' };
 
@@ -90,12 +89,14 @@ function hideProfileModal() {
 }
 
 function switchView(view) {
+  if (currentView === 'history' && view !== 'history') exitHistoryEdit();
   currentView = view;
   Object.keys(VIEW_IDS).forEach(v => {
     const el = document.getElementById(VIEW_IDS[v]);
     if (el) el.style.display = v === view ? '' : 'none';
   });
   if (view === 'history') {
+    exitHistoryEdit();
     selectedDateKey = ymd(new Date());
     renderDateHeader();
     renderHistory();
@@ -113,7 +114,7 @@ function renderSettings() {
   const totalCount = state.history.length;
   const historyDescEl = document.getElementById('historyEntryDesc');
   if (historyDescEl) {
-    historyDescEl.textContent = totalCount ? `共 ${totalCount} 条记录` : '按日期查看记录';
+    historyDescEl.textContent = totalCount ? `共 ${totalCount} 条记录` : '查看与编辑积分记录';
   }
   updateSettingsSection();
 }
@@ -271,57 +272,6 @@ function confirmSpend() {
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji); confetti();
   vibrateFeedback('spend');
   render();
-}
-
-function undoLast() {
-  if (!state.history.length) return;
-  const last = state.history.pop();
-  if (!Array.isArray(state.revokedEids)) state.revokedEids = [];
-  state.revokedEids.push(last.eid || historyEid(last, state.history.length));
-  state.score -= last.delta;
-  touchMeta();
-  save();
-  render();
-}
-
-function showClearModalStep(step) {
-  clearConfirmStep = step;
-  const s = CLEAR_STEPS[step - 1];
-  document.getElementById('clearModalEmoji').innerHTML = ipIcon(s.icon);
-  document.getElementById('clearModalTitle').textContent = s.title;
-  document.getElementById('clearModalMsg').textContent = s.msg;
-  document.getElementById('clearModalStep').textContent = s.step;
-  const okBtn = document.getElementById('clearModalOk');
-  okBtn.textContent = s.btn;
-  okBtn.className = 'modal-btn ' + (s.danger ? 'danger' : 'confirm');
-  document.getElementById('clearModal').classList.add('show');
-}
-
-function hideClearModal() {
-  document.getElementById('clearModal').classList.remove('show');
-  clearConfirmStep = 1;
-}
-
-function clearAll() {
-  if (!state.score && !state.history.length) return;
-  showClearModalStep(1);
-}
-
-function onClearConfirm() {
-  if (clearConfirmStep === 1) {
-    showClearModalStep(2);
-    return;
-  }
-  state = {
-    score: 0,
-    history: [],
-    profile: state.profile,
-    revokedEids: [],
-    meta: { ...defaultMeta(), ...state.meta, lastClearAt: Date.now(), updatedAt: Date.now() }
-  };
-  save();
-  render();
-  hideClearModal();
 }
 
 // ====== 动画效果 ======

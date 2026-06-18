@@ -1,5 +1,5 @@
 // ====== 应用版本（「我的」页展示，发版时同步更新 index.html 中 ?v= 参数） ======
-const APP_VERSION = '0.0.44';
+const APP_VERSION = '0.0.45';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
@@ -73,22 +73,3 @@ const SORT_LABELS = { default: '默认', 'pts-asc': '分数从低到高', 'pts-d
 const EARN_COOLDOWN_MS = 60 * 1000;
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
-
-const CLEAR_STEPS = [
-  {
-    icon: 'clear-format',
-    title: '确定要清空吗？',
-    msg: '将清空当前所有积分和记录。',
-    step: '第 1 步 / 共 2 步',
-    btn: '继续',
-    danger: false
-  },
-  {
-    icon: 'caution',
-    title: '再次确认清空',
-    msg: '清空后无法恢复，真的要全部清空吗？',
-    step: '第 2 步 / 共 2 步',
-    btn: '确认全部清空',
-    danger: true
-  }
-];
