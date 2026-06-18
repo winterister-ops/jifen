@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.46">
+<link rel="stylesheet" href="styles.css?v=0.0.47">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -151,6 +151,22 @@
       </span>
       <span class="menu-arrow">›</span>
     </button>
+    <button type="button" class="menu-item" onclick="openCatalogManage('tasks')">
+      <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">任务管理</span>
+        <span class="menu-desc">增删改任务、调分值、改图标</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+    <button type="button" class="menu-item" onclick="openCatalogManage('rewards')">
+      <span class="menu-ic"><img class="ui-ic" src="icons/gift.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">奖励管理</span>
+        <span class="menu-desc">增删改奖励、调分值、改图标</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
   </div>
 
   <div id="settingsSection">
@@ -214,7 +230,43 @@
   <footer>陪宝贝一起成长</footer>
  </div>
 
+ <div id="taskManageView" style="display:none">
+  <div class="subpage-head">
+    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
+    <div class="subpage-title">任务管理</div>
+  </div>
+  <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
+  <div class="catalog-list" id="taskManageList"></div>
+  <button type="button" class="catalog-add-btn" onclick="openCatalogEditModal('tasks')">+ 添加任务</button>
+  <footer>陪宝贝一起成长</footer>
+ </div>
+
+ <div id="rewardManageView" style="display:none">
+  <div class="subpage-head">
+    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
+    <div class="subpage-title">奖励管理</div>
+  </div>
+  <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
+  <div class="catalog-list" id="rewardManageList"></div>
+  <button type="button" class="catalog-add-btn" onclick="openCatalogEditModal('rewards')">+ 添加奖励</button>
+  <footer>陪宝贝一起成长</footer>
+ </div>
+
 </div>
+</div>
+
+<div class="modal-overlay" id="catalogEditModal" onclick="if(event.target===this) hideCatalogEditModal()">
+  <div class="modal-box">
+    <div class="modal-title" id="catalogEditTitle">编辑任务</div>
+    <input class="profile-input modal-input" id="catalogNameInput" type="text" maxlength="20" placeholder="名称" onkeydown="if(event.key==='Enter')document.getElementById('catalogPtsInput').focus()">
+    <input class="profile-input modal-input" id="catalogPtsInput" type="number" min="1" max="999" placeholder="星星分值" onkeydown="if(event.key==='Enter')saveCatalogEdit()">
+    <div class="emoji-picker" id="catalogEmojiPicker"></div>
+    <div class="modal-btns">
+      <button class="modal-btn danger" id="catalogDeleteBtn" onclick="deleteCatalogItem()" style="display:none">删除</button>
+      <button class="modal-btn cancel" onclick="hideCatalogEditModal()">取消</button>
+      <button class="modal-btn confirm" onclick="saveCatalogEdit()">保存</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="passwordModal" onclick="if(event.target===this) hidePasswordModal()">
@@ -292,10 +344,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
-<script src="js/sync.js?v=0.0.46"></script>
-<script src="js/history.js?v=0.0.46"></script>
-<script src="js/ui.js?v=0.0.46"></script>
-<script src="js/auth.js?v=0.0.46"></script>
-<script src="js/pwa.js?v=0.0.46"></script>
+<script src="js/sync.js?v=0.0.47"></script>
+<script src="js/history.js?v=0.0.47"></script>
+<script src="js/catalog.js?v=0.0.47"></script>
+<script src="js/ui.js?v=0.0.47"></script>
+<script src="js/auth.js?v=0.0.47"></script>
+<script src="js/pwa.js?v=0.0.47"></script>
 </body>
 </html>

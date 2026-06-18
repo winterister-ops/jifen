@@ -114,4 +114,37 @@ test.describe('云同步合并逻辑', () => {
 
     expect(equal).toBe(true);
   });
+
+  test('mergeStates 保留 catalogUpdatedAt 较新的目录', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const base = {
+        score: 0,
+        history: [],
+        profile: { name: '宝贝', avatar: '👧' },
+        revokedEids: [],
+        meta: { lastClearAt: 0, profileUpdatedAt: 0, updatedAt: 0 },
+      };
+      const local = {
+        ...base,
+        catalog: {
+          tasks: [{ id: 'c_local', emoji: '⭐', name: '本地任务', pts: 3, enabled: true, preset: false }],
+          rewards: [],
+        },
+        meta: { ...base.meta, catalogUpdatedAt: 500, updatedAt: 500 },
+      };
+      const remote = {
+        ...base,
+        catalog: {
+          tasks: [{ id: 'c_remote', emoji: '🎯', name: '远端任务', pts: 8, enabled: true, preset: false }],
+          rewards: [],
+        },
+        meta: { ...base.meta, catalogUpdatedAt: 100, updatedAt: 100 },
+      };
+      return mergeStates(local, remote);
+    });
+
+    expect(result.catalog.tasks.some(t => t.name === '本地任务')).toBe(true);
+    expect(result.catalog.tasks.some(t => t.name === '远端任务')).toBe(false);
+    expect(result.meta.catalogUpdatedAt).toBe(500);
+  });
 });

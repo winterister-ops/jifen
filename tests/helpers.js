@@ -46,4 +46,46 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
   await expect(page.locator('#scoreNum')).toHaveText('0', { timeout: 5000 });
 }
 
-module.exports = { gotoLoggedInApp };
+async function openSettings(page) {
+  await page.locator('.header-left').click();
+  await expect(page.locator('#settingsView')).toBeVisible();
+}
+
+async function openTaskManage(page) {
+  await openSettings(page);
+  await page.locator('.menu-item').filter({ hasText: '任务管理' }).click();
+  await expect(page.locator('#taskManageView')).toBeVisible();
+}
+
+async function openRewardManage(page) {
+  await openSettings(page);
+  await page.locator('.menu-item').filter({ hasText: '奖励管理' }).click();
+  await expect(page.locator('#rewardManageView')).toBeVisible();
+}
+
+async function goHome(page) {
+  for (const sel of ['#taskManageView .back-btn', '#rewardManageView .back-btn', '#settingsView .back-btn']) {
+    const btn = page.locator(sel);
+    if (await btn.isVisible()) await btn.click();
+  }
+  await expect(page.locator('#mainView')).toBeVisible();
+}
+
+async function addCatalogItem(page, { type, name, pts }) {
+  const viewSel = type === 'rewards' ? '#rewardManageView' : '#taskManageView';
+  await page.locator(`${viewSel} .catalog-add-btn`).click();
+  await expect(page.locator('#catalogEditModal')).toHaveClass(/show/);
+  await page.locator('#catalogNameInput').fill(name);
+  await page.locator('#catalogPtsInput').fill(String(pts));
+  await page.locator('#catalogEditModal .modal-btn.confirm').click();
+  await expect(page.locator('#catalogEditModal')).not.toHaveClass(/show/);
+}
+
+module.exports = {
+  gotoLoggedInApp,
+  openSettings,
+  openTaskManage,
+  openRewardManage,
+  goHome,
+  addCatalogItem,
+};

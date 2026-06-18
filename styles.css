@@ -639,3 +639,48 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   color: #2a9d5c;
   line-height: 1.45;
 }
+
+/* 任务 / 奖励管理 */
+.catalog-hint {
+  font-size: .82rem; font-weight: 700; color: #b08a5e;
+  margin-bottom: 10px; padding: 0 4px;
+}
+.catalog-list {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;
+}
+.catalog-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--card); border-radius: 18px; box-shadow: var(--shadow);
+  padding: 6px 6px 6px 0; overflow: hidden;
+}
+.catalog-row.disabled { opacity: .55; }
+.catalog-main {
+  flex: 1; min-width: 0; border: none; background: transparent;
+  display: flex; align-items: center; gap: 10px; padding: 8px 4px 8px 12px;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
+.catalog-main:active { opacity: .85; }
+.catalog-emoji { font-size: 1.75rem; flex-shrink: 0; width: 2rem; text-align: center; }
+.catalog-info { flex: 1; min-width: 0; }
+.catalog-name {
+  display: block; font-size: .95rem; font-weight: 800; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.catalog-badge {
+  display: inline-block; margin-left: 6px; font-size: .65rem; font-weight: 800;
+  color: var(--purple); background: #fff0d6; padding: 2px 6px; border-radius: 6px;
+  vertical-align: middle;
+}
+.catalog-pts { display: block; font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 2px; }
+.catalog-edit-ic { font-size: 1.2rem; font-weight: 800; color: #d2a679; flex-shrink: 0; padding-right: 4px; }
+.catalog-toggle { flex-shrink: 0; margin-right: 8px; }
+.catalog-add-btn {
+  width: 100%; border: 2px dashed #e8c99a; background: #fff7ec;
+  color: var(--accent); border-radius: 18px; padding: 14px;
+  font-family: inherit; font-size: .95rem; font-weight: 800;
+  cursor: pointer; transition: transform .12s, background .15s;
+}
+.catalog-add-btn:active { transform: scale(.97); background: #fff0d6; }
+#catalogEmojiPicker { grid-template-columns: repeat(6, 1fr); max-height: 180px; overflow-y: auto; }
+#catalogEditModal .modal-btns { flex-wrap: wrap; margin-top: 4px; }
+#catalogEditModal .modal-btn.danger { flex: 1 1 100%; margin-bottom: 4px; }

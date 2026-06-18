@@ -35,11 +35,64 @@ function normalizeProfile(p) {
 }
 
 function defaultMeta() {
-  return { lastClearAt: 0, profileUpdatedAt: 0, updatedAt: 0 };
+  return { lastClearAt: 0, profileUpdatedAt: 0, catalogUpdatedAt: 0, updatedAt: 0 };
+}
+
+function defaultCatalog() {
+  return {
+    tasks: DEFAULT_TASKS.map(t => ({ ...t })),
+    rewards: DEFAULT_REWARDS.map(r => ({ ...r }))
+  };
+}
+
+function presetTaskIds() {
+  return new Set(DEFAULT_TASKS.map(t => t.id));
+}
+
+function presetRewardIds() {
+  return new Set(DEFAULT_REWARDS.map(r => r.id));
+}
+
+function normalizeCatalogItem(item, presetIds) {
+  if (!item || typeof item.id !== 'string' || !item.id) return null;
+  const name = typeof item.name === 'string' ? item.name.trim().slice(0, 20) : '';
+  if (!name) return null;
+  const pts = Math.max(1, Math.min(999, Math.round(Number(item.pts) || 1)));
+  return {
+    id: item.id,
+    emoji: typeof item.emoji === 'string' && item.emoji ? item.emoji : '⭐',
+    name,
+    pts,
+    enabled: item.enabled !== false,
+    preset: presetIds.has(item.id) || item.preset === true
+  };
+}
+
+function normalizeCatalogList(rawList, defaults, presetIds) {
+  const byId = new Map();
+  (Array.isArray(rawList) ? rawList : []).forEach(item => {
+    const n = normalizeCatalogItem(item, presetIds);
+    if (n) byId.set(n.id, n);
+  });
+  const list = defaults.map(def => {
+    const existing = byId.get(def.id);
+    return existing ? { ...existing, preset: true } : { ...def };
+  });
+  byId.forEach((item, id) => {
+    if (!presetIds.has(id)) list.push(item);
+  });
+  return list;
+}
+
+function normalizeCatalog(raw) {
+  return {
+    tasks: normalizeCatalogList(raw?.tasks, DEFAULT_TASKS, presetTaskIds()),
+    rewards: normalizeCatalogList(raw?.rewards, DEFAULT_REWARDS, presetRewardIds())
+  };
 }
 
 function defaultState() {
-  return { score: 0, history: [], profile: defaultProfile(), revokedEids: [], meta: defaultMeta() };
+  return { score: 0, history: [], profile: defaultProfile(), revokedEids: [], catalog: defaultCatalog(), meta: defaultMeta() };
 }
 
 function newEid() {
@@ -53,6 +106,10 @@ function historyEid(h, index) {
 
 function touchMeta() {
   state.meta = { ...defaultMeta(), ...state.meta, updatedAt: Date.now() };
+}
+
+function touchCatalogMeta() {
+  state.meta = { ...defaultMeta(), ...state.meta, catalogUpdatedAt: Date.now(), updatedAt: Date.now() };
 }
 
 // 旧记录可能没有 ts，尽量从 "M月D日 HH:MM" 解析（按当前年份）
@@ -88,13 +145,14 @@ function normalizeState(raw, forMerge) {
   const meta = { ...defaultMeta(), ...(raw.meta || {}) };
   const revokedEids = Array.isArray(raw.revokedEids) ? raw.revokedEids : [];
   const profile = normalizeProfile(raw.profile);
+  const catalog = normalizeCatalog(raw.catalog);
   if (forMerge) {
-    return { score: raw.score, history, profile, revokedEids, meta };
+    return { score: raw.score, history, profile, revokedEids, catalog, meta };
   }
   const filtered = applyClearAndRevoked(history, meta.lastClearAt, new Set(revokedEids))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
   const score = filtered.reduce((s, h) => s + h.delta, 0);
-  return { score, history: filtered, profile, revokedEids, meta };
+  return { score, history: filtered, profile, revokedEids, catalog, meta };
 }
 
 function mergeStates(localRaw, remoteRaw) {
@@ -110,14 +168,18 @@ function mergeStates(localRaw, remoteRaw) {
   const score = history.reduce((s, h) => s + h.delta, 0);
   const profile = local.meta.profileUpdatedAt >= remote.meta.profileUpdatedAt
     ? local.profile : remote.profile;
+  const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
+    ? normalizeCatalog(local.catalog) : normalizeCatalog(remote.catalog);
   return {
     score,
     history,
     profile,
     revokedEids,
+    catalog,
     meta: {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
+      catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
       updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt)
     }
   };
@@ -129,9 +191,11 @@ function stateContentFingerprint(s) {
     score: n.score,
     history: n.history.map(h => h.eid + ':' + h.delta),
     profile: n.profile,
+    catalog: n.catalog,
     revoked: [...n.revokedEids].sort(),
     lastClearAt: n.meta.lastClearAt,
-    profileUpdatedAt: n.meta.profileUpdatedAt
+    profileUpdatedAt: n.meta.profileUpdatedAt,
+    catalogUpdatedAt: n.meta.catalogUpdatedAt
   });
 }
 
@@ -145,6 +209,7 @@ function stateFingerprint(s) {
     score: n.score,
     history: n.history.map(h => h.eid + ':' + h.delta),
     profile: n.profile,
+    catalog: n.catalog,
     revoked: [...n.revokedEids].sort(),
     meta: n.meta
   });

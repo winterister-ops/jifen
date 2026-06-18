@@ -9,7 +9,13 @@ let currentView = 'home';
 let currentTab = 'earn';
 let pendingSpendItem = null;
 
-const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView' };
+const VIEW_IDS = {
+  home: 'mainView',
+  history: 'historyView',
+  settings: 'settingsView',
+  taskManage: 'taskManageView',
+  rewardManage: 'rewardManageView'
+};
 
 function isIOS() {
   if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) return true;
@@ -105,6 +111,14 @@ function switchView(view) {
     renderSettings();
     renderAppMeta();
   }
+  if (view === 'taskManage') {
+    catalogManageType = 'tasks';
+    renderCatalogManage();
+  }
+  if (view === 'rewardManage') {
+    catalogManageType = 'rewards';
+    renderCatalogManage();
+  }
   window.scrollTo(0, 0);
 }
 
@@ -194,7 +208,7 @@ function render() {
   renderSortBar();
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  const list = sortItems(currentTab === 'earn' ? TASKS : REWARDS);
+  const list = sortItems(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
   list.forEach(it => {
     const div = document.createElement('div');
     if (currentTab === 'earn') {
