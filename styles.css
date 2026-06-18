@@ -357,9 +357,10 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
   opacity: 0; visibility: hidden;
+  pointer-events: none;
   transition: opacity .2s, visibility .2s;
 }
-.modal-overlay.show { opacity: 1; visibility: visible; }
+.modal-overlay.show { opacity: 1; visibility: visible; pointer-events: auto; }
 #clearModal { z-index: 110; }
 .modal-box {
   background: #fff; border-radius: 28px; padding: 28px 24px;
@@ -443,40 +444,6 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 }
 .profile-edit:active { transform: scale(.96); }
 
-.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.stat-box {
-  background: var(--card); border-radius: 20px; padding: 16px 8px;
-  text-align: center; box-shadow: var(--shadow);
-}
-.stat-num { font-family: var(--font-num); font-size: 1.4rem; font-weight: 700; }
-.stat-num.plus { color: var(--green); }
-.stat-num.minus { color: var(--accent); }
-.stat-lb { font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 4px; }
-
-.task-stats {
-  background: var(--card); border-radius: 22px; box-shadow: var(--shadow);
-  padding: 8px; margin-bottom: 8px;
-}
-.task-stat-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 12px; border-radius: 14px;
-}
-.task-stat-list .task-stat-row:nth-child(odd) { background: #fff5e6; }
-.task-stat-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.task-stat-emoji { font-size: 1.4rem; flex-shrink: 0; }
-.task-stat-name {
-  font-size: .95rem; font-weight: 700;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.task-stat-count {
-  font-family: var(--font-num);
-  flex-shrink: 0; background: var(--purple); color: #fff;
-  font-size: .78rem; font-weight: 600; min-width: 28px; height: 28px;
-  border-radius: 999px; display: flex; align-items: center; justify-content: center;
-  padding: 0 8px;
-}
-.task-stats .empty { padding: 20px; }
-
 .menu-list {
   display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px;
 }
@@ -532,12 +499,16 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 
 /* 启动加载占位 */
 .splash-view {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  background: var(--bg1);
 }
+.splash-view[hidden] { display: none !important; }
 .splash-logo {
   width: 72px;
   height: 72px;

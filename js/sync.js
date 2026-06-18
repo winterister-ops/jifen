@@ -9,6 +9,16 @@ let cloudUnsubscribe = null;
 let applyingRemote = false;
 let firebaseReady = false;
 let cloudPushPending = false;
+let renderTimer = null;
+
+function scheduleRender() {
+  if (typeof render !== 'function') return;
+  if (renderTimer) return;
+  renderTimer = requestAnimationFrame(() => {
+    renderTimer = null;
+    render();
+  });
+}
 
 function defaultProfile() {
   return { name: DEFAULT_CHILD_NAME, avatar: DEFAULT_CHILD_AVATAR };
@@ -108,9 +118,25 @@ function mergeStates(localRaw, remoteRaw) {
     meta: {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
-      updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt, Date.now())
+      updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt)
     }
   };
+}
+
+function stateContentFingerprint(s) {
+  const n = normalizeState(s);
+  return JSON.stringify({
+    score: n.score,
+    history: n.history.map(h => h.eid + ':' + h.delta),
+    profile: n.profile,
+    revoked: [...n.revokedEids].sort(),
+    lastClearAt: n.meta.lastClearAt,
+    profileUpdatedAt: n.meta.profileUpdatedAt
+  });
+}
+
+function stateContentEqual(a, b) {
+  return stateContentFingerprint(a) === stateContentFingerprint(b);
 }
 
 function stateFingerprint(s) {
@@ -156,11 +182,11 @@ function pushToCloud() {
     }
     if (committed && snapshot) {
       const merged = normalizeState(snapshot.val());
-      if (!stateEqual(state, merged)) {
+      if (!stateContentEqual(state, merged)) {
         applyingRemote = true;
         state = merged;
         saveLocal();
-        render();
+        scheduleRender();
         applyingRemote = false;
       }
     }
@@ -189,6 +215,10 @@ function envStatusText() {
 }
 
 function tearDownCloud() {
+  if (renderTimer) {
+    cancelAnimationFrame(renderTimer);
+    renderTimer = null;
+  }
   if (cloudRef && cloudUnsubscribe) {
     try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
   }
@@ -223,15 +253,14 @@ function initCloud() {
       const val = snap.val();
       if (val && typeof val.score === 'number') {
         const merged = mergeStates(state, val);
-        if (!stateEqual(state, merged)) {
+        if (!stateContentEqual(state, merged)) {
           applyingRemote = true;
           state = merged;
           saveLocal();
-          render();
+          scheduleRender();
           applyingRemote = false;
-          const remoteNorm = normalizeState(val, true);
-          if (!stateEqual(merged, remoteNorm)) {
-            cloudRef.set(merged).catch(err => console.warn('云同步合并回写失败', err));
+          if (!stateContentEqual(merged, val)) {
+            cloudRef.set(normalizeState(merged)).catch(err => console.warn('云同步合并回写失败', err));
           }
         }
       } else if (first) {

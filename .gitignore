@@ -23,5 +23,9 @@ serviceAccountKey.json
 # 编辑器 / IDE 本地配置
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
+
+# 本地测试依赖（puppeteer 等，非应用运行时依赖）
+package-lock.json

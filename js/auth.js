@@ -16,7 +16,19 @@ let passwordResetCodeFromUrl = null;
 
 function hideSplash() {
   const el = document.getElementById('splashView');
-  if (el) el.style.display = 'none';
+  if (!el) return;
+  el.style.display = 'none';
+  el.hidden = true;
+}
+
+function ensureAppVisible() {
+  hideSplash();
+  const authView = document.getElementById('authView');
+  const appRoot = document.getElementById('appRoot');
+  if (currentUser) {
+    if (authView) authView.style.display = 'none';
+    if (appRoot) appRoot.style.display = '';
+  }
 }
 
 function hideAllAuthPanels() {
@@ -102,11 +114,7 @@ function clearResetPasswordFields() {
 }
 
 function hideAuthView() {
-  hideSplash();
-  const authView = document.getElementById('authView');
-  const appRoot = document.getElementById('appRoot');
-  if (authView) authView.style.display = 'none';
-  if (appRoot) appRoot.style.display = '';
+  ensureAppVisible();
 }
 
 function clearAuthMessages() {
@@ -348,3 +356,8 @@ function initFirebase() {
 }
 
 initFirebase();
+
+// Chrome 崩溃恢复后，可能留下启动屏遮挡已登录界面，导致无法点击
+window.addEventListener('pageshow', () => {
+  if (currentUser) ensureAppVisible();
+});

@@ -10,7 +10,7 @@ let currentTab = 'earn';
 let pendingSpendItem = null;
 let clearConfirmStep = 1;
 
-const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView', stats: 'statsView' };
+const VIEW_IDS = { home: 'mainView', history: 'historyView', settings: 'settingsView' };
 
 function isIOS() {
   if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) return true;
@@ -92,7 +92,8 @@ function hideProfileModal() {
 function switchView(view) {
   currentView = view;
   Object.keys(VIEW_IDS).forEach(v => {
-    document.getElementById(VIEW_IDS[v]).style.display = v === view ? '' : 'none';
+    const el = document.getElementById(VIEW_IDS[v]);
+    if (el) el.style.display = v === view ? '' : 'none';
   });
   if (view === 'history') {
     selectedDateKey = ymd(new Date());
@@ -103,26 +104,16 @@ function switchView(view) {
     renderSettings();
     renderAppMeta();
   }
-  if (view === 'stats') renderTaskStats();
   window.scrollTo(0, 0);
 }
 
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
-  document.getElementById('setScore').textContent = state.score;
-  let earned = 0, spent = 0;
-  state.history.forEach(h => { if (h.delta > 0) earned += h.delta; else spent += -h.delta; });
-  document.getElementById('setEarned').textContent = '+' + earned;
-  document.getElementById('setSpent').textContent = '-' + spent;
   const totalCount = state.history.length;
   const historyDescEl = document.getElementById('historyEntryDesc');
   if (historyDescEl) {
     historyDescEl.textContent = totalCount ? `共 ${totalCount} 条记录` : '按日期查看记录';
-  }
-  const descEl = document.getElementById('statsEntryDesc');
-  if (descEl) {
-    descEl.textContent = totalCount ? `共 ${totalCount} 条完成记录` : '查看完成记录';
   }
   updateSettingsSection();
 }
@@ -141,43 +132,6 @@ function toggleVibration() {
   vibrationEnabled = !!vibToggle?.checked;
   if (VIBRATION_KEY) localStorage.setItem(VIBRATION_KEY, vibrationEnabled ? '1' : '0');
   if (vibrationEnabled) vibrateFeedback('earn');
-}
-
-function countOf(id) {
-  return state.history.filter(h => h.id === id).length;
-}
-
-function renderTaskStats() {
-  const el = document.getElementById('taskStats');
-  if (!el) return;
-  const earnStats = TASKS.map(t => ({ ...t, count: countOf(t.id) })).filter(t => t.count > 0);
-  const rewardStats = REWARDS.map(t => ({ ...t, count: countOf(t.id) })).filter(t => t.count > 0);
-  if (!earnStats.length && !rewardStats.length) {
-    el.innerHTML = '<div class="empty">还没有完成记录</div>';
-    return;
-  }
-  let html = '';
-  if (earnStats.length) {
-    html += '<div class="date-head">完成任务</div><div class="task-stat-list">';
-    earnStats.forEach(t => {
-      html += `<div class="task-stat-row">
-        <div class="task-stat-left"><span class="task-stat-emoji">${t.emoji}</span><span class="task-stat-name">${t.name}</span></div>
-        <span class="task-stat-count">${t.count}次</span>
-      </div>`;
-    });
-    html += '</div>';
-  }
-  if (rewardStats.length) {
-    html += '<div class="date-head">兑换奖励</div><div class="task-stat-list">';
-    rewardStats.forEach(t => {
-      html += `<div class="task-stat-row">
-        <div class="task-stat-left"><span class="task-stat-emoji">${t.emoji}</span><span class="task-stat-name">${t.name}</span></div>
-        <span class="task-stat-count">${t.count}次</span>
-      </div>`;
-    });
-    html += '</div>';
-  }
-  el.innerHTML = html;
 }
 
 function saveProfile() {
@@ -262,7 +216,6 @@ function render() {
     grid.appendChild(div);
   });
   renderSettings();
-  if (currentView === 'stats') renderTaskStats();
   renderHistory();
 }
 

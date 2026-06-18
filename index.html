@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>星星银行</title>
+<link rel="icon" href="icons/star.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.42">
+<link rel="stylesheet" href="styles.css?v=0.0.44">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -128,12 +129,6 @@
     <button class="profile-edit" onclick="openProfileModal()"><img class="ui-ic" src="icons/edit.svg" alt="">修改头像和昵称</button>
   </div>
 
-  <div class="stat-row">
-    <div class="stat-box"><div class="stat-num" id="setScore">0</div><div class="stat-lb">剩余星星</div></div>
-    <div class="stat-box"><div class="stat-num plus" id="setEarned">0</div><div class="stat-lb">累计获得</div></div>
-    <div class="stat-box"><div class="stat-num minus" id="setSpent">0</div><div class="stat-lb">累计消耗</div></div>
-  </div>
-
   <div id="settingsSection">
     <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
     <div class="menu-list">
@@ -158,14 +153,6 @@
       <span class="menu-tx">
         <span class="menu-title">记录</span>
         <span class="menu-desc" id="historyEntryDesc">按日期查看记录</span>
-      </span>
-      <span class="menu-arrow">›</span>
-    </button>
-    <button type="button" class="menu-item" onclick="switchView('stats')">
-      <span class="menu-ic"><img class="ui-ic" src="icons/transaction-order.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">统计</span>
-        <span class="menu-desc" id="statsEntryDesc">查看完成记录</span>
       </span>
       <span class="menu-arrow">›</span>
     </button>
@@ -203,14 +190,6 @@
   <footer>陪宝贝一起成长</footer>
  </div>
 
- <div id="statsView" style="display:none">
-  <div class="subpage-head">
-    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
-    <div class="subpage-title">统计</div>
-  </div>
-  <div class="task-stats" id="taskStats"></div>
-  <footer>陪宝贝一起成长</footer>
- </div>
 </div>
 </div>
 
@@ -290,9 +269,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="data.js"></script>
-<script src="js/sync.js?v=0.0.42"></script>
-<script src="js/history.js?v=0.0.42"></script>
-<script src="js/ui.js?v=0.0.42"></script>
-<script src="js/auth.js?v=0.0.42"></script>
+<script src="js/sync.js?v=0.0.44"></script>
+<script src="js/history.js?v=0.0.44"></script>
+<script src="js/ui.js?v=0.0.44"></script>
+<script src="js/auth.js?v=0.0.44"></script>
 </body>
 </html>
