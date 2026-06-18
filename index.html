@@ -136,6 +136,17 @@
     <button class="profile-edit" onclick="openProfileModal()"><img class="ui-ic" src="icons/edit.svg" alt="">修改头像和昵称</button>
   </div>
 
+  <div class="menu-list">
+    <button type="button" class="menu-item" onclick="switchView('history')">
+      <span class="menu-ic"><img class="ui-ic" src="icons/calendar.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">记录</span>
+        <span class="menu-desc" id="historyEntryDesc">查看与编辑积分记录</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+
   <div id="settingsSection">
     <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
     <div class="menu-list">
@@ -150,39 +161,23 @@
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <button type="button" class="menu-item" onclick="openPasswordModal()">
+        <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
+        <span class="menu-tx">
+          <span class="menu-title">修改密码</span>
+          <span class="menu-desc">更改当前账号的登录密码</span>
+        </span>
+        <span class="menu-arrow">›</span>
+      </button>
+      <button type="button" class="menu-item" onclick="logoutApp()">
+        <span class="menu-ic"><img class="ui-ic" src="icons/setting-two.svg" alt=""></span>
+        <span class="menu-tx">
+          <span class="menu-title">退出登录</span>
+          <span class="menu-desc">退出当前账号，返回登录界面</span>
+        </span>
+        <span class="menu-arrow">›</span>
+      </button>
     </div>
-  </div>
-
-  <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">功能</div>
-  <div class="menu-list">
-    <button type="button" class="menu-item" onclick="switchView('history')">
-      <span class="menu-ic"><img class="ui-ic" src="icons/calendar.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">记录</span>
-        <span class="menu-desc" id="historyEntryDesc">查看与编辑积分记录</span>
-      </span>
-      <span class="menu-arrow">›</span>
-    </button>
-  </div>
-
-  <div class="section-title"><img class="ui-ic" src="icons/lock.svg" alt="">账户</div>
-  <div class="menu-list">
-    <button type="button" class="menu-item" onclick="openPasswordModal()">
-      <span class="menu-ic"><img class="ui-ic" src="icons/setting-two.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">修改密码</span>
-        <span class="menu-desc">更改当前账号的登录密码</span>
-      </span>
-      <span class="menu-arrow">›</span>
-    </button>
-    <button type="button" class="menu-item" onclick="logoutApp()">
-      <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">退出登录</span>
-        <span class="menu-desc">退出当前账号，返回登录界面</span>
-      </span>
-      <span class="menu-arrow">›</span>
-    </button>
   </div>
 
   <div class="env-footer">

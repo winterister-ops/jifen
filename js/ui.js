@@ -120,10 +120,8 @@ function renderSettings() {
 }
 
 function updateSettingsSection() {
-  const section = document.getElementById('settingsSection');
   const vibSetting = document.getElementById('vibrationSetting');
   if (vibSetting) vibSetting.style.display = vibrationSupported ? '' : 'none';
-  if (section) section.style.display = vibrationSupported ? '' : 'none';
   const vibToggle = document.getElementById('vibrationToggle');
   if (vibToggle) vibToggle.checked = vibrationEnabled;
 }
