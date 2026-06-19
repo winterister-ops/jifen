@@ -85,7 +85,7 @@ test.describe('任务与奖励管理', () => {
     await page.locator('.earn-item').filter({ hasText: '配合摄影' }).click();
     await expect(page.locator('#scoreNum')).toHaveText('50', { timeout: 5000 });
 
-    await page.locator('#tabSpend').click();
+    await page.locator('.bottom-nav-item[data-nav="rewards"]').click();
     await page.locator('.spend-item').filter({ hasText: CUSTOM_REWARD }).click();
     await expect(page.locator('#spendModal')).toHaveClass(/show/);
     await page.locator('#spendModal .modal-btn.confirm').click();

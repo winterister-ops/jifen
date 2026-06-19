@@ -47,7 +47,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
 }
 
 async function openSettings(page) {
-  await page.locator('.header-left').click();
+  await page.locator('.bottom-nav-item[data-nav="settings"]').click();
   await expect(page.locator('#settingsView')).toBeVisible();
 }
 
@@ -64,10 +64,11 @@ async function openRewardManage(page) {
 }
 
 async function goHome(page) {
-  for (const sel of ['#taskManageView .back-btn', '#rewardManageView .back-btn', '#settingsView .back-btn']) {
+  for (const sel of ['#taskManageView .back-btn', '#rewardManageView .back-btn']) {
     const btn = page.locator(sel);
     if (await btn.isVisible()) await btn.click();
   }
+  await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
   await expect(page.locator('#mainView')).toBeVisible();
 }
 

@@ -3,9 +3,11 @@
 let profilePickAvatar = DEFAULT_CHILD_AVATAR;
 let lastDisplayedScore = null;
 let scoreAnimFrame = null;
-let currentView = 'home';
+let currentView = 'tasks';
 let currentTab = 'earn';
 let pendingSpendItem = null;
+
+const PRIMARY_VIEWS = ['tasks', 'rewards', 'history', 'settings'];
 
 const VIEW_IDS = {
   home: 'mainView',
@@ -14,6 +16,20 @@ const VIEW_IDS = {
   taskManage: 'taskManageView',
   rewardManage: 'rewardManageView'
 };
+
+function updateBottomNav(view) {
+  const nav = document.getElementById('bottomNav');
+  if (!nav) return;
+  const navKey = view === 'tasks' || view === 'rewards' ? view : view;
+  const primary = PRIMARY_VIEWS.includes(navKey);
+  const hideForEdit = view === 'history' && typeof historyEditMode !== 'undefined' && historyEditMode;
+  const show = primary && !hideForEdit;
+  nav.classList.toggle('is-hidden', !show);
+  document.body.classList.toggle('has-bottom-nav', show);
+  nav.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.nav === navKey);
+  });
+}
 
 function isIOS() {
   if (/iPad|iPhone|iPod/i.test(navigator.userAgent)) return true;
@@ -48,7 +64,7 @@ function startApp() {
   lastDisplayedScore = null;
   initCloud();
   renderAppMeta();
-  switchView('home');
+  switchView('tasks');
   updateSettingsSection();
   render();
 }
@@ -65,6 +81,8 @@ function renderHeader() {
   document.getElementById('welcomeName').textContent = state.profile.name;
   document.getElementById('welcomeSub').textContent = greetingText();
   document.getElementById('avatar').textContent = state.profile.avatar;
+  const bottomAvatar = document.getElementById('bottomNavAvatar');
+  if (bottomAvatar) bottomAvatar.textContent = state.profile.avatar;
 }
 
 function renderEmojiPicker() {
@@ -94,6 +112,19 @@ function hideProfileModal() {
 
 function switchView(view) {
   if (currentView === 'history' && view !== 'history') exitHistoryEdit();
+
+  if (view === 'tasks' || view === 'rewards') {
+    currentView = view;
+    Object.keys(VIEW_IDS).forEach(v => {
+      const el = document.getElementById(VIEW_IDS[v]);
+      if (el) el.style.display = v === 'home' ? '' : 'none';
+    });
+    switchTab(view === 'tasks' ? 'earn' : 'spend');
+    updateBottomNav(view);
+    window.scrollTo(0, 0);
+    return;
+  }
+
   currentView = view;
   Object.keys(VIEW_IDS).forEach(v => {
     const el = document.getElementById(VIEW_IDS[v]);
@@ -117,17 +148,13 @@ function switchView(view) {
     catalogManageType = 'rewards';
     renderCatalogManage();
   }
+  updateBottomNav(view);
   window.scrollTo(0, 0);
 }
 
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
-  const totalCount = state.history.length;
-  const historyDescEl = document.getElementById('historyEntryDesc');
-  if (historyDescEl) {
-    historyDescEl.textContent = totalCount ? `共 ${totalCount} 条记录` : '查看与编辑积分记录';
-  }
   updateSettingsSection();
 }
 
@@ -162,8 +189,6 @@ function saveProfile() {
 
 function switchTab(t) {
   currentTab = t;
-  document.getElementById('tabEarn').classList.toggle('active', t === 'earn');
-  document.getElementById('tabSpend').classList.toggle('active', t === 'spend');
   render();
 }
 

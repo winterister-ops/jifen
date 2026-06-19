@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>星星银行</title>
 <link rel="icon" href="icons/star.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -62,26 +62,20 @@
  <div id="mainView">
   <div class="score-card">
     <div class="header-row">
-      <button type="button" class="header-left" onclick="switchView('settings')" title="我的">
+      <div class="header-left">
         <span class="avatar" id="avatar">👧</span>
         <span class="welcome">
           <span class="greet-row">
             <span class="greet-name" id="welcomeName">宝贝</span>
-            <span class="greet-arrow" aria-hidden="true">›</span>
           </span>
           <span class="sub" id="welcomeSub">早上好！</span>
         </span>
-      </button>
+      </div>
       <div class="star-badge" id="starBadge">
         <span class="star-icon"><img class="ui-ic" src="icons/star.svg" alt=""></span>
         <span class="score-num" id="scoreNum">0</span>
       </div>
     </div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab earn active" id="tabEarn" onclick="switchTab('earn')"><img class="ui-ic tab-ic" src="icons/muscle.svg" alt="">完成任务</button>
-    <button class="tab spend" id="tabSpend" onclick="switchTab('spend')"><img class="ui-ic tab-ic" src="icons/gift.svg" alt="">兑换奖励</button>
   </div>
 
   <div class="grid" id="grid"></div>
@@ -90,10 +84,6 @@
  </div>
 
  <div id="historyView" style="display:none">
-  <div class="subpage-head">
-    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
-    <div class="subpage-title">记录</div>
-  </div>
   <div class="hp-datebar">
     <div class="hp-date-main">
       <div class="hp-date-title" id="hpDateTitle">今天</div>
@@ -119,10 +109,6 @@
  </div>
 
  <div id="settingsView" style="display:none">
-  <div class="subpage-head">
-    <button type="button" class="back-btn" onclick="switchView('home')">‹ 返回</button>
-    <div class="subpage-title">我的</div>
-  </div>
   <div class="profile-card">
     <div class="profile-avatar" id="setAvatar" onclick="openProfileModal()" title="点击修改头像">👧</div>
     <div class="profile-name" id="setName">宝贝</div>
@@ -130,14 +116,6 @@
   </div>
 
   <div class="menu-list">
-    <button type="button" class="menu-item" onclick="switchView('history')">
-      <span class="menu-ic"><img class="ui-ic" src="icons/calendar.svg" alt=""></span>
-      <span class="menu-tx">
-        <span class="menu-title">记录</span>
-        <span class="menu-desc" id="historyEntryDesc">查看与编辑积分记录</span>
-      </span>
-      <span class="menu-arrow">›</span>
-    </button>
     <button type="button" class="menu-item" onclick="openCatalogManage('tasks')">
       <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
       <span class="menu-tx">
@@ -248,6 +226,25 @@
  </div>
 
 </div>
+
+<nav id="bottomNav" class="bottom-nav" aria-label="主导航">
+  <button type="button" class="bottom-nav-item active" data-nav="tasks" onclick="switchView('tasks')">
+    <img class="ui-ic" src="icons/muscle.svg" alt="">
+    <span>任务</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-nav="rewards" onclick="switchView('rewards')">
+    <img class="ui-ic" src="icons/gift.svg" alt="">
+    <span>奖励</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-nav="history" onclick="switchView('history')">
+    <img class="ui-ic" src="icons/calendar.svg" alt="">
+    <span>记录</span>
+  </button>
+  <button type="button" class="bottom-nav-item" data-nav="settings" onclick="switchView('settings')">
+    <span class="bottom-nav-avatar" id="bottomNavAvatar">👧</span>
+    <span>我的</span>
+  </button>
+</nav>
 </div>
 
 <div class="modal-overlay" id="catalogEditModal" onclick="if(event.target===this) hideCatalogEditModal()">

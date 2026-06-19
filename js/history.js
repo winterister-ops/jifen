@@ -116,6 +116,7 @@ function updateHistoryEditChrome() {
   if (cancelBtn) cancelBtn.style.display = historyEditMode ? '' : 'none';
   if (editBar) editBar.style.display = historyEditMode ? '' : 'none';
   if (historyView) historyView.classList.toggle('history-editing', historyEditMode);
+  if (typeof updateBottomNav === 'function') updateBottomNav('history');
 
   const filterLocked = historyEditMode;
   [allBtn, calBtn, todayBtn].forEach(el => {
