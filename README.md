@@ -1,6 +1,6 @@
 # 星星银行
 
-一款面向儿童的积分激励小应用。孩子完成日常任务可以赚取星星积分，攒够积分后可以兑换奖励。界面采用暖色卡通风格，操作简单，适合家长和孩子一起使用。
+ 一款面向儿童的积分激励小应用。孩子完成日常任务可以赚取星星积分，攒够积分后可以兑换奖励。界面采用暖色卡通风格，操作简单，适合家长和孩子一起使用。
 
 ## 功能概览
 
@@ -44,10 +44,12 @@
 
 页面通过 [Google Fonts](https://fonts.google.com/) CDN 加载两套开源字体，均可免费商用：
 
-| 字体 | 用途 | 授权 |
-|------|------|------|
+
+| 字体                                                                  | 用途                | 授权                                                        |
+| ------------------------------------------------------------------- | ----------------- | --------------------------------------------------------- |
 | [Noto Sans SC](https://fonts.google.com/noto/specimen/Noto+Sans+SC) | 中文正文、按钮、标签等 UI 文字 | [SIL Open Font License 1.1](https://openfontlicense.org/) |
-| [Fredoka](https://fonts.google.com/specimen/Fredoka) | 积分、角标、统计等数字展示 | [SIL Open Font License 1.1](https://openfontlicense.org/) |
+| [Fredoka](https://fonts.google.com/specimen/Fredoka)                | 积分、角标、统计等数字展示     | [SIL Open Font License 1.1](https://openfontlicense.org/) |
+
 
 ## 图标许可
 
