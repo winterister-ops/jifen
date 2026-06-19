@@ -22,7 +22,7 @@ test.describe('任务与奖励管理', () => {
   });
 
   test('首页按分值从低到高排列', async ({ page }) => {
-    const pts = await page.locator('.earn-item .pts').allTextContents();
+    const pts = await page.locator('.earn-item .catalog-pts').allTextContents();
     const values = pts.map(t => parseInt(t.replace('+', ''), 10));
     for (let i = 1; i < values.length; i++) {
       expect(values[i]).toBeGreaterThanOrEqual(values[i - 1]);

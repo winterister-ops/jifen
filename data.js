@@ -1,5 +1,5 @@
 // ====== 应用版本（单一来源 package.json，发版：npm version patch） ======
-const APP_VERSION = '0.0.49';
+const APP_VERSION = '0.0.50';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';

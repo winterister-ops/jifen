@@ -193,24 +193,23 @@ function switchTab(t) {
 }
 
 function buildCatalogItemEl(it, mode) {
-  const div = document.createElement('div');
-  if (mode === 'earn') {
-    div.className = 'item earn-item';
-    div.innerHTML = `
-      <span class="pts">+${it.pts}</span>
-      <span class="emoji">${it.emoji}</span>
-      <span class="name">${it.name}</span>`;
-    div.onclick = () => earn(it);
-  } else {
-    const locked = state.score < it.pts;
-    div.className = 'item spend-item' + (locked ? ' locked' : '');
-    div.innerHTML = `
-      <span class="pts">-${it.pts}</span>
-      <span class="emoji">${it.emoji}</span>
-      <span class="name">${it.name}</span>`;
-    div.onclick = () => spend(it, null, locked);
-  }
-  return div;
+  const row = document.createElement('div');
+  const ptsClass = mode === 'earn' ? 'plus' : 'minus';
+  const ptsLabel = mode === 'earn' ? `+${it.pts}` : `-${it.pts}`;
+  row.className = 'catalog-row ' + (mode === 'earn' ? 'earn-item' : 'spend-item');
+  if (mode === 'spend' && state.score < it.pts) row.classList.add('locked', 'disabled');
+  row.innerHTML = `
+    <button type="button" class="catalog-main">
+      <span class="catalog-emoji">${it.emoji}</span>
+      <span class="catalog-name">${it.name}</span>
+      <span class="catalog-pts ${ptsClass}">${ptsLabel}</span>
+    </button>`;
+  const locked = mode === 'spend' && state.score < it.pts;
+  row.querySelector('.catalog-main').onclick = () => {
+    if (mode === 'earn') earn(it);
+    else spend(it, null, locked);
+  };
+  return row;
 }
 
 function render() {
@@ -220,7 +219,7 @@ function render() {
     grid = document.getElementById('catalogSections');
     if (grid) {
       grid.id = 'grid';
-      grid.className = 'grid';
+      grid.className = 'catalog-list';
     }
   }
   if (!grid) return;

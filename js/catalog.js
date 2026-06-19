@@ -49,10 +49,8 @@ function renderCatalogManage() {
     row.innerHTML = `
       <button type="button" class="catalog-main" data-id="${it.id}">
         <span class="catalog-emoji">${it.emoji}</span>
-        <span class="catalog-info">
-          <span class="catalog-name">${it.name}${it.preset ? '<span class="catalog-badge">预设</span>' : ''}</span>
-          <span class="catalog-pts">${type === 'rewards' ? '-' : '+'}${it.pts} 星星</span>
-        </span>
+        <span class="catalog-name">${it.name}${it.preset ? '<span class="catalog-badge">预设</span>' : ''}</span>
+        <span class="catalog-pts ${type === 'rewards' ? 'minus' : 'plus'}">${type === 'rewards' ? '-' : '+'}${it.pts}</span>
         <span class="catalog-edit-ic">›</span>
       </button>
       <label class="toggle-switch catalog-toggle" onclick="event.stopPropagation()">

@@ -342,33 +342,29 @@ function renderHistory() {
     const row = document.createElement('div');
     const plus = log.delta > 0;
     const selected = selectedEids.has(eid);
-    row.className = 'log' + (historyEditMode ? ' edit' : '') + (selected ? ' sel' : '');
+    row.className = 'catalog-row' + (historyEditMode ? ' catalog-row-edit' : '') + (selected ? ' sel' : '');
     row.dataset.eid = eid;
+    const deltaLabel = `${plus ? '+' : ''}${log.delta}`;
+    const deltaClass = plus ? 'plus' : 'minus';
 
     if (historyEditMode) {
       row.innerHTML = `
-        <label class="log-check" onclick="event.stopPropagation()">
+        <label class="catalog-check" onclick="event.stopPropagation()">
           <input type="checkbox"${selected ? ' checked' : ''} onchange="toggleHistorySelection('${eid}')">
         </label>
-        <div class="left">
-          <span class="le">${log.emoji}</span>
-          <div>
-            <div>${log.name}</div>
-            <div class="time">${log.time}</div>
-          </div>
-        </div>
-        <div class="delta ${plus ? 'plus' : 'minus'}">${plus ? '+' : ''}${log.delta}</div>`;
-      row.onclick = () => toggleHistorySelection(eid);
+        <button type="button" class="catalog-main">
+          <span class="catalog-emoji">${log.emoji}</span>
+          <span class="catalog-name">${log.name}</span>
+          <span class="catalog-pts ${deltaClass}">${deltaLabel}</span>
+        </button>`;
+      row.querySelector('.catalog-main').onclick = () => toggleHistorySelection(eid);
     } else {
       row.innerHTML = `
-        <div class="left">
-          <span class="le">${log.emoji}</span>
-          <div>
-            <div>${log.name}</div>
-            <div class="time">${log.time}</div>
-          </div>
-        </div>
-        <div class="delta ${plus ? 'plus' : 'minus'}">${plus ? '+' : ''}${log.delta}</div>`;
+        <div class="catalog-main catalog-main-static">
+          <span class="catalog-emoji">${log.emoji}</span>
+          <span class="catalog-name">${log.name}</span>
+          <span class="catalog-pts ${deltaClass}">${deltaLabel}</span>
+        </div>`;
     }
     h.appendChild(row);
   });
