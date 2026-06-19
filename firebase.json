@@ -13,7 +13,8 @@
       "tests/**",
       "package.json",
       "package-lock.json",
-      "playwright.config.js"
+      "playwright.config.js",
+      "scripts/**"
     ],
     "rewrites": [
       {
