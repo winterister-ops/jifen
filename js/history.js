@@ -348,23 +348,53 @@ function renderHistory() {
     const deltaClass = plus ? 'plus' : 'minus';
 
     if (historyEditMode) {
-      row.innerHTML = `
-        <label class="catalog-check" onclick="event.stopPropagation()">
-          <input type="checkbox"${selected ? ' checked' : ''} onchange="toggleHistorySelection('${eid}')">
-        </label>
-        <button type="button" class="catalog-main">
-          <span class="catalog-emoji">${log.emoji}</span>
-          <span class="catalog-name">${log.name}</span>
-          <span class="catalog-pts ${deltaClass}">${deltaLabel}</span>
-        </button>`;
-      row.querySelector('.catalog-main').onclick = () => toggleHistorySelection(eid);
+      const label = document.createElement('label');
+      label.className = 'catalog-check';
+      label.onclick = (e) => e.stopPropagation();
+
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = selected;
+      input.onchange = () => toggleHistorySelection(eid);
+      label.appendChild(input);
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'catalog-main';
+
+      const emojiSpan = document.createElement('span');
+      emojiSpan.className = 'catalog-emoji';
+      emojiSpan.textContent = log.emoji;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'catalog-name';
+      nameSpan.textContent = log.name;
+
+      const ptsSpan = document.createElement('span');
+      ptsSpan.className = 'catalog-pts ' + deltaClass;
+      ptsSpan.textContent = deltaLabel;
+
+      btn.append(emojiSpan, nameSpan, ptsSpan);
+      btn.onclick = () => toggleHistorySelection(eid);
+      row.append(label, btn);
     } else {
-      row.innerHTML = `
-        <div class="catalog-main catalog-main-static">
-          <span class="catalog-emoji">${log.emoji}</span>
-          <span class="catalog-name">${log.name}</span>
-          <span class="catalog-pts ${deltaClass}">${deltaLabel}</span>
-        </div>`;
+      const main = document.createElement('div');
+      main.className = 'catalog-main catalog-main-static';
+
+      const emojiSpan = document.createElement('span');
+      emojiSpan.className = 'catalog-emoji';
+      emojiSpan.textContent = log.emoji;
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'catalog-name';
+      nameSpan.textContent = log.name;
+
+      const ptsSpan = document.createElement('span');
+      ptsSpan.className = 'catalog-pts ' + deltaClass;
+      ptsSpan.textContent = deltaLabel;
+
+      main.append(emojiSpan, nameSpan, ptsSpan);
+      row.appendChild(main);
     }
     h.appendChild(row);
   });

@@ -198,17 +198,32 @@ function buildCatalogItemEl(it, mode) {
   const ptsLabel = mode === 'earn' ? `+${it.pts}` : `-${it.pts}`;
   row.className = 'catalog-row ' + (mode === 'earn' ? 'earn-item' : 'spend-item');
   if (mode === 'spend' && state.score < it.pts) row.classList.add('locked', 'disabled');
-  row.innerHTML = `
-    <button type="button" class="catalog-main">
-      <span class="catalog-emoji">${it.emoji}</span>
-      <span class="catalog-name">${it.name}</span>
-      <span class="catalog-pts ${ptsClass}">${ptsLabel}</span>
-    </button>`;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'catalog-main';
+
+  const emojiSpan = document.createElement('span');
+  emojiSpan.className = 'catalog-emoji';
+  emojiSpan.textContent = it.emoji;
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'catalog-name';
+  nameSpan.textContent = it.name;
+
+  const ptsSpan = document.createElement('span');
+  ptsSpan.className = 'catalog-pts ' + ptsClass;
+  ptsSpan.textContent = ptsLabel;
+
+  btn.append(emojiSpan, nameSpan, ptsSpan);
+
   const locked = mode === 'spend' && state.score < it.pts;
-  row.querySelector('.catalog-main').onclick = () => {
+  btn.onclick = () => {
     if (mode === 'earn') earn(it);
     else spend(it, null, locked);
   };
+
+  row.appendChild(btn);
   return row;
 }
 

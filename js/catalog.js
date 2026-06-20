@@ -46,18 +46,51 @@ function renderCatalogManage() {
   sortItemsByPtsAsc(items).forEach(it => {
     const row = document.createElement('div');
     row.className = 'catalog-row' + (it.enabled ? '' : ' disabled');
-    row.innerHTML = `
-      <button type="button" class="catalog-main" data-id="${it.id}">
-        <span class="catalog-emoji">${it.emoji}</span>
-        <span class="catalog-name">${it.name}${it.preset ? '<span class="catalog-badge">预设</span>' : ''}</span>
-        <span class="catalog-pts ${type === 'rewards' ? 'minus' : 'plus'}">${type === 'rewards' ? '-' : '+'}${it.pts}</span>
-        <span class="catalog-edit-ic">›</span>
-      </button>
-      <label class="toggle-switch catalog-toggle" onclick="event.stopPropagation()">
-        <input type="checkbox" ${it.enabled ? 'checked' : ''} onchange="toggleCatalogItem('${type}', '${it.id}', this.checked)">
-        <span class="toggle-slider"></span>
-      </label>`;
-    row.querySelector('.catalog-main').onclick = () => openCatalogEditModal(type, it.id);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'catalog-main';
+    btn.dataset.id = it.id;
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'catalog-emoji';
+    emojiSpan.textContent = it.emoji;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'catalog-name';
+    nameSpan.textContent = it.name;
+    if (it.preset) {
+      const badge = document.createElement('span');
+      badge.className = 'catalog-badge';
+      badge.textContent = '预设';
+      nameSpan.appendChild(badge);
+    }
+
+    const ptsSpan = document.createElement('span');
+    ptsSpan.className = 'catalog-pts ' + (type === 'rewards' ? 'minus' : 'plus');
+    ptsSpan.textContent = (type === 'rewards' ? '-' : '+') + it.pts;
+
+    const editIc = document.createElement('span');
+    editIc.className = 'catalog-edit-ic';
+    editIc.textContent = '›';
+
+    btn.append(emojiSpan, nameSpan, ptsSpan, editIc);
+    btn.onclick = () => openCatalogEditModal(type, it.id);
+
+    const label = document.createElement('label');
+    label.className = 'toggle-switch catalog-toggle';
+    label.onclick = (e) => e.stopPropagation();
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = it.enabled;
+    input.onchange = () => toggleCatalogItem(type, it.id, input.checked);
+
+    const slider = document.createElement('span');
+    slider.className = 'toggle-slider';
+
+    label.append(input, slider);
+    row.append(btn, label);
     listEl.appendChild(row);
   });
 }
