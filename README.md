@@ -61,3 +61,19 @@
 ## 图标许可
 
 `icons/` 目录下的 SVG 图标来自 ByteDance IconPark，遵循 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0)。
+
+## 项目结构
+
+```
+index.html          应用页面
+styles.css          样式
+data.js             预设任务/奖励与通用配置
+sw.js               离线缓存（Service Worker）
+js/                 页面逻辑（登录、任务、同步等）
+icons/              图标与 PWA 启动图
+tests/              自动化测试
+scripts/            发版脚本（版本号同步）
+firebase.json       托管与数据库规则配置
+```
+
+本地测试：`npm test`
