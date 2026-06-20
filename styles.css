@@ -23,6 +23,12 @@ body {
 body.has-bottom-nav {
   padding-bottom: calc(96px + env(safe-area-inset-bottom));
 }
+body.catalog-action-lock .bottom-nav {
+  pointer-events: none;
+}
+#mainView .catalog-list {
+  margin-bottom: 4px;
+}
 .wrap { max-width: 720px; margin: 0 auto; }
 
 /* 顶部栏 */
@@ -197,7 +203,12 @@ footer {
 }
 .empty { text-align: center; color: #bbb; padding: 24px; }
 
-#historyView.history-editing { padding-bottom: 88px; }
+#historyView.history-editing { padding-bottom: 12px; }
+body.history-editing.has-bottom-nav { padding-bottom: calc(168px + env(safe-area-inset-bottom)); }
+body.history-editing.has-bottom-nav .hp-editbar {
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 44;
+}
 .hp-editbar {
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: 0; width: 100%; max-width: 480px;
@@ -641,6 +652,13 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .catalog-row.sel {
   box-shadow: inset 0 0 0 2px #ffd4a8;
   background: #fff9f0;
+}
+.catalog-row.history-row.catalog-row-edit.sel {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: #fff3e0;
+}
+.catalog-row.history-row.catalog-row-edit.sel .catalog-main {
+  background: transparent;
 }
 .catalog-main {
   flex: 1; min-width: 0; width: 100%; min-height: 44px;

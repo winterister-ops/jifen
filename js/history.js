@@ -166,6 +166,7 @@ function exitHistoryEdit() {
   historyEditMode = false;
   selectedEids.clear();
   hideDeleteConfirmModal();
+  document.body.classList.remove('history-editing');
   updateHistoryEditChrome();
   renderHistory();
 }
@@ -177,9 +178,11 @@ function toggleHistorySelection(eid) {
   renderDateHeader();
   renderEditBar();
   document.querySelectorAll('.catalog-row[data-eid]').forEach(row => {
-    row.classList.toggle('sel', selectedEids.has(row.dataset.eid));
+    const on = selectedEids.has(row.dataset.eid);
+    row.classList.toggle('sel', on);
+    row.setAttribute('aria-selected', on ? 'true' : 'false');
     const cb = row.querySelector('.catalog-check input');
-    if (cb) cb.checked = selectedEids.has(row.dataset.eid);
+    if (cb) cb.checked = on;
   });
 }
 
@@ -211,7 +214,8 @@ function updateHistoryEditChrome() {
   if (cancelBtn) cancelBtn.style.display = historyEditMode ? '' : 'none';
   if (editBar) editBar.style.display = historyEditMode ? '' : 'none';
   if (historyView) historyView.classList.toggle('history-editing', historyEditMode);
-  if (typeof updateBottomNav === 'function') updateBottomNav('history');
+  document.body.classList.toggle('history-editing', historyEditMode && currentView === 'history');
+  if (typeof updateBottomNav === 'function') updateBottomNav(currentView === 'history' ? 'history' : currentView);
 
   const filterLocked = historyEditMode;
   [allBtn, calBtn, todayBtn].forEach(el => {
@@ -444,8 +448,11 @@ function renderHistory() {
     const row = document.createElement('div');
     const plus = log.delta > 0;
     const selected = selectedEids.has(eid);
-    row.className = 'catalog-row history-row' + (historyEditMode ? ' catalog-row-edit' : '') + (selected ? ' sel' : '');
+    row.className = 'catalog-row history-row'
+      + (historyEditMode ? ' catalog-row-edit' : '')
+      + (selected ? ' sel' : '');
     row.dataset.eid = eid;
+    if (historyEditMode) row.setAttribute('aria-selected', selected ? 'true' : 'false');
     const deltaLabel = `${plus ? '+' : ''}${log.delta}`;
     const deltaClass = plus ? 'plus' : 'minus';
 

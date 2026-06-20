@@ -6,6 +6,9 @@ let scoreAnimFrame = null;
 let currentView = 'tasks';
 let currentTab = 'earn';
 let pendingSpendItem = null;
+let catalogActionLockTimer = null;
+
+const CATALOG_ACTION_LOCK_MS = 500;
 
 const PRIMARY_VIEWS = ['tasks', 'rewards', 'history', 'settings'];
 
@@ -24,7 +27,6 @@ function bottomNavKey(view) {
 }
 
 function shouldShowBottomNav(view) {
-  if (view === 'history' && typeof historyEditMode !== 'undefined' && historyEditMode) return false;
   return PRIMARY_VIEWS.includes(bottomNavKey(view))
     || view === 'taskManage' || view === 'rewardManage';
 }
@@ -124,15 +126,35 @@ function hideProfileModal() {
   document.getElementById('profileModal').classList.remove('show');
 }
 
+function markCatalogAction() {
+  document.body.classList.add('catalog-action-lock');
+  if (catalogActionLockTimer) clearTimeout(catalogActionLockTimer);
+  catalogActionLockTimer = setTimeout(() => {
+    document.body.classList.remove('catalog-action-lock');
+    catalogActionLockTimer = null;
+  }, CATALOG_ACTION_LOCK_MS);
+}
+
+function applyViewVisibility(view) {
+  if (view === 'tasks' || view === 'rewards') {
+    Object.keys(VIEW_IDS).forEach(v => {
+      const el = document.getElementById(VIEW_IDS[v]);
+      if (el) el.style.display = v === 'home' ? '' : 'none';
+    });
+    return;
+  }
+  Object.keys(VIEW_IDS).forEach(v => {
+    const el = document.getElementById(VIEW_IDS[v]);
+    if (el) el.style.display = v === view ? '' : 'none';
+  });
+}
+
 function switchView(view) {
   if (currentView === 'history' && view !== 'history') exitHistoryEdit();
 
   if (view === 'tasks' || view === 'rewards') {
     currentView = view;
-    Object.keys(VIEW_IDS).forEach(v => {
-      const el = document.getElementById(VIEW_IDS[v]);
-      if (el) el.style.display = v === 'home' ? '' : 'none';
-    });
+    applyViewVisibility(view);
     switchTab(view === 'tasks' ? 'earn' : 'spend');
     updateBottomNav(view);
     window.scrollTo(0, 0);
@@ -140,10 +162,7 @@ function switchView(view) {
   }
 
   currentView = view;
-  Object.keys(VIEW_IDS).forEach(v => {
-    const el = document.getElementById(VIEW_IDS[v]);
-    if (el) el.style.display = v === view ? '' : 'none';
-  });
+  applyViewVisibility(view);
   if (view === 'history') {
     exitHistoryEdit();
     selectedDateKey = ymd(new Date());
@@ -232,9 +251,12 @@ function buildCatalogItemEl(it, mode) {
   btn.append(emojiSpan, nameSpan, ptsSpan);
 
   const locked = mode === 'spend' && state.score < it.pts;
-  btn.onclick = () => {
+  btn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    markCatalogAction();
     if (mode === 'earn') earn(it);
-    else spend(it, null, locked);
+    else spend(it, e, locked);
   };
 
   row.appendChild(btn);
@@ -265,6 +287,7 @@ function renderCatalog() {
 
 function render() {
   if (currentView === 'tasks' || currentView === 'rewards') {
+    applyViewVisibility(currentView);
     renderHeader();
     renderCatalog();
   } else if (currentView === 'history') {
@@ -323,6 +346,7 @@ function confirmSpend() {
   save();
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji); confetti();
   vibrateFeedback('spend');
+  markCatalogAction();
   render();
 }
 
