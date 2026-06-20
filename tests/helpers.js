@@ -16,21 +16,49 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
       sendPasswordResetEmail: () => Promise.resolve(),
       confirmPasswordReset: () => Promise.resolve(),
     };
-    const fakeRef = {
-      on: (_event, cb) => {
-        setTimeout(() => cb({ val: () => null }), 0);
-      },
-      off: () => {},
-      set: () => Promise.resolve(),
-      transaction: (updateFn, complete) => {
-        try {
-          const result = updateFn(null);
-          if (complete) complete(null, true, { val: () => result });
-        } catch (e) {
-          if (complete) complete(e, false, null);
-        }
-      },
-    };
+    const fakeRef = (() => {
+      let cloudData = null;
+      function applyPatch(base, patch) {
+        const next = base ? JSON.parse(JSON.stringify(base)) : {};
+        Object.entries(patch || {}).forEach(([path, val]) => {
+          const slash = path.indexOf('/');
+          if (slash === -1) {
+            if (val === null) delete next[path];
+            else next[path] = val;
+            return;
+          }
+          const top = path.slice(0, slash);
+          const key = path.slice(slash + 1);
+          if (!next[top] || typeof next[top] !== 'object') next[top] = {};
+          if (val === null) delete next[top][key];
+          else next[top][key] = val;
+        });
+        return next;
+      }
+      return {
+        on: (_event, cb) => {
+          setTimeout(() => cb({ val: () => cloudData }), 0);
+        },
+        off: () => {},
+        set: (data) => {
+          cloudData = data;
+          return Promise.resolve();
+        },
+        update: (patch) => {
+          cloudData = applyPatch(cloudData, patch);
+          return Promise.resolve();
+        },
+        transaction: (updateFn, complete) => {
+          try {
+            const result = updateFn(cloudData);
+            cloudData = result;
+            if (complete) complete(null, true, { val: () => cloudData });
+          } catch (e) {
+            if (complete) complete(e, false, null);
+          }
+        },
+      };
+    })();
     window.firebase = {
       initializeApp: () => {},
       auth: Object.assign(() => authInstance, {

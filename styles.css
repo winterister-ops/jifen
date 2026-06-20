@@ -239,6 +239,11 @@ footer {
   background: var(--blue); color: #fff;
   border-color: transparent;
 }
+.history-load-more {
+  display: block;
+  width: calc(100% - 8px);
+  margin: 12px auto 4px;
+}
 .filter-today { background: #fff0d6; border-color: #ffe2bf; }
 
 .cal-btn {

@@ -1,9 +1,13 @@
 // ====== 积分记录页面 + 日期筛选 + 多选编辑 ======
 
+const HISTORY_PAGE_SIZE = 50;
+
 let selectedDateKey = ymd(new Date()); // 'YYYY-MM-DD' 或 'all'
 let calYear, calMonth; // calMonth: 0-11
 let historyEditMode = false;
 let selectedEids = new Set();
+let historyAllLimit = HISTORY_PAGE_SIZE;
+let historyDateKeysMonthCache = { key: '', days: null };
 
 function ymd(d) {
   const p = n => String(n).padStart(2, '0');
@@ -41,16 +45,72 @@ function buildStats(list) {
 }
 
 function filteredHistory() {
-  let list = state.history.slice();
-  if (selectedDateKey !== 'all') list = list.filter(log => entryDateKey(log) === selectedDateKey);
-  return list;
+  const out = [];
+  const list = state.history;
+  if (selectedDateKey === 'all') {
+    for (let i = 0; i < list.length; i++) out.push(list[i]);
+    return out;
+  }
+  for (let i = 0; i < list.length; i++) {
+    if (entryDateKey(list[i]) === selectedDateKey) out.push(list[i]);
+  }
+  return out;
+}
+
+function historyEntriesWithEids(items) {
+  const out = [];
+  for (let i = 0; i < items.length; i++) {
+    const log = items[i];
+    out.push({ log, eid: log.eid || logEid(log, i) });
+  }
+  return out;
 }
 
 function visibleHistoryWithEids() {
-  return filteredHistory().map(log => {
-    const index = state.history.indexOf(log);
-    return { log, eid: logEid(log, index >= 0 ? index : 0) };
-  });
+  return historyEntriesWithEids(filteredHistory());
+}
+
+function visibleHistoryPage() {
+  const items = visibleHistoryWithEids();
+  if (selectedDateKey !== 'all') return { items, hasMore: false, total: items.length };
+
+  const reversed = items.slice().reverse();
+  const total = reversed.length;
+  return {
+    items: reversed.slice(0, historyAllLimit),
+    hasMore: total > historyAllLimit,
+    total
+  };
+}
+
+function loadMoreHistory() {
+  if (selectedDateKey !== 'all') return;
+  historyAllLimit += HISTORY_PAGE_SIZE;
+  renderHistory();
+}
+
+function resetHistoryAllLimit() {
+  historyAllLimit = HISTORY_PAGE_SIZE;
+}
+
+function invalidateHistoryDateKeysCache() {
+  historyDateKeysMonthCache = { key: '', days: null };
+}
+
+function historyDateKeysForMonth(year, month) {
+  const cacheKey = year + '-' + month;
+  if (historyDateKeysMonthCache.key === cacheKey && historyDateKeysMonthCache.days) {
+    return historyDateKeysMonthCache.days;
+  }
+  const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
+  const days = new Set();
+  const list = state.history;
+  for (let i = 0; i < list.length; i++) {
+    const key = entryDateKey(list[i]);
+    if (key.startsWith(prefix)) days.add(key);
+  }
+  historyDateKeysMonthCache = { key: cacheKey, days };
+  return days;
 }
 
 function pruneSelection() {
@@ -81,7 +141,7 @@ function toggleHistorySelection(eid) {
   else selectedEids.add(eid);
   renderDateHeader();
   renderEditBar();
-  document.querySelectorAll('.log[data-eid]').forEach(row => {
+  document.querySelectorAll('.catalog-row[data-eid]').forEach(row => {
     row.classList.toggle('sel', selectedEids.has(row.dataset.eid));
     const cb = row.querySelector('.log-check input');
     if (cb) cb.checked = selectedEids.has(row.dataset.eid);
@@ -158,7 +218,14 @@ function renderDateHeader() {
       const n = selectedEids.size;
       statsEl.textContent = n ? `已选 ${n} 条` : '点选要删除的记录';
     } else {
-      statsEl.innerHTML = buildStats(list);
+      let statsHtml = buildStats(list);
+      if (showAll) {
+        const page = visibleHistoryPage();
+        if (page.total > page.items.length) {
+          statsHtml += ` · 已显示 ${page.items.length} / ${page.total}`;
+        }
+      }
+      statsEl.innerHTML = statsHtml;
     }
   }
 
@@ -172,6 +239,7 @@ function renderDateHeader() {
 }
 
 function selectDate(key) {
+  if (key === 'all' && selectedDateKey !== 'all') resetHistoryAllLimit();
   selectedDateKey = key;
   if (historyEditMode) pruneSelection();
   renderDateHeader();
@@ -230,7 +298,7 @@ function renderCalendar() {
   const startDow = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const todayKey = ymd(new Date());
-  const recDays = new Set(state.history.map(entryDateKey));
+  const recDays = historyDateKeysForMonth(calYear, calMonth);
 
   for (let i = 0; i < startDow; i++) {
     const b = document.createElement('div');
@@ -254,15 +322,16 @@ function deleteHistoryRecords(eids) {
   const set = new Set(eids);
   if (!set.size) return;
 
-  if (!Array.isArray(state.revokedEids)) state.revokedEids = [];
+  if (!state.revoked || typeof state.revoked !== 'object') state.revoked = {};
 
   state.history = state.history.filter((h, i) => {
     const eid = logEid(h, i);
     if (!set.has(eid)) return true;
-    state.revokedEids.push(eid);
+    state.revoked[eid] = Date.now();
     return false;
   });
 
+  invalidateHistoryDateKeysCache();
   touchMeta();
   save();
 }
@@ -311,7 +380,8 @@ function renderHistory() {
   if (!h) return;
   renderDateHeader();
 
-  let list = visibleHistoryWithEids();
+  const page = visibleHistoryPage();
+  const list = page.items;
   const showAll = selectedDateKey === 'all';
 
   if (!list.length) {
@@ -327,7 +397,7 @@ function renderHistory() {
 
   h.innerHTML = '';
   let lastKey = null;
-  list.slice().reverse().forEach(({ log, eid }) => {
+  list.forEach(({ log, eid }) => {
     const key = entryDateKey(log);
     if (showAll && key !== lastKey) {
       lastKey = key;
@@ -395,6 +465,15 @@ function renderHistory() {
     }
     h.appendChild(row);
   });
+
+  if (showAll && page.hasMore) {
+    const moreBtn = document.createElement('button');
+    moreBtn.type = 'button';
+    moreBtn.className = 'filter-pill history-load-more';
+    moreBtn.textContent = `加载更多（还剩 ${page.total - list.length} 条）`;
+    moreBtn.onclick = () => loadMoreHistory();
+    h.appendChild(moreBtn);
+  }
 
   if (historyEditMode) renderEditBar();
 }

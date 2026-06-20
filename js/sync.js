@@ -1,5 +1,8 @@
 // ====== 状态与云同步 ======
 
+const CLOUD_PUSH_DEBOUNCE_MS = 400;
+const REVOKED_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+
 let KEY = null;
 let VIBRATION_KEY = null;
 let state = defaultState();
@@ -8,6 +11,9 @@ let cloudUnsubscribe = null;
 let applyingRemote = false;
 let firebaseReady = false;
 let cloudPushPending = false;
+let cloudPushDirty = false;
+let cloudPushTimer = null;
+let lastSyncedCloud = null;
 let renderTimer = null;
 
 function scheduleRender() {
@@ -92,7 +98,142 @@ function normalizeCatalog(raw) {
 }
 
 function defaultState() {
-  return { score: 0, history: [], profile: defaultProfile(), revokedEids: [], catalog: defaultCatalog(), meta: defaultMeta() };
+  return { score: 0, history: [], profile: defaultProfile(), revoked: {}, catalog: defaultCatalog(), meta: defaultMeta() };
+}
+
+function normalizeRevoked(raw) {
+  if (raw && typeof raw.revoked === 'object' && !Array.isArray(raw.revoked)) {
+    const out = {};
+    Object.entries(raw.revoked).forEach(([eid, ts]) => {
+      if (eid) out[eid] = typeof ts === 'number' ? ts : 0;
+    });
+    return out;
+  }
+  const out = {};
+  (Array.isArray(raw?.revokedEids) ? raw.revokedEids : []).forEach(eid => {
+    if (!eid) return;
+    out[eid] = Date.now();
+  });
+  return out;
+}
+
+function compactRevoked(revoked) {
+  const ageCutoff = Date.now() - REVOKED_MAX_AGE_MS;
+  const out = {};
+  Object.entries(revoked).forEach(([eid, ts]) => {
+    const t = typeof ts === 'number' ? ts : 0;
+    if (t >= ageCutoff) out[eid] = t;
+  });
+  return out;
+}
+
+function mergeRevokedMaps(a, b) {
+  const out = { ...normalizeRevoked({ revoked: a }) };
+  Object.entries(normalizeRevoked({ revoked: b })).forEach(([eid, ts]) => {
+    out[eid] = Math.max(out[eid] || 0, ts);
+  });
+  return out;
+}
+
+function revokedSet(revoked) {
+  return new Set(Object.keys(revoked || {}));
+}
+
+function parseHistoryList(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'object') return Object.values(raw);
+  return [];
+}
+
+function historyToCloudMap(history) {
+  const map = {};
+  (history || []).forEach(h => {
+    if (h && h.eid) map[h.eid] = h;
+  });
+  return map;
+}
+
+function stateToCloudBlob(s) {
+  const n = normalizeState(s);
+  return {
+    score: n.score,
+    profile: n.profile,
+    catalog: n.catalog,
+    meta: n.meta,
+    revoked: { ...n.revoked },
+    history: historyToCloudMap(n.history)
+  };
+}
+
+function applyCloudPatch(base, patch) {
+  const next = base ? JSON.parse(JSON.stringify(base)) : {};
+  Object.entries(patch || {}).forEach(([path, val]) => {
+    const slash = path.indexOf('/');
+    if (slash === -1) {
+      if (val === null) delete next[path];
+      else next[path] = val;
+      return;
+    }
+    const top = path.slice(0, slash);
+    const key = path.slice(slash + 1);
+    if (!next[top] || typeof next[top] !== 'object') next[top] = {};
+    if (val === null) delete next[top][key];
+    else next[top][key] = val;
+  });
+  return next;
+}
+
+function buildCloudPatch(prev, next) {
+  const patch = {};
+  let hasStructuralChange = false;
+
+  if (!prev || prev.score !== next.score) patch.score = next.score;
+
+  if (!prev || JSON.stringify(prev.profile) !== JSON.stringify(next.profile)) {
+    patch.profile = next.profile;
+    hasStructuralChange = true;
+  }
+  if (!prev || JSON.stringify(prev.catalog) !== JSON.stringify(next.catalog)) {
+    patch.catalog = next.catalog;
+    hasStructuralChange = true;
+  }
+
+  const prevMeta = (prev && prev.meta) || {};
+  const nextMeta = next.meta || {};
+  const metaConflict = !prev
+    || prevMeta.lastClearAt !== nextMeta.lastClearAt
+    || prevMeta.profileUpdatedAt !== nextMeta.profileUpdatedAt
+    || prevMeta.catalogUpdatedAt !== nextMeta.catalogUpdatedAt;
+  if (metaConflict) {
+    patch.meta = next.meta;
+    hasStructuralChange = true;
+  } else if (prevMeta.updatedAt !== nextMeta.updatedAt) {
+    patch.meta = next.meta;
+  }
+
+  const prevRev = (prev && prev.revoked) || {};
+  const nextRev = next.revoked || {};
+  Object.keys(nextRev).forEach(eid => {
+    if (prevRev[eid] !== nextRev[eid]) patch['revoked/' + eid] = nextRev[eid];
+  });
+  Object.keys(prevRev).forEach(eid => {
+    if (!(eid in nextRev)) patch['revoked/' + eid] = null;
+  });
+  if (Object.keys(patch).some(k => k.startsWith('revoked/'))) hasStructuralChange = true;
+
+  const prevHist = (prev && prev.history) || {};
+  const nextHist = next.history || {};
+  Object.keys(nextHist).forEach(eid => {
+    if (JSON.stringify(prevHist[eid]) !== JSON.stringify(nextHist[eid])) {
+      patch['history/' + eid] = nextHist[eid];
+    }
+  });
+  Object.keys(prevHist).forEach(eid => {
+    if (!(eid in nextHist)) patch['history/' + eid] = null;
+  });
+
+  return { patch, incremental: !hasStructuralChange };
 }
 
 function newEid() {
@@ -131,14 +272,14 @@ function applyClearAndRevoked(history, lastClearAt, revokedSet) {
   });
 }
 
-function recomputeScore(history, lastClearAt, revokedEids) {
-  return applyClearAndRevoked(history, lastClearAt, new Set(revokedEids))
+function recomputeScore(history, lastClearAt, revoked) {
+  return applyClearAndRevoked(history, lastClearAt, revokedSet(revoked))
     .reduce((s, h) => s + h.delta, 0);
 }
 
 function normalizeState(raw, forMerge) {
   if (!raw || typeof raw.score !== 'number') return defaultState();
-  const history = (Array.isArray(raw.history) ? raw.history : []).map((h, i) => ({
+  const history = parseHistoryList(raw.history).map((h, i) => ({
     id: h.id ?? '',
     emoji: h.emoji ?? '',
     name: h.name ?? '',
@@ -148,27 +289,28 @@ function normalizeState(raw, forMerge) {
     eid: historyEid(h, i)
   }));
   const meta = { ...defaultMeta(), ...(raw.meta || {}) };
-  const revokedEids = Array.isArray(raw.revokedEids) ? raw.revokedEids : [];
+  let revoked = normalizeRevoked(raw);
   const profile = normalizeProfile(raw.profile);
   const catalog = normalizeCatalog(raw.catalog);
   if (forMerge) {
-    return { score: raw.score, history, profile, revokedEids, catalog, meta };
+    return { score: raw.score, history, profile, revoked, catalog, meta };
   }
-  const filtered = applyClearAndRevoked(history, meta.lastClearAt, new Set(revokedEids))
+  revoked = compactRevoked(revoked);
+  const filtered = applyClearAndRevoked(history, meta.lastClearAt, revokedSet(revoked))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  const score = recomputeScore(history, meta.lastClearAt, revokedEids);
-  return { score, history: filtered, profile, revokedEids, catalog, meta };
+  const score = recomputeScore(history, meta.lastClearAt, revoked);
+  return { score, history: filtered, profile, revoked, catalog, meta };
 }
 
 function mergeStates(localRaw, remoteRaw) {
   const local = normalizeState(localRaw, true);
   const remote = normalizeState(remoteRaw, true);
   const lastClearAt = Math.max(local.meta.lastClearAt, remote.meta.lastClearAt);
-  const revokedEids = [...new Set([...local.revokedEids, ...remote.revokedEids])];
-  const revokedSet = new Set(revokedEids);
+  const revoked = compactRevoked(mergeRevokedMaps(local.revoked, remote.revoked));
+  const revokedKeys = revokedSet(revoked);
   const byEid = new Map();
   [...local.history, ...remote.history].forEach(h => byEid.set(h.eid, h));
-  const history = applyClearAndRevoked([...byEid.values()], lastClearAt, revokedSet)
+  const history = applyClearAndRevoked([...byEid.values()], lastClearAt, revokedKeys)
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
   const score = history.reduce((s, h) => s + h.delta, 0);
   const profile = local.meta.profileUpdatedAt >= remote.meta.profileUpdatedAt
@@ -179,7 +321,7 @@ function mergeStates(localRaw, remoteRaw) {
     score,
     history,
     profile,
-    revokedEids,
+    revoked,
     catalog,
     meta: {
       lastClearAt,
@@ -190,34 +332,77 @@ function mergeStates(localRaw, remoteRaw) {
   };
 }
 
-function stateContentFingerprint(s) {
-  const n = normalizeState(s);
-  return JSON.stringify({
-    score: n.score,
-    history: n.history.map(h => h.eid + ':' + h.delta),
-    profile: n.profile,
-    catalog: n.catalog,
-    revoked: [...n.revokedEids].sort(),
-    lastClearAt: n.meta.lastClearAt,
-    profileUpdatedAt: n.meta.profileUpdatedAt,
-    catalogUpdatedAt: n.meta.catalogUpdatedAt
+function revokedFingerprint(revoked) {
+  return Object.keys(revoked || {}).sort().map(k => k + ':' + revoked[k]).join(',');
+}
+
+function catalogQuickSig(catalog) {
+  if (!catalog) return '';
+  const parts = [];
+  (catalog.tasks || []).forEach(t => {
+    parts.push('t' + t.id + ':' + t.pts + ':' + (t.enabled === false ? 0 : 1));
   });
+  (catalog.rewards || []).forEach(r => {
+    parts.push('r' + r.id + ':' + r.pts + ':' + (r.enabled === false ? 0 : 1));
+  });
+  return parts.join('|');
+}
+
+function stateContentQuickKey(s) {
+  if (!s || typeof s.score !== 'number') return '';
+  const h = parseHistoryList(s.history);
+  const parts = [
+    s.score,
+    h.length,
+    s.meta?.lastClearAt || 0,
+    s.meta?.profileUpdatedAt || 0,
+    s.meta?.catalogUpdatedAt || 0,
+    s.profile?.name || '',
+    s.profile?.avatar || '',
+    revokedFingerprint(normalizeRevoked(s)),
+    catalogQuickSig(s.catalog)
+  ];
+  for (let i = 0; i < h.length; i++) {
+    const item = h[i];
+    parts.push((item.eid || historyEid(item, i)) + ':' + (item.delta || 0));
+  }
+  return parts.join('\x1e');
+}
+
+function stateContentFullEqual(a, b) {
+  const na = normalizeState(a);
+  const nb = normalizeState(b);
+  if (na.score !== nb.score) return false;
+  if (na.history.length !== nb.history.length) return false;
+  if (na.meta.lastClearAt !== nb.meta.lastClearAt) return false;
+  if (na.meta.profileUpdatedAt !== nb.meta.profileUpdatedAt) return false;
+  if (na.meta.catalogUpdatedAt !== nb.meta.catalogUpdatedAt) return false;
+  if (na.profile.name !== nb.profile.name || na.profile.avatar !== nb.profile.avatar) return false;
+  if (revokedFingerprint(na.revoked) !== revokedFingerprint(nb.revoked)) return false;
+  if (catalogQuickSig(na.catalog) !== catalogQuickSig(nb.catalog)) return false;
+  for (let i = 0; i < na.history.length; i++) {
+    const ah = na.history[i];
+    const bh = nb.history[i];
+    if (ah.eid !== bh.eid || ah.delta !== bh.delta) return false;
+  }
+  return true;
+}
+
+function stateContentFingerprint(s) {
+  return stateContentQuickKey(s);
 }
 
 function stateContentEqual(a, b) {
-  return stateContentFingerprint(a) === stateContentFingerprint(b);
+  if (a === b) return true;
+  const ka = stateContentQuickKey(a);
+  const kb = stateContentQuickKey(b);
+  if (ka && kb && ka === kb) return true;
+  return stateContentFullEqual(a, b);
 }
 
 function stateFingerprint(s) {
   const n = normalizeState(s);
-  return JSON.stringify({
-    score: n.score,
-    history: n.history.map(h => h.eid + ':' + h.delta),
-    profile: n.profile,
-    catalog: n.catalog,
-    revoked: [...n.revokedEids].sort(),
-    meta: n.meta
-  });
+  return stateContentQuickKey(n) + '\x1f' + (n.meta?.updatedAt || 0);
 }
 
 function stateEqual(a, b) {
@@ -238,33 +423,108 @@ function saveLocal() {
   localStorage.setItem(KEY, JSON.stringify(state));
 }
 
-function pushToCloud() {
-  if (!cloudRef || applyingRemote || cloudPushPending) return;
+function finishCloudPush(error, snapshotVal) {
+  cloudPushPending = false;
+  if (error) {
+    console.warn('云同步写入失败', error);
+    cloudPushDirty = true;
+    schedulePushToCloud();
+    return;
+  }
+  if (snapshotVal) {
+    const merged = normalizeState(snapshotVal);
+    if (!stateContentEqual(state, merged)) {
+      applyingRemote = true;
+      state = merged;
+      saveLocal();
+      scheduleRender();
+      applyingRemote = false;
+    }
+    lastSyncedCloud = stateToCloudBlob(merged);
+  }
+  if (cloudPushDirty) schedulePushToCloud();
+}
+
+function pushToCloudFull(nextCloud) {
+  cloudPushPending = true;
+  cloudRef.set(nextCloud)
+    .then(() => {
+      lastSyncedCloud = nextCloud;
+      finishCloudPush(null);
+    })
+    .catch(err => finishCloudPush(err));
+}
+
+function pushToCloudTransaction() {
   cloudPushPending = true;
   cloudRef.transaction(current => {
     const remote = current ? normalizeState(current, true) : null;
-    return remote ? mergeStates(state, remote) : normalizeState(state);
+    const merged = remote ? mergeStates(state, current) : normalizeState(state);
+    return stateToCloudBlob(merged);
   }, (error, committed, snapshot) => {
-    cloudPushPending = false;
-    if (error) {
-      console.warn('云同步写入失败', error);
+    if (error || !committed || !snapshot) {
+      finishCloudPush(error || new Error('transaction not committed'));
       return;
     }
-    if (committed && snapshot) {
-      const merged = normalizeState(snapshot.val());
-      if (!stateContentEqual(state, merged)) {
-        applyingRemote = true;
-        state = merged;
-        saveLocal();
-        scheduleRender();
-        applyingRemote = false;
-      }
-    }
+    lastSyncedCloud = snapshot.val() || stateToCloudBlob(state);
+    finishCloudPush(null, snapshot.val());
   });
+}
+
+function pushToCloudIncremental(patch) {
+  cloudPushPending = true;
+  cloudRef.update(patch)
+    .then(() => {
+      lastSyncedCloud = applyCloudPatch(lastSyncedCloud, patch);
+      finishCloudPush(null);
+    })
+    .catch(err => {
+      console.warn('增量云同步失败，回退全量合并', err);
+      cloudPushPending = false;
+      pushToCloudTransaction();
+    });
+}
+
+function flushPushToCloud() {
+  cloudPushTimer = null;
+  if (!cloudPushDirty || !cloudRef || applyingRemote) return;
+  if (cloudPushPending) {
+    cloudPushTimer = setTimeout(flushPushToCloud, 80);
+    return;
+  }
+
+  cloudPushDirty = false;
+  const nextCloud = stateToCloudBlob(state);
+
+  if (!lastSyncedCloud) {
+    pushToCloudFull(nextCloud);
+    return;
+  }
+
+  const { patch, incremental } = buildCloudPatch(lastSyncedCloud, nextCloud);
+  if (!Object.keys(patch).length) return;
+
+  if (incremental) {
+    pushToCloudIncremental(patch);
+  } else {
+    pushToCloudTransaction();
+  }
+}
+
+function schedulePushToCloud() {
+  if (!cloudRef || applyingRemote) return;
+  cloudPushDirty = true;
+  if (cloudPushTimer) return;
+  cloudPushTimer = setTimeout(flushPushToCloud, CLOUD_PUSH_DEBOUNCE_MS);
+}
+
+function pushToCloud() {
+  schedulePushToCloud();
 }
 
 function save() {
   state = normalizeState(state);
+  if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
   saveLocal();
   pushToCloud();
 }
@@ -293,6 +553,12 @@ function tearDownCloud() {
     cancelAnimationFrame(renderTimer);
     renderTimer = null;
   }
+  if (cloudPushTimer) {
+    clearTimeout(cloudPushTimer);
+    cloudPushTimer = null;
+  }
+  cloudPushPending = false;
+  lastSyncedCloud = null;
   if (cloudRef && cloudUnsubscribe) {
     try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
   }
@@ -340,12 +606,24 @@ function initCloud() {
           saveLocal();
           scheduleRender();
           applyingRemote = false;
+          lastSyncedCloud = stateToCloudBlob(merged);
+          const remoteCloud = stateToCloudBlob(val);
           if (!stateContentEqual(merged, val)) {
-            cloudRef.set(normalizeState(merged)).catch(err => console.warn('云同步合并回写失败', err));
+            const { patch, incremental } = buildCloudPatch(remoteCloud, lastSyncedCloud);
+            if (Object.keys(patch).length) {
+              const write = incremental
+                ? cloudRef.update(patch)
+                : cloudRef.set(lastSyncedCloud);
+              write.catch(err => console.warn('云同步合并回写失败', err));
+            }
           }
+        } else {
+          lastSyncedCloud = stateToCloudBlob(merged);
         }
       } else if (first) {
-        cloudRef.set(normalizeState(state));
+        const blob = stateToCloudBlob(state);
+        lastSyncedCloud = blob;
+        cloudRef.set(blob);
       }
       first = false;
       const s = envStatusText();
