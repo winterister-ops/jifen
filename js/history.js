@@ -44,6 +44,41 @@ function buildStats(list) {
   return `共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ${ipIcon('star', 'ui-ic-sm')}`;
 }
 
+function historyTimeLabel(log) {
+  if (log.time) {
+    const m = /(\d{1,2}:\d{2})\s*$/.exec(log.time.trim());
+    if (m) return m[1];
+    return log.time;
+  }
+  if (typeof log.ts === 'number' && log.ts > 0) {
+    const d = new Date(log.ts);
+    const p = n => String(n).padStart(2, '0');
+    return p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  return '';
+}
+
+function appendHistoryInfo(parent, log) {
+  const info = document.createElement('span');
+  info.className = 'catalog-info';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'catalog-name';
+  nameSpan.textContent = log.name;
+
+  const time = historyTimeLabel(log);
+  if (time) {
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'catalog-time';
+    timeSpan.textContent = time;
+    info.append(nameSpan, timeSpan);
+  } else {
+    info.appendChild(nameSpan);
+  }
+
+  parent.appendChild(info);
+}
+
 function filteredHistory() {
   const out = [];
   const list = state.history;
@@ -143,7 +178,7 @@ function toggleHistorySelection(eid) {
   renderEditBar();
   document.querySelectorAll('.catalog-row[data-eid]').forEach(row => {
     row.classList.toggle('sel', selectedEids.has(row.dataset.eid));
-    const cb = row.querySelector('.log-check input');
+    const cb = row.querySelector('.catalog-check input');
     if (cb) cb.checked = selectedEids.has(row.dataset.eid);
   });
 }
@@ -409,7 +444,7 @@ function renderHistory() {
     const row = document.createElement('div');
     const plus = log.delta > 0;
     const selected = selectedEids.has(eid);
-    row.className = 'catalog-row' + (historyEditMode ? ' catalog-row-edit' : '') + (selected ? ' sel' : '');
+    row.className = 'catalog-row history-row' + (historyEditMode ? ' catalog-row-edit' : '') + (selected ? ' sel' : '');
     row.dataset.eid = eid;
     const deltaLabel = `${plus ? '+' : ''}${log.delta}`;
     const deltaClass = plus ? 'plus' : 'minus';
@@ -432,16 +467,15 @@ function renderHistory() {
       const emojiSpan = document.createElement('span');
       emojiSpan.className = 'catalog-emoji';
       emojiSpan.textContent = log.emoji;
+      btn.appendChild(emojiSpan);
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'catalog-name';
-      nameSpan.textContent = log.name;
+      appendHistoryInfo(btn, log);
 
       const ptsSpan = document.createElement('span');
       ptsSpan.className = 'catalog-pts ' + deltaClass;
       ptsSpan.textContent = deltaLabel;
+      btn.appendChild(ptsSpan);
 
-      btn.append(emojiSpan, nameSpan, ptsSpan);
       btn.onclick = () => toggleHistorySelection(eid);
       row.append(label, btn);
     } else {
@@ -451,16 +485,15 @@ function renderHistory() {
       const emojiSpan = document.createElement('span');
       emojiSpan.className = 'catalog-emoji';
       emojiSpan.textContent = log.emoji;
+      main.appendChild(emojiSpan);
 
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'catalog-name';
-      nameSpan.textContent = log.name;
+      appendHistoryInfo(main, log);
 
       const ptsSpan = document.createElement('span');
       ptsSpan.className = 'catalog-pts ' + deltaClass;
       ptsSpan.textContent = deltaLabel;
+      main.appendChild(ptsSpan);
 
-      main.append(emojiSpan, nameSpan, ptsSpan);
       row.appendChild(main);
     }
     h.appendChild(row);

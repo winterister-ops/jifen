@@ -196,9 +196,9 @@
  </div>
 
  <div id="taskManageView" class="catalog-manage-view" style="display:none">
-  <div class="subpage-head">
-    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
-    <div class="subpage-title">任务管理</div>
+  <div class="manage-head">
+    <div class="manage-title">任务管理</div>
+    <div class="manage-hint">点底部「我的」返回</div>
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
@@ -211,9 +211,9 @@
  </div>
 
  <div id="rewardManageView" class="catalog-manage-view" style="display:none">
-  <div class="subpage-head">
-    <button type="button" class="back-btn" onclick="switchView('settings')">‹ 返回</button>
-    <div class="subpage-title">奖励管理</div>
+  <div class="manage-head">
+    <div class="manage-title">奖励管理</div>
+    <div class="manage-hint">点底部「我的」返回</div>
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
@@ -229,19 +229,19 @@
 
 <nav id="bottomNav" class="bottom-nav" aria-label="主导航">
   <button type="button" class="bottom-nav-item active" data-nav="tasks" onclick="switchView('tasks')">
-    <img class="ui-ic" src="icons/muscle.svg" alt="">
+    <img class="ui-ic" src="icons/muscle.svg" alt="" aria-hidden="true">
     <span>任务</span>
   </button>
   <button type="button" class="bottom-nav-item" data-nav="rewards" onclick="switchView('rewards')">
-    <img class="ui-ic" src="icons/gift.svg" alt="">
+    <img class="ui-ic" src="icons/gift.svg" alt="" aria-hidden="true">
     <span>奖励</span>
   </button>
   <button type="button" class="bottom-nav-item" data-nav="history" onclick="switchView('history')">
-    <img class="ui-ic" src="icons/calendar.svg" alt="">
+    <img class="ui-ic" src="icons/calendar.svg" alt="" aria-hidden="true">
     <span>记录</span>
   </button>
   <button type="button" class="bottom-nav-item" data-nav="settings" onclick="switchView('settings')">
-    <span class="bottom-nav-avatar" id="bottomNavAvatar">👧</span>
+    <span class="bottom-nav-avatar" id="bottomNavAvatar" aria-hidden="true">👧</span>
     <span>我的</span>
   </button>
 </nav>

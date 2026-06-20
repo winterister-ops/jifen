@@ -117,7 +117,8 @@ test.describe('任务与奖励管理', () => {
   test('自定义目录会写入 localStorage', async ({ page }) => {
     await openTaskManage(page);
     await addCatalogItem(page, { type: 'tasks', name: CUSTOM_TASK, pts: 4 });
-    await page.locator('#taskManageView .back-btn').click();
+    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
+    await expect(page.locator('#settingsView')).toBeVisible();
     await page.locator('.menu-item').filter({ hasText: '奖励管理' }).click();
     await addCatalogItem(page, { type: 'rewards', name: CUSTOM_REWARD, pts: 12 });
 

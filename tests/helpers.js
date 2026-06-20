@@ -91,11 +91,15 @@ async function openRewardManage(page) {
   await expect(page.locator('#rewardManageView')).toBeVisible();
 }
 
-async function goHome(page) {
-  for (const sel of ['#taskManageView .back-btn', '#rewardManageView .back-btn']) {
-    const btn = page.locator(sel);
-    if (await btn.isVisible()) await btn.click();
+async function exitManageViews(page) {
+  if (await page.locator('#taskManageView').isVisible() || await page.locator('#rewardManageView').isVisible()) {
+    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
+    await expect(page.locator('#settingsView')).toBeVisible();
   }
+}
+
+async function goHome(page) {
+  await exitManageViews(page);
   await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
   await expect(page.locator('#mainView')).toBeVisible();
 }

@@ -657,6 +657,18 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   font-size: .92rem; font-weight: 800; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.catalog-info {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;
+}
+.catalog-info .catalog-name { flex: none; width: 100%; }
+.catalog-time {
+  font-size: .72rem; font-weight: 700; color: #b08a5e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.catalog-row.history-row .catalog-main { align-items: center; }
+.manage-head { margin-bottom: 12px; }
+.manage-title { font-size: 1.15rem; font-weight: 900; }
+.manage-hint { font-size: .76rem; font-weight: 700; color: #b08a5e; margin-top: 4px; }
 .catalog-badge {
   display: inline-block; margin-left: 6px; font-size: .65rem; font-weight: 800;
   color: var(--purple); background: #fff0d6; padding: 2px 6px; border-radius: 6px;

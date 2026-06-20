@@ -17,17 +17,31 @@ const VIEW_IDS = {
   rewardManage: 'rewardManageView'
 };
 
+function bottomNavKey(view) {
+  if (view === 'taskManage' || view === 'rewardManage') return 'settings';
+  if (view === 'tasks' || view === 'rewards') return view;
+  return view;
+}
+
+function shouldShowBottomNav(view) {
+  if (view === 'history' && typeof historyEditMode !== 'undefined' && historyEditMode) return false;
+  return PRIMARY_VIEWS.includes(bottomNavKey(view))
+    || view === 'taskManage' || view === 'rewardManage';
+}
+
 function updateBottomNav(view) {
   const nav = document.getElementById('bottomNav');
   if (!nav) return;
-  const navKey = view === 'tasks' || view === 'rewards' ? view : view;
-  const primary = PRIMARY_VIEWS.includes(navKey);
-  const hideForEdit = view === 'history' && typeof historyEditMode !== 'undefined' && historyEditMode;
-  const show = primary && !hideForEdit;
+  const navKey = bottomNavKey(view);
+  const show = shouldShowBottomNav(view);
   nav.classList.toggle('is-hidden', !show);
+  nav.setAttribute('aria-hidden', show ? 'false' : 'true');
   document.body.classList.toggle('has-bottom-nav', show);
   nav.querySelectorAll('.bottom-nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.nav === navKey);
+    const active = show && btn.dataset.nav === navKey;
+    btn.classList.toggle('active', active);
+    if (active) btn.setAttribute('aria-current', 'page');
+    else btn.removeAttribute('aria-current');
   });
 }
 
