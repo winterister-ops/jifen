@@ -21,10 +21,7 @@ const DEFAULT_TASKS = [
   { id: 'tidy',    emoji: '🧸', name: '收拾玩具',   pts: 4,  enabled: true, preset: true },
   { id: 'sleep',   emoji: '😴', name: '按时睡觉',   pts: 4,  enabled: true, preset: true },
   { id: 'polite',  emoji: '🙏', name: '讲礼貌',     pts: 2,  enabled: true, preset: true },
-  { id: 'jump',    emoji: '🤽', name: '勇敢跳水',   pts: 10, enabled: true, preset: true },
-  { id: 'dive',    emoji: '🌊', name: '勇敢潜水',   pts: 10, enabled: true, preset: true },
   { id: 'learn',   emoji: '📚', name: '认真学习',   pts: 5,  enabled: true, preset: true },
-  { id: 'photo',   emoji: '📷', name: '配合摄影',   pts: 50, enabled: true, preset: true },
 ];
 const DEFAULT_REWARDS = [
   { id: 'cartoon',  emoji: '📺', name: '看动画片15分钟', pts: 10, enabled: true, preset: true },

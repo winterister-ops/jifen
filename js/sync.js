@@ -69,7 +69,7 @@ function normalizeCatalogItem(item, presetIds) {
     name,
     pts,
     enabled: item.enabled !== false,
-    preset: presetIds.has(item.id) || item.preset === true
+    preset: presetIds.has(item.id)
   };
 }
 
