@@ -212,8 +212,7 @@ function buildCatalogItemEl(it, mode) {
   return row;
 }
 
-function render() {
-  renderHeader();
+function getCatalogGrid() {
   let grid = document.getElementById('grid');
   if (!grid) {
     grid = document.getElementById('catalogSections');
@@ -222,14 +221,28 @@ function render() {
       grid.className = 'catalog-list';
     }
   }
+  return grid;
+}
+
+function renderCatalog() {
+  const grid = getCatalogGrid();
   if (!grid) return;
 
   grid.innerHTML = '';
   const mode = currentTab === 'earn' ? 'earn' : 'spend';
   const list = sortItemsByPtsAsc(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
   list.forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
-  renderSettings();
-  renderHistory();
+}
+
+function render() {
+  if (currentView === 'tasks' || currentView === 'rewards') {
+    renderHeader();
+    renderCatalog();
+  } else if (currentView === 'history') {
+    renderHistory();
+  } else if (currentView === 'settings') {
+    renderSettings();
+  }
 }
 
 function lastEarnTimeForTask(taskId) {
