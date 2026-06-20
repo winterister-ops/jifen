@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.52';
+const CACHE_VERSION = '0.0.53';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -96,7 +96,7 @@ self.addEventListener('fetch', event => {
 
   if (url.origin !== self.location.origin) return;
 
-  if (url.pathname === '/data.js') {
+  if (url.pathname === '/data.js' || url.pathname === '/styles.css') {
     event.respondWith(
       fetch(event.request)
         .then(res => {
