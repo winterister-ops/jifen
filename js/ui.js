@@ -141,8 +141,22 @@ function markCatalogAction() {
   }, CATALOG_ACTION_LOCK_MS);
 }
 
+function resetViewScroll() {
+  if (currentView === 'history') {
+    const el = document.getElementById('hpHistoryScroll');
+    if (el) { el.scrollTop = 0; return; }
+  }
+  const viewId = (currentView === 'tasks' || currentView === 'rewards')
+    ? 'mainView'
+    : VIEW_IDS[currentView];
+  if (viewId) {
+    const el = document.getElementById(viewId);
+    if (el) { el.scrollTop = 0; return; }
+  }
+  window.scrollTo(0, 0);
+}
+
 function applyViewVisibility(view) {
-  document.body.classList.toggle('view-history', view === 'history');
   if (view === 'tasks' || view === 'rewards') {
     Object.keys(VIEW_IDS).forEach(v => {
       const el = document.getElementById(VIEW_IDS[v]);
@@ -164,7 +178,7 @@ function switchView(view) {
     applyViewVisibility(view);
     switchTab(view === 'tasks' ? 'earn' : 'spend');
     updateBottomNav(view);
-    window.scrollTo(0, 0);
+    resetViewScroll();
     return;
   }
 
@@ -190,7 +204,7 @@ function switchView(view) {
     renderCatalogManage();
   }
   updateBottomNav(view);
-  window.scrollTo(0, 0);
+  resetViewScroll();
 }
 
 function renderSettings() {

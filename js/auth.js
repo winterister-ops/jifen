@@ -49,7 +49,7 @@ function showAuthShell() {
     nav.classList.add('is-hidden');
     nav.setAttribute('aria-hidden', 'true');
   }
-  document.body.classList.remove('view-history', 'has-bottom-nav');
+  document.body.classList.remove('has-bottom-nav');
 }
 
 function showAuthView() {

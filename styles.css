@@ -27,16 +27,14 @@ body {
   padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom));
 }
 body.has-bottom-nav {
-  padding-bottom: calc(96px + env(safe-area-inset-bottom));
-}
-body.view-history {
   overflow: hidden;
   height: 100dvh;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
 }
-body.view-history #appRoot {
+body.has-bottom-nav #appRoot {
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -44,13 +42,23 @@ body.view-history #appRoot {
   flex-direction: column;
   overflow: hidden;
 }
-body.view-history #appRoot > .wrap {
+body.has-bottom-nav #appRoot > .wrap {
   flex: 1;
   min-height: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+body.has-bottom-nav #mainView,
+body.has-bottom-nav #settingsView,
+body.has-bottom-nav .catalog-manage-view {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom));
 }
 body.catalog-action-lock .bottom-nav {
   pointer-events: none;
