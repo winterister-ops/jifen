@@ -66,10 +66,18 @@ function greetingText() {
   return '晚上好！';
 }
 
+function getAppVersion() {
+  const meta = document.querySelector('meta[name="app-version"]');
+  const fromMeta = meta && meta.getAttribute('content');
+  if (fromMeta && fromMeta.trim()) return fromMeta.trim();
+  if (typeof APP_VERSION === 'string' && APP_VERSION) return APP_VERSION;
+  return '—';
+}
+
 function renderAppMeta() {
   const el = document.getElementById('appMeta');
   if (!el) return;
-  const ver = (typeof APP_VERSION === 'string' && APP_VERSION) ? APP_VERSION : '—';
+  const ver = getAppVersion();
   const env = getEnvStatus();
   const tagCls = 'env-tag' + (env.text === '离线' ? ' offline' : (env.dev ? ' dev' : ''));
   el.innerHTML = `版本 ${ver} · <span class="${tagCls}">${env.text}</span>`;
@@ -97,8 +105,6 @@ function renderHeader() {
   document.getElementById('welcomeName').textContent = state.profile.name;
   document.getElementById('welcomeSub').textContent = greetingText();
   document.getElementById('avatar').textContent = state.profile.avatar;
-  const bottomAvatar = document.getElementById('bottomNavAvatar');
-  if (bottomAvatar) bottomAvatar.textContent = state.profile.avatar;
 }
 
 function renderEmojiPicker() {
@@ -294,6 +300,7 @@ function render() {
     renderHistory();
   } else if (currentView === 'settings') {
     renderSettings();
+    renderAppMeta();
   }
 }
 

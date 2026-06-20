@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.51';
+const CACHE_VERSION = '0.0.52';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -21,6 +21,7 @@ const PRECACHE_URLS = [
   '/icons/plus.svg',
   '/icons/gift.svg',
   '/icons/calendar.svg',
+  '/icons/user.svg',
   '/icons/edit.svg',
   '/icons/lock.svg',
   '/icons/shake.svg',
@@ -94,6 +95,21 @@ self.addEventListener('fetch', event => {
   }
 
   if (url.origin !== self.location.origin) return;
+
+  if (url.pathname === '/data.js') {
+    event.respondWith(
+      fetch(event.request)
+        .then(res => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(PRECACHE).then(c => c.put(stripQuery(event.request.url), copy));
+          }
+          return res;
+        })
+        .catch(() => matchCache(event.request))
+    );
+    return;
+  }
 
   if (event.request.mode === 'navigate') {
     event.respondWith(

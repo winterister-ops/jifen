@@ -36,8 +36,17 @@ updateFile('sw.js', content =>
   content.replace(/const CACHE_VERSION = '[^']*';/, `const CACHE_VERSION = '${version}';`)
 );
 
-updateFile('index.html', content =>
-  content.replace(/\?v=[^"']+/g, `?v=${version}`)
-);
+updateFile('index.html', content => {
+  let next = content.replace(/\?v=[^"']+/g, `?v=${version}`);
+  if (next.includes('name="app-version"')) {
+    next = next.replace(/<meta name="app-version" content="[^"]*">/, `<meta name="app-version" content="${version}">`);
+  } else {
+    next = next.replace(
+      /<meta name="apple-mobile-web-app-title"[^>]*>/,
+      `$&\n<meta name="app-version" content="${version}">`
+    );
+  }
+  return next;
+});
 
 console.log(`版本已同步为 ${version}`);
