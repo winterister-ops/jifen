@@ -555,7 +555,7 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .modal-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 10px; }
 .modal-msg { font-size: .95rem; color: #888; line-height: 1.5; margin-bottom: 8px; }
 .modal-input { width: 100%; margin-bottom: 10px; }
-.modal-input:last-of-type { margin-bottom: 0; }
+.modal-input:last-of-type:not(:has(+ .modal-error)) { margin-bottom: 0; }
 .modal-error {
   font-size: .88rem;
   font-weight: 700;
@@ -567,7 +567,7 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   font-size: .78rem; color: var(--purple); font-weight: 700;
   margin-bottom: 20px;
 }
-.modal-btns { display: flex; gap: 10px; }
+.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
 .modal-btn {
   flex: 1; padding: 14px; border: none; border-radius: 16px;
   font-size: .95rem; font-weight: 700; cursor: pointer; font-family: inherit;
@@ -904,5 +904,5 @@ footer .ui-ic { width: .95rem; height: .95rem; }
   width: 1.15rem; height: 1.15rem; accent-color: var(--accent); cursor: pointer;
 }
 #catalogEmojiPicker { grid-template-columns: repeat(6, 1fr); max-height: 180px; overflow-y: auto; }
-#catalogEditModal .modal-btns { flex-wrap: wrap; margin-top: 4px; }
+#catalogEditModal .modal-btns { flex-wrap: wrap; }
 #catalogEditModal .modal-btn.danger { flex: 1 1 100%; margin-bottom: 4px; }
