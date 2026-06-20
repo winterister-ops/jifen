@@ -1,6 +1,6 @@
 {
   "name": "jifen",
-  "version": "0.0.56",
+  "version": "0.0.57",
   "private": true,
   "scripts": {
     "sync-version": "node scripts/sync-version.js",
