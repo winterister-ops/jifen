@@ -33,36 +33,54 @@ function shouldShowBottomNav(view) {
 }
 
 let safeAreaProbe;
-let safeAreaOrientationTimer;
+let safeAreaBurstTimer;
+
+function mountSafeAreaProbe() {
+  if (safeAreaProbe) safeAreaProbe.remove();
+  safeAreaProbe = document.createElement('div');
+  safeAreaProbe.setAttribute('aria-hidden', 'true');
+  safeAreaProbe.style.cssText =
+    'position:fixed;top:0;left:0;width:0;height:0;overflow:hidden;pointer-events:none;visibility:hidden;z-index:-1;' +
+    'padding-top:env(safe-area-inset-top);padding-right:env(safe-area-inset-right);' +
+    'padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left)';
+  document.documentElement.appendChild(safeAreaProbe);
+}
 
 function syncSafeAreaInsets() {
-  if (!safeAreaProbe) {
-    safeAreaProbe = document.createElement('div');
-    safeAreaProbe.setAttribute('aria-hidden', 'true');
-    safeAreaProbe.style.cssText =
-      'position:fixed;top:0;left:0;pointer-events:none;visibility:hidden;z-index:-1;' +
-      'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
-    document.documentElement.appendChild(safeAreaProbe);
-  }
+  if (!safeAreaProbe) mountSafeAreaProbe();
+  void safeAreaProbe.offsetHeight;
   const s = getComputedStyle(safeAreaProbe);
   const root = document.documentElement;
-  root.style.setProperty('--safe-top', s.paddingTop);
-  root.style.setProperty('--safe-bottom', s.paddingBottom);
+  let top = s.paddingTop;
+  const bottom = s.paddingBottom;
+  if (isIOS() && window.visualViewport) {
+    const vvTop = Math.round(window.visualViewport.offsetTop);
+    if (vvTop > 0) top = `${vvTop}px`;
+  }
+  root.style.setProperty('--safe-top', top);
+  root.style.setProperty('--safe-bottom', bottom);
   if (typeof updateHistoryStickyOffset === 'function') updateHistoryStickyOffset();
 }
 
-function initSafeAreaSync() {
-  syncSafeAreaInsets();
-  window.addEventListener('orientationchange', () => {
-    clearTimeout(safeAreaOrientationTimer);
-    safeAreaOrientationTimer = setTimeout(syncSafeAreaInsets, 150);
+function burstSafeAreaSync() {
+  mountSafeAreaProbe();
+  clearTimeout(safeAreaBurstTimer);
+  [0, 50, 150, 300, 600, 1000].forEach(ms => {
+    setTimeout(syncSafeAreaInsets, ms);
   });
+  safeAreaBurstTimer = setTimeout(syncSafeAreaInsets, 1500);
+}
+
+function initSafeAreaSync() {
+  burstSafeAreaSync();
+  window.addEventListener('orientationchange', burstSafeAreaSync);
   window.addEventListener('resize', syncSafeAreaInsets);
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', syncSafeAreaInsets);
+    window.visualViewport.addEventListener('scroll', syncSafeAreaInsets);
   }
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') syncSafeAreaInsets();
+    if (document.visibilityState === 'visible') burstSafeAreaSync();
   });
 }
 

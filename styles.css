@@ -37,8 +37,8 @@ body.has-bottom-nav {
   display: flex;
   flex-direction: column;
   padding-top: calc(16px + var(--safe-top));
-  padding-left: var(--page-inline);
-  padding-right: var(--page-inline);
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: var(--safe-bottom);
 }
 body.has-bottom-nav #appRoot {
@@ -75,13 +75,30 @@ body.catalog-action-lock .bottom-nav {
 }
 .wrap { width: 100%; max-width: 720px; margin: 0 auto; }
 
-/* 滚动容器内留白，让 box-shadow 不被 overflow 裁切 */
+/* 滚动容器：page-inline + shadow 留白；带阴影子项用负 margin 收回内容宽度 */
 body.has-bottom-nav #mainView,
 body.has-bottom-nav #settingsView,
 body.has-bottom-nav .catalog-manage-view,
 .hp-history-scroll,
 .hp-sticky-head {
-  padding-inline: var(--shadow-bleed);
+  padding-inline: calc(var(--page-inline) + var(--shadow-bleed));
+}
+body.has-bottom-nav :is(
+  .profile-card,
+  .tab,
+  .catalog-row,
+  .score-card,
+  .hp-datebar,
+  .hp-weekcal,
+  .cal-btn
+) {
+  margin-inline: calc(-1 * var(--shadow-bleed));
+}
+body.has-bottom-nav #settingsView .menu-list {
+  margin-inline: calc(-1 * var(--shadow-bleed));
+}
+body.has-bottom-nav #settingsView .section-title {
+  margin-inline: calc(-1 * var(--shadow-bleed));
 }
 
 /* 顶部栏 */
@@ -642,7 +659,7 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 }
 .menu-item {
   width: 100%; border: none; background: var(--card); border-radius: 20px;
-  box-shadow: var(--shadow); padding: 14px 16px; cursor: pointer;
+  box-shadow: var(--shadow); padding: 14px 20px; cursor: pointer;
   display: flex; align-items: center; gap: 12px; font-family: inherit;
   text-align: left; transition: transform .12s;
 }
