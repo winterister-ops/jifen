@@ -15,6 +15,8 @@ button {
   --purple: #ff9f1c;
   --text: #6b4a2b;
   --shadow: 0 8px 24px rgba(200,140,60,.18);
+  --shadow-bleed: 28px;
+  --page-inline: 20px;
   --font-body: "Noto Sans SC", sans-serif;
   --font-num: "Fredoka", sans-serif;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -35,8 +37,8 @@ body.has-bottom-nav {
   display: flex;
   flex-direction: column;
   padding-top: calc(16px + var(--safe-top));
-  padding-left: 16px;
-  padding-right: 16px;
+  padding-left: var(--page-inline);
+  padding-right: var(--page-inline);
   padding-bottom: var(--safe-bottom);
 }
 body.has-bottom-nav #appRoot {
@@ -45,7 +47,7 @@ body.has-bottom-nav #appRoot {
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 body.has-bottom-nav #appRoot > .wrap {
   flex: 1;
@@ -53,7 +55,7 @@ body.has-bottom-nav #appRoot > .wrap {
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 body.has-bottom-nav #mainView,
 body.has-bottom-nav #settingsView,
@@ -71,7 +73,16 @@ body.catalog-action-lock .bottom-nav {
 #mainView .catalog-list {
   margin-bottom: 4px;
 }
-.wrap { width: 100%; max-width: 720px; margin: 0 auto; overflow-x: clip; }
+.wrap { width: 100%; max-width: 720px; margin: 0 auto; }
+
+/* 滚动容器内留白，让 box-shadow 不被 overflow 裁切 */
+body.has-bottom-nav #mainView,
+body.has-bottom-nav #settingsView,
+body.has-bottom-nav .catalog-manage-view,
+.hp-history-scroll,
+.hp-sticky-head {
+  padding-inline: var(--shadow-bleed);
+}
 
 /* 顶部栏 */
 .score-card {
@@ -179,8 +190,8 @@ footer {
 /* 底部悬浮导航 */
 .bottom-nav {
   position: fixed;
-  left: 16px;
-  right: 16px;
+  left: var(--page-inline);
+  right: var(--page-inline);
   bottom: calc(12px + env(safe-area-inset-bottom));
   width: auto;
   max-width: 480px;
@@ -242,7 +253,7 @@ footer {
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 .hp-sticky-head {
   position: relative;
@@ -297,8 +308,8 @@ body.history-editing.has-bottom-nav .hp-editbar {
 }
 .hp-editbar {
   position: fixed;
-  left: 16px;
-  right: 16px;
+  left: var(--page-inline);
+  right: var(--page-inline);
   margin-left: auto;
   margin-right: auto;
   bottom: 0;
