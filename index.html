@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.55">
+<meta name="app-version" content="0.0.56">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.55">
+<link rel="stylesheet" href="styles.css?v=0.0.56">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -103,14 +103,15 @@
    </div>
   </div>
 
-  <div class="catalog-list" id="history"></div>
+  <div class="hp-history-scroll" id="hpHistoryScroll">
+   <div class="catalog-list" id="history"></div>
+   <footer>陪宝贝一起成长</footer>
+  </div>
 
   <div class="hp-editbar" id="hpEditBar" style="display:none">
     <button type="button" class="btn-soft" id="hpSelectAllBtn" onclick="selectAllVisibleHistory()">全选</button>
     <button type="button" class="btn-soft hp-edit-delete" id="hpDeleteBtn" onclick="showDeleteConfirmModal()" disabled>删除</button>
   </div>
-
-  <footer>陪宝贝一起成长</footer>
  </div>
 
  <div id="settingsView" style="display:none">
@@ -231,8 +232,9 @@
  </div>
 
 </div>
+</div>
 
-<nav id="bottomNav" class="bottom-nav" aria-label="主导航">
+<nav id="bottomNav" class="bottom-nav is-hidden" aria-hidden="true" aria-label="主导航">
   <button type="button" class="bottom-nav-item active" data-nav="tasks" onclick="switchView('tasks')">
     <img class="ui-ic" src="icons/muscle.svg" alt="" aria-hidden="true">
     <span>任务</span>
@@ -250,7 +252,6 @@
     <span>我的</span>
   </button>
 </nav>
-</div>
 
 <div class="modal-overlay" id="catalogEditModal" onclick="if(event.target===this) hideCatalogEditModal()">
   <div class="modal-box">
@@ -336,16 +337,28 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="updateModal" onclick="if(event.target===this) hideUpdateModal()">
+  <div class="modal-box">
+    <div class="modal-emoji"><img class="ui-ic" src="icons/star.svg" alt=""></div>
+    <div class="modal-title" id="updateModalTitle">发现新版本</div>
+    <div class="modal-msg" id="updateModalMsg">需要刷新以加载最新内容。</div>
+    <div class="modal-btns">
+      <button type="button" class="modal-btn cancel" onclick="hideUpdateModal()">稍后</button>
+      <button type="button" class="modal-btn confirm" onclick="confirmAppRefresh()">立即刷新</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase 云同步 SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="data.js?v=0.0.55"></script>
-<script src="js/sync.js?v=0.0.55"></script>
-<script src="js/history.js?v=0.0.55"></script>
-<script src="js/catalog.js?v=0.0.55"></script>
-<script src="js/ui.js?v=0.0.55"></script>
-<script src="js/auth.js?v=0.0.55"></script>
-<script src="js/pwa.js?v=0.0.55"></script>
+<script src="data.js?v=0.0.56"></script>
+<script src="js/sync.js?v=0.0.56"></script>
+<script src="js/history.js?v=0.0.56"></script>
+<script src="js/catalog.js?v=0.0.56"></script>
+<script src="js/ui.js?v=0.0.56"></script>
+<script src="js/auth.js?v=0.0.56"></script>
+<script src="js/pwa.js?v=0.0.56"></script>
 </body>
 </html>

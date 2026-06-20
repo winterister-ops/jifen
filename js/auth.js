@@ -42,8 +42,14 @@ function showAuthShell() {
   hideSplash();
   const authView = document.getElementById('authView');
   const appRoot = document.getElementById('appRoot');
+  const nav = document.getElementById('bottomNav');
   if (authView) authView.style.display = 'flex';
   if (appRoot) appRoot.style.display = 'none';
+  if (nav) {
+    nav.classList.add('is-hidden');
+    nav.setAttribute('aria-hidden', 'true');
+  }
+  document.body.classList.remove('view-history', 'has-bottom-nav');
 }
 
 function showAuthView() {

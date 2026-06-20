@@ -96,9 +96,15 @@ function historyFirstIndexForDateKey(key) {
 }
 
 function scrollToHistoryDateHead(key) {
-  updateHistoryStickyOffset();
   const el = document.querySelector('#history .date-head[data-date="' + key + '"]');
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollEl = document.getElementById('hpHistoryScroll');
+  if (!el) return;
+  if (scrollEl) {
+    const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
+    scrollEl.scrollTo({ top, behavior: 'smooth' });
+    return;
+  }
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updateHistoryStickyOffset() {

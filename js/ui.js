@@ -142,6 +142,7 @@ function markCatalogAction() {
 }
 
 function applyViewVisibility(view) {
+  document.body.classList.toggle('view-history', view === 'history');
   if (view === 'tasks' || view === 'rewards') {
     Object.keys(VIEW_IDS).forEach(v => {
       const el = document.getElementById(VIEW_IDS[v]);

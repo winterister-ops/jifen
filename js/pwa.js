@@ -24,17 +24,36 @@ async function fetchServerAppVersion() {
   return match ? match[1].trim() : '';
 }
 
+function hideUpdateModal() {
+  const modal = document.getElementById('updateModal');
+  if (modal) modal.classList.remove('show');
+  updatePromptShown = false;
+}
+
+function showUpdateModal(reason) {
+  const titleEl = document.getElementById('updateModalTitle');
+  const msgEl = document.getElementById('updateModalMsg');
+  const isServer = reason === 'server';
+  if (titleEl) titleEl.textContent = isServer ? '发现新版本' : '应用已更新';
+  if (msgEl) {
+    msgEl.textContent = isServer
+      ? '发现新版本，需要刷新以加载最新内容。'
+      : '应用已更新，需要刷新以加载最新内容。';
+  }
+  const modal = document.getElementById('updateModal');
+  if (modal) modal.classList.add('show');
+}
+
+function confirmAppRefresh() {
+  const modal = document.getElementById('updateModal');
+  if (modal) modal.classList.remove('show');
+  refreshAppNow();
+}
+
 function promptAppRefresh(reason) {
   if (updatePromptShown) return;
   updatePromptShown = true;
-  const msg = reason === 'server'
-    ? '发现新版本，需要刷新以加载最新内容。'
-    : '应用已更新，需要刷新以加载最新内容。';
-  if (!window.confirm(msg + '\n\n是否立即刷新？')) {
-    updatePromptShown = false;
-    return;
-  }
-  refreshAppNow();
+  showUpdateModal(reason);
 }
 
 async function refreshAppNow() {
