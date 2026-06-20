@@ -620,6 +620,3 @@ function nowStr() {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
-window.addEventListener('resize', () => {
-  if (typeof currentView !== 'undefined' && currentView === 'history') updateHistoryStickyOffset();
-});

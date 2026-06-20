@@ -32,6 +32,40 @@ function shouldShowBottomNav(view) {
     || view === 'taskManage' || view === 'rewardManage';
 }
 
+let safeAreaProbe;
+let safeAreaOrientationTimer;
+
+function syncSafeAreaInsets() {
+  if (!safeAreaProbe) {
+    safeAreaProbe = document.createElement('div');
+    safeAreaProbe.setAttribute('aria-hidden', 'true');
+    safeAreaProbe.style.cssText =
+      'position:fixed;top:0;left:0;pointer-events:none;visibility:hidden;z-index:-1;' +
+      'padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';
+    document.documentElement.appendChild(safeAreaProbe);
+  }
+  const s = getComputedStyle(safeAreaProbe);
+  const root = document.documentElement;
+  root.style.setProperty('--safe-top', s.paddingTop);
+  root.style.setProperty('--safe-bottom', s.paddingBottom);
+  if (typeof updateHistoryStickyOffset === 'function') updateHistoryStickyOffset();
+}
+
+function initSafeAreaSync() {
+  syncSafeAreaInsets();
+  window.addEventListener('orientationchange', () => {
+    clearTimeout(safeAreaOrientationTimer);
+    safeAreaOrientationTimer = setTimeout(syncSafeAreaInsets, 150);
+  });
+  window.addEventListener('resize', syncSafeAreaInsets);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncSafeAreaInsets);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncSafeAreaInsets();
+  });
+}
+
 function updateBottomNav(view) {
   const nav = document.getElementById('bottomNav');
   if (!nav) return;
@@ -40,6 +74,7 @@ function updateBottomNav(view) {
   nav.classList.toggle('is-hidden', !show);
   nav.setAttribute('aria-hidden', show ? 'false' : 'true');
   document.body.classList.toggle('has-bottom-nav', show);
+  if (show) syncSafeAreaInsets();
   nav.querySelectorAll('.bottom-nav-item').forEach(btn => {
     const active = show && btn.dataset.nav === navKey;
     btn.classList.toggle('active', active);
@@ -598,3 +633,4 @@ function initAppEvents() {
 }
 
 initAppEvents();
+initSafeAreaSync();
