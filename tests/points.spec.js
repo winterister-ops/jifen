@@ -30,4 +30,17 @@ test.describe('积分获取与消耗', () => {
     await expect(page.locator('#scoreNum')).toHaveText('42', { timeout: 5000 });
     await expect(page.locator('#spendModal')).not.toHaveClass(/show/);
   });
+
+  test('冷却时间内重复点击同一任务不重复加分', async ({ page }) => {
+    const wash = page.locator('.earn-item').filter({ hasText: '自己洗手' });
+    await wash.click();
+    await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
+
+    await wash.click();
+    await expect(page.locator('#toastEl')).toHaveText('刚刚已经做过啦', { timeout: 5000 });
+    await expect(page.locator('#scoreNum')).toHaveText('2');
+
+    const historyLen = await page.evaluate(() => state.history.length);
+    expect(historyLen).toBe(1);
+  });
 });

@@ -348,9 +348,7 @@ function initFirebase() {
   }
 
   if (firebaseReady) {
-    const isPwa = window.matchMedia('(display-mode: standalone)').matches
-      || window.navigator.standalone === true;
-    const persistence = isPwa
+    const persistence = isStandalone()
       ? firebase.auth.Auth.Persistence.LOCAL
       : firebase.auth.Auth.Persistence.SESSION;
     firebase.auth().setPersistence(persistence)

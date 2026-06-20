@@ -18,6 +18,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
     };
     const fakeRef = (() => {
       let cloudData = null;
+      let writeBlocked = false;
       function applyPatch(base, patch) {
         const next = base ? JSON.parse(JSON.stringify(base)) : {};
         Object.entries(patch || {}).forEach(([path, val]) => {
@@ -35,20 +36,33 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
         });
         return next;
       }
-      return {
+      function rejectIfBlocked() {
+        if (!writeBlocked) return null;
+        return Promise.reject(new Error('cloud write blocked'));
+      }
+      const ref = {
         on: (_event, cb) => {
           setTimeout(() => cb({ val: () => cloudData }), 0);
         },
         off: () => {},
         set: (data) => {
+          const blocked = rejectIfBlocked();
+          if (blocked) return blocked;
           cloudData = data;
           return Promise.resolve();
         },
         update: (patch) => {
+          const blocked = rejectIfBlocked();
+          if (blocked) return blocked;
           cloudData = applyPatch(cloudData, patch);
           return Promise.resolve();
         },
         transaction: (updateFn, complete) => {
+          const blocked = rejectIfBlocked();
+          if (blocked) {
+            if (complete) complete(new Error('cloud write blocked'), false, null);
+            return blocked;
+          }
           try {
             const result = updateFn(cloudData);
             cloudData = result;
@@ -56,8 +70,15 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
           } catch (e) {
             if (complete) complete(e, false, null);
           }
+          return Promise.resolve();
         },
       };
+      window.__testCloud = {
+        getData: () => cloudData,
+        setWriteBlocked: (blocked) => { writeBlocked = !!blocked; },
+        isWriteBlocked: () => writeBlocked,
+      };
+      return ref;
     })();
     window.firebase = {
       initializeApp: () => {},
@@ -114,6 +135,18 @@ async function addCatalogItem(page, { type, name, pts }) {
   await expect(page.locator('#catalogEditModal')).not.toHaveClass(/show/);
 }
 
+async function waitForCloudSync(page) {
+  await page.waitForFunction(() => {
+    return window.__testCloud
+      && window.__testCloud.getData()
+      && typeof window.__testCloud.getData().score === 'number';
+  }, null, { timeout: 10000 });
+}
+
+async function earnTask(page, name) {
+  await page.locator('.earn-item').filter({ hasText: name }).click();
+}
+
 module.exports = {
   gotoLoggedInApp,
   openSettings,
@@ -121,4 +154,6 @@ module.exports = {
   openRewardManage,
   goHome,
   addCatalogItem,
+  waitForCloudSync,
+  earnTask,
 };

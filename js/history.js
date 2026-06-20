@@ -7,6 +7,7 @@ let calYear, calMonth; // calMonth: 0-11
 let historyEditMode = false;
 let selectedEids = new Set();
 let historyAllLimit = HISTORY_PAGE_SIZE;
+let historyDayStatsIndex = null;
 let historyDateKeysMonthCache = { key: '', stats: null };
 
 function ymd(d) {
@@ -169,18 +170,30 @@ function resetHistoryAllLimit() {
 }
 
 function invalidateHistoryDateKeysCache() {
+  historyDayStatsIndex = null;
   historyDateKeysMonthCache = { key: '', stats: null };
 }
 
-function historyDayStat(key) {
-  const stat = { earn: false, spend: false };
+function buildHistoryDayStatsIndex() {
+  const stats = new Map();
   const list = state.history;
   for (let i = 0; i < list.length; i++) {
-    if (entryDateKey(list[i]) !== key) continue;
+    const key = entryDateKey(list[i]);
+    if (key === 'unknown') continue;
+    let stat = stats.get(key);
+    if (!stat) {
+      stat = { earn: false, spend: false };
+      stats.set(key, stat);
+    }
     if (list[i].delta > 0) stat.earn = true;
     else if (list[i].delta < 0) stat.spend = true;
   }
-  return stat;
+  return stats;
+}
+
+function getHistoryDayStatsIndex() {
+  if (!historyDayStatsIndex) historyDayStatsIndex = buildHistoryDayStatsIndex();
+  return historyDayStatsIndex;
 }
 
 function historyDayStatsForMonth(year, month) {
@@ -190,18 +203,9 @@ function historyDayStatsForMonth(year, month) {
   }
   const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
   const stats = new Map();
-  const list = state.history;
-  for (let i = 0; i < list.length; i++) {
-    const key = entryDateKey(list[i]);
-    if (!key.startsWith(prefix)) continue;
-    let stat = stats.get(key);
-    if (!stat) {
-      stat = { earn: false, spend: false };
-      stats.set(key, stat);
-    }
-    if (list[i].delta > 0) stat.earn = true;
-    else if (list[i].delta < 0) stat.spend = true;
-  }
+  getHistoryDayStatsIndex().forEach((stat, key) => {
+    if (key.startsWith(prefix)) stats.set(key, stat);
+  });
   historyDateKeysMonthCache = { key: cacheKey, stats };
   return stats;
 }
@@ -361,10 +365,11 @@ function renderWeekCalendar() {
   if (!wrap) return;
   wrap.innerHTML = '';
   const todayKey = ymd(new Date());
+  const dayStats = getHistoryDayStatsIndex();
   weekCalKeys().forEach(key => {
     const [y, mo, da] = key.split('-').map(Number);
     const d = new Date(y, mo - 1, da);
-    const stat = historyDayStat(key);
+    const stat = dayStats.get(key);
     const cell = document.createElement('button');
     cell.type = 'button';
     cell.className = 'hp-weekcal-day'

@@ -1,5 +1,5 @@
 // ====== 应用版本（单一来源 package.json，发版：npm version patch） ======
-const APP_VERSION = '0.0.57';
+const APP_VERSION = '0.0.58';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
@@ -78,3 +78,18 @@ const STORAGE_PREFIX = 'kid_points_v1_' + ENV + '_';
 const EARN_COOLDOWN_MS = 60 * 1000;
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+// ====== 通用工具 ======
+
+function getAppVersion() {
+  const meta = document.querySelector('meta[name="app-version"]');
+  const fromMeta = meta && meta.getAttribute('content');
+  if (fromMeta && fromMeta.trim()) return fromMeta.trim();
+  if (typeof APP_VERSION === 'string' && APP_VERSION) return APP_VERSION;
+  return '';
+}
+
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+}

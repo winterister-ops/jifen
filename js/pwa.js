@@ -3,19 +3,6 @@
 let deferredInstallPrompt = null;
 let updatePromptShown = false;
 
-function isStandalone() {
-  return window.matchMedia('(display-mode: standalone)').matches
-    || window.navigator.standalone === true;
-}
-
-function getLocalAppVersion() {
-  const meta = document.querySelector('meta[name="app-version"]');
-  const fromMeta = meta && meta.getAttribute('content');
-  if (fromMeta && fromMeta.trim()) return fromMeta.trim();
-  if (typeof APP_VERSION === 'string' && APP_VERSION) return APP_VERSION;
-  return '';
-}
-
 async function fetchServerAppVersion() {
   const res = await fetch('/index.html', { cache: 'no-store' });
   if (!res.ok) return '';
@@ -69,7 +56,7 @@ async function refreshAppNow() {
 }
 
 async function checkServerVersion() {
-  const localVer = getLocalAppVersion();
+  const localVer = getAppVersion();
   if (!localVer) return;
   try {
     const serverVer = await fetchServerAppVersion();

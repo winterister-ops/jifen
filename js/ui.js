@@ -66,18 +66,10 @@ function greetingText() {
   return '晚上好！';
 }
 
-function getAppVersion() {
-  const meta = document.querySelector('meta[name="app-version"]');
-  const fromMeta = meta && meta.getAttribute('content');
-  if (fromMeta && fromMeta.trim()) return fromMeta.trim();
-  if (typeof APP_VERSION === 'string' && APP_VERSION) return APP_VERSION;
-  return '—';
-}
-
 function renderAppMeta() {
   const el = document.getElementById('appMeta');
   if (!el) return;
-  const ver = getAppVersion();
+  const ver = getAppVersion() || '—';
   const env = getEnvStatus();
   const tagCls = 'env-tag' + (env.text === '离线' ? ' offline' : (env.dev ? ' dev' : ''));
   el.innerHTML = `版本 ${ver} · <span class="${tagCls}">${env.text}</span>`;
@@ -464,3 +456,98 @@ function confetti() {
     setTimeout(() => c.remove(), dur*1000 + 100);
   }
 }
+
+// ====== 事件委托（替代 HTML 内联 onclick / onkeydown） ======
+
+const OVERLAY_DISMISS_HANDLERS = {
+  catalogEditModal: () => hideCatalogEditModal(),
+  passwordModal: () => hidePasswordModal(),
+  profileModal: () => hideProfileModal(),
+  calModal: () => hideCalendar(),
+  spendModal: () => hideSpendModal(),
+  deleteModal: () => hideDeleteConfirmModal(),
+  updateModal: () => hideUpdateModal(),
+};
+
+const CLICK_ACTION_HANDLERS = {
+  'submit-login': () => submitLogin(),
+  'show-forgot-panel': () => showForgotPanel(),
+  'show-login-panel': () => showLoginPanel(),
+  'submit-forgot-password': () => submitForgotPassword(),
+  'submit-reset-password': () => submitResetPassword(),
+  'show-forgot-send-panel': () => showForgotSendPanel(),
+  'enter-history-edit': () => enterHistoryEdit(),
+  'exit-history-edit': () => exitHistoryEdit(),
+  'open-calendar': () => openCalendar(),
+  'select-all-history': () => selectAllVisibleHistory(),
+  'show-delete-confirm': () => showDeleteConfirmModal(),
+  'open-profile-modal': () => openProfileModal(),
+  'open-catalog-manage': el => openCatalogManage(el.dataset.catalogType),
+  'prompt-install-app': () => promptInstallApp(),
+  'open-password-modal': () => openPasswordModal(),
+  'logout': () => logoutApp(),
+  'open-catalog-edit': el => openCatalogEditModal(el.dataset.catalogType),
+  'nav': el => switchView(el.dataset.nav),
+  'delete-catalog-item': () => deleteCatalogItem(),
+  'hide-catalog-edit-modal': () => hideCatalogEditModal(),
+  'save-catalog-edit': () => saveCatalogEdit(),
+  'hide-password-modal': () => hidePasswordModal(),
+  'submit-change-password': () => submitChangePassword(),
+  'hide-profile-modal': () => hideProfileModal(),
+  'save-profile': () => saveProfile(),
+  'cal-shift': el => calShift(Number(el.dataset.months)),
+  'hide-calendar': () => hideCalendar(),
+  'cal-pick-today': () => calPickToday(),
+  'hide-spend-modal': () => hideSpendModal(),
+  'confirm-spend': () => confirmSpend(),
+  'hide-delete-confirm-modal': () => hideDeleteConfirmModal(),
+  'confirm-delete-selected': () => confirmDeleteSelected(),
+  'hide-update-modal': () => hideUpdateModal(),
+  'confirm-app-refresh': () => confirmAppRefresh(),
+};
+
+const KEY_ACTION_HANDLERS = {
+  'focus-next': el => document.getElementById(el.dataset.focusTarget)?.focus(),
+  'submit-login': () => submitLogin(),
+  'submit-forgot-password': () => submitForgotPassword(),
+  'submit-reset-password': () => submitResetPassword(),
+  'save-catalog-edit': () => saveCatalogEdit(),
+  'submit-change-password': () => submitChangePassword(),
+  'save-profile': () => saveProfile(),
+};
+
+function findActionEl(el, attr) {
+  return el && el.closest ? el.closest('[' + attr + ']') : null;
+}
+
+function initAppEvents() {
+  document.addEventListener('click', e => {
+    const overlay = e.target.closest('.modal-overlay');
+    if (overlay && e.target === overlay) {
+      const dismiss = OVERLAY_DISMISS_HANDLERS[overlay.id];
+      if (dismiss) dismiss();
+      return;
+    }
+
+    const el = findActionEl(e.target, 'data-action');
+    if (!el) return;
+    const handler = CLICK_ACTION_HANDLERS[el.dataset.action];
+    if (handler) handler(el);
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const el = findActionEl(e.target, 'data-action-key');
+    if (!el || el !== e.target) return;
+    const handler = KEY_ACTION_HANDLERS[el.dataset.actionKey];
+    if (handler) handler(el);
+  });
+
+  document.addEventListener('change', e => {
+    const el = findActionEl(e.target, 'data-action');
+    if (!el || el.dataset.action !== 'toggle-vibration') return;
+    toggleVibration();
+  });
+}
+
+initAppEvents();

@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.57">
+<meta name="app-version" content="0.0.58">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.57">
+<link rel="stylesheet" href="styles.css?v=0.0.58">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -28,28 +28,28 @@
 
     <div id="authLoginPanel">
       <div class="auth-sub">请登录家长账号</div>
-      <input class="profile-input auth-input" id="emailInput" type="email" autocomplete="username" placeholder="邮箱" onkeydown="if(event.key==='Enter')document.getElementById('passwordInput').focus()">
-      <input class="profile-input auth-input auth-input-gap" id="passwordInput" type="password" autocomplete="current-password" placeholder="密码" onkeydown="if(event.key==='Enter')submitLogin()">
-      <button class="auth-btn primary" id="loginBtn" onclick="submitLogin()">登录</button>
-      <button type="button" class="auth-btn link" onclick="showForgotPanel()">忘记密码？</button>
+      <input class="profile-input auth-input" id="emailInput" type="email" autocomplete="username" placeholder="邮箱" data-action-key="focus-next" data-focus-target="passwordInput">
+      <input class="profile-input auth-input auth-input-gap" id="passwordInput" type="password" autocomplete="current-password" placeholder="密码" data-action-key="submit-login">
+      <button type="button" class="auth-btn primary" id="loginBtn" data-action="submit-login">登录</button>
+      <button type="button" class="auth-btn link" data-action="show-forgot-panel">忘记密码？</button>
     </div>
 
     <div id="authForgotSendPanel" style="display:none">
       <div class="auth-sub">输入注册邮箱，我们将发送验证码</div>
-      <input class="profile-input auth-input" id="resetEmailInput" type="email" autocomplete="username" placeholder="邮箱" onkeydown="if(event.key==='Enter')submitForgotPassword()">
-      <button class="auth-btn primary" id="forgotBtn" onclick="submitForgotPassword()">发送验证码</button>
-      <button type="button" class="auth-btn link" onclick="showLoginPanel()">返回登录</button>
+      <input class="profile-input auth-input" id="resetEmailInput" type="email" autocomplete="username" placeholder="邮箱" data-action-key="submit-forgot-password">
+      <button type="button" class="auth-btn primary" id="forgotBtn" data-action="submit-forgot-password">发送验证码</button>
+      <button type="button" class="auth-btn link" data-action="show-login-panel">返回登录</button>
     </div>
 
     <div id="authResetPanel" style="display:none">
       <div class="auth-sub">请输入邮件验证码并设置新密码</div>
       <p class="auth-hint" id="resetEmailHint"></p>
-      <input class="profile-input auth-input" id="resetCodeInput" type="text" inputmode="text" autocomplete="one-time-code" placeholder="邮件验证码" onkeydown="if(event.key==='Enter')document.getElementById('resetNewPasswordInput').focus()">
-      <input class="profile-input auth-input auth-input-gap" id="resetNewPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少 6 位）" onkeydown="if(event.key==='Enter')document.getElementById('resetConfirmPasswordInput').focus()">
-      <input class="profile-input auth-input auth-input-gap" id="resetConfirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" onkeydown="if(event.key==='Enter')submitResetPassword()">
-      <button class="auth-btn primary" id="resetPasswordBtn" onclick="submitResetPassword()">确认重置密码</button>
-      <button type="button" class="auth-btn link" onclick="showForgotSendPanel()">重新发送验证码</button>
-      <button type="button" class="auth-btn link" onclick="showLoginPanel()">返回登录</button>
+      <input class="profile-input auth-input" id="resetCodeInput" type="text" inputmode="text" autocomplete="one-time-code" placeholder="邮件验证码" data-action-key="focus-next" data-focus-target="resetNewPasswordInput">
+      <input class="profile-input auth-input auth-input-gap" id="resetNewPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少 6 位）" data-action-key="focus-next" data-focus-target="resetConfirmPasswordInput">
+      <input class="profile-input auth-input auth-input-gap" id="resetConfirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" data-action-key="submit-reset-password">
+      <button type="button" class="auth-btn primary" id="resetPasswordBtn" data-action="submit-reset-password">确认重置密码</button>
+      <button type="button" class="auth-btn link" data-action="show-forgot-send-panel">重新发送验证码</button>
+      <button type="button" class="auth-btn link" data-action="show-login-panel">返回登录</button>
       <p class="auth-hint">点击邮件中的重置链接可自动跳回本页并填入验证码；也可复制链接里 <strong>oobCode=</strong> 后面的一串字符</p>
     </div>
 
@@ -92,14 +92,14 @@
      <div class="hp-date-stats" id="hpDateStats"></div>
     </div>
     <div class="hp-date-actions">
-     <button class="filter-pill" id="historyEditBtn" onclick="enterHistoryEdit()">编辑</button>
-     <button class="filter-pill" id="historyCancelEditBtn" onclick="exitHistoryEdit()" style="display:none">取消</button>
+     <button type="button" class="filter-pill" id="historyEditBtn" data-action="enter-history-edit">编辑</button>
+     <button type="button" class="filter-pill" id="historyCancelEditBtn" data-action="exit-history-edit" style="display:none">取消</button>
     </div>
    </div>
 
    <div class="hp-weekcal" id="hpWeekCal">
     <div class="hp-weekcal-days" id="hpWeekCalDays"></div>
-    <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" onclick="openCalendar()" title="万年历" aria-label="打开万年历"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
+    <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" data-action="open-calendar" title="万年历" aria-label="打开万年历"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
    </div>
   </div>
 
@@ -109,20 +109,20 @@
   </div>
 
   <div class="hp-editbar" id="hpEditBar" style="display:none">
-    <button type="button" class="btn-soft" id="hpSelectAllBtn" onclick="selectAllVisibleHistory()">全选</button>
-    <button type="button" class="btn-soft hp-edit-delete" id="hpDeleteBtn" onclick="showDeleteConfirmModal()" disabled>删除</button>
+    <button type="button" class="btn-soft" id="hpSelectAllBtn" data-action="select-all-history">全选</button>
+    <button type="button" class="btn-soft hp-edit-delete" id="hpDeleteBtn" data-action="show-delete-confirm" disabled>删除</button>
   </div>
  </div>
 
  <div id="settingsView" style="display:none">
   <div class="profile-card">
-    <div class="profile-avatar" id="setAvatar" onclick="openProfileModal()" title="点击修改头像">👧</div>
+    <div class="profile-avatar" id="setAvatar" data-action="open-profile-modal" title="点击修改头像">👧</div>
     <div class="profile-name" id="setName">宝贝</div>
-    <button class="profile-edit" onclick="openProfileModal()"><img class="ui-ic" src="icons/edit.svg" alt="">修改头像和昵称</button>
+    <button type="button" class="profile-edit" data-action="open-profile-modal"><img class="ui-ic" src="icons/edit.svg" alt="">修改头像和昵称</button>
   </div>
 
   <div class="menu-list">
-    <button type="button" class="menu-item" onclick="openCatalogManage('tasks')">
+    <button type="button" class="menu-item" data-action="open-catalog-manage" data-catalog-type="tasks">
       <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
       <span class="menu-tx">
         <span class="menu-title">任务管理</span>
@@ -130,7 +130,7 @@
       </span>
       <span class="menu-arrow">›</span>
     </button>
-    <button type="button" class="menu-item" onclick="openCatalogManage('rewards')">
+    <button type="button" class="menu-item" data-action="open-catalog-manage" data-catalog-type="rewards">
       <span class="menu-ic"><img class="ui-ic" src="icons/gift.svg" alt=""></span>
       <span class="menu-tx">
         <span class="menu-title">奖励管理</span>
@@ -143,7 +143,7 @@
   <div id="settingsSection">
     <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
     <div class="menu-list">
-      <button type="button" class="menu-item" id="pwaInstallItem" onclick="promptInstallApp()" style="display:none">
+      <button type="button" class="menu-item" id="pwaInstallItem" data-action="prompt-install-app" style="display:none">
         <span class="menu-ic"><img class="ui-ic" src="icons/home.svg" alt=""></span>
         <span class="menu-tx">
           <span class="menu-title">添加到主屏幕</span>
@@ -172,11 +172,11 @@
           <span class="menu-desc">完成任务和兑换奖励时振动</span>
         </span>
         <label class="toggle-switch">
-          <input type="checkbox" id="vibrationToggle" onchange="toggleVibration()">
+          <input type="checkbox" id="vibrationToggle" data-action="toggle-vibration">
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <button type="button" class="menu-item" onclick="openPasswordModal()">
+      <button type="button" class="menu-item" data-action="open-password-modal">
         <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
         <span class="menu-tx">
           <span class="menu-title">修改密码</span>
@@ -184,7 +184,7 @@
         </span>
         <span class="menu-arrow">›</span>
       </button>
-      <button type="button" class="menu-item" onclick="logoutApp()">
+      <button type="button" class="menu-item" data-action="logout">
         <span class="menu-ic"><img class="ui-ic" src="icons/setting-two.svg" alt=""></span>
         <span class="menu-tx">
           <span class="menu-title">退出登录</span>
@@ -208,7 +208,7 @@
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
-    <button type="button" class="filter-pill catalog-add-pill" onclick="openCatalogEditModal('tasks')">
+    <button type="button" class="filter-pill catalog-add-pill" data-action="open-catalog-edit" data-catalog-type="tasks">
       <img class="ui-ic" src="icons/plus.svg" alt="">添加
     </button>
   </div>
@@ -223,7 +223,7 @@
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
-    <button type="button" class="filter-pill catalog-add-pill" onclick="openCatalogEditModal('rewards')">
+    <button type="button" class="filter-pill catalog-add-pill" data-action="open-catalog-edit" data-catalog-type="rewards">
       <img class="ui-ic" src="icons/plus.svg" alt="">添加
     </button>
   </div>
@@ -235,130 +235,130 @@
 </div>
 
 <nav id="bottomNav" class="bottom-nav is-hidden" aria-hidden="true" aria-label="主导航">
-  <button type="button" class="bottom-nav-item active" data-nav="tasks" onclick="switchView('tasks')">
+  <button type="button" class="bottom-nav-item active" data-action="nav" data-nav="tasks">
     <img class="ui-ic" src="icons/muscle.svg" alt="" aria-hidden="true">
     <span>任务</span>
   </button>
-  <button type="button" class="bottom-nav-item" data-nav="rewards" onclick="switchView('rewards')">
+  <button type="button" class="bottom-nav-item" data-action="nav" data-nav="rewards">
     <img class="ui-ic" src="icons/gift.svg" alt="" aria-hidden="true">
     <span>奖励</span>
   </button>
-  <button type="button" class="bottom-nav-item" data-nav="history" onclick="switchView('history')">
+  <button type="button" class="bottom-nav-item" data-action="nav" data-nav="history">
     <img class="ui-ic" src="icons/calendar.svg" alt="" aria-hidden="true">
     <span>记录</span>
   </button>
-  <button type="button" class="bottom-nav-item" data-nav="settings" onclick="switchView('settings')">
+  <button type="button" class="bottom-nav-item" data-action="nav" data-nav="settings">
     <img class="ui-ic" src="icons/user.svg" alt="" aria-hidden="true">
     <span>我的</span>
   </button>
 </nav>
 
-<div class="modal-overlay" id="catalogEditModal" onclick="if(event.target===this) hideCatalogEditModal()">
+<div class="modal-overlay" id="catalogEditModal">
   <div class="modal-box">
     <div class="modal-title" id="catalogEditTitle">编辑任务</div>
-    <input class="profile-input modal-input" id="catalogNameInput" type="text" maxlength="20" placeholder="名称" onkeydown="if(event.key==='Enter')document.getElementById('catalogPtsInput').focus()">
-    <input class="profile-input modal-input" id="catalogPtsInput" type="number" min="1" max="999" placeholder="星星分值" onkeydown="if(event.key==='Enter')saveCatalogEdit()">
+    <input class="profile-input modal-input" id="catalogNameInput" type="text" maxlength="20" placeholder="名称" data-action-key="focus-next" data-focus-target="catalogPtsInput">
+    <input class="profile-input modal-input" id="catalogPtsInput" type="number" min="1" max="999" placeholder="星星分值" data-action-key="save-catalog-edit">
     <div class="emoji-picker" id="catalogEmojiPicker"></div>
     <div class="modal-btns">
-      <button class="modal-btn danger" id="catalogDeleteBtn" onclick="deleteCatalogItem()" style="display:none">删除</button>
-      <button class="modal-btn cancel" onclick="hideCatalogEditModal()">取消</button>
-      <button class="modal-btn confirm" onclick="saveCatalogEdit()">保存</button>
+      <button type="button" class="modal-btn danger" id="catalogDeleteBtn" data-action="delete-catalog-item" style="display:none">删除</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-catalog-edit-modal">取消</button>
+      <button type="button" class="modal-btn confirm" data-action="save-catalog-edit">保存</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="passwordModal" onclick="if(event.target===this) hidePasswordModal()">
+<div class="modal-overlay" id="passwordModal">
   <div class="modal-box">
     <div class="modal-title">修改密码</div>
     <input class="profile-input modal-input" id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="当前密码">
     <input class="profile-input modal-input" id="newPasswordInput" type="password" autocomplete="new-password" placeholder="新密码（至少 6 位）">
-    <input class="profile-input modal-input" id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" onkeydown="if(event.key==='Enter')submitChangePassword()">
+    <input class="profile-input modal-input" id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="确认新密码" data-action-key="submit-change-password">
     <div class="modal-error" id="passwordModalError" style="display:none"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hidePasswordModal()">取消</button>
-      <button class="modal-btn confirm" id="passwordModalOk" onclick="submitChangePassword()">确认修改</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-password-modal">取消</button>
+      <button type="button" class="modal-btn confirm" id="passwordModalOk" data-action="submit-change-password">确认修改</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="profileModal" onclick="if(event.target===this) hideProfileModal()">
+<div class="modal-overlay" id="profileModal">
   <div class="modal-box">
     <div class="modal-title">修改宝贝信息</div>
-    <input class="profile-input" id="profileNameInput" type="text" maxlength="12" placeholder="宝贝昵称" onkeydown="if(event.key==='Enter')saveProfile()">
+    <input class="profile-input" id="profileNameInput" type="text" maxlength="12" placeholder="宝贝昵称" data-action-key="save-profile">
     <div class="emoji-picker" id="emojiPicker"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hideProfileModal()">取消</button>
-      <button class="modal-btn confirm" onclick="saveProfile()">保存</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-profile-modal">取消</button>
+      <button type="button" class="modal-btn confirm" data-action="save-profile">保存</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="calModal" onclick="if(event.target===this) hideCalendar()">
+<div class="modal-overlay" id="calModal">
   <div class="modal-box cal-box">
     <div class="cal-head">
-      <button class="cal-nav" onclick="calShift(-12)" title="上一年">«</button>
-      <button class="cal-nav" onclick="calShift(-1)" title="上个月">‹</button>
+      <button type="button" class="cal-nav" data-action="cal-shift" data-months="-12" title="上一年">«</button>
+      <button type="button" class="cal-nav" data-action="cal-shift" data-months="-1" title="上个月">‹</button>
       <div class="cal-title" id="calTitle"></div>
-      <button class="cal-nav" onclick="calShift(1)" title="下个月">›</button>
-      <button class="cal-nav" onclick="calShift(12)" title="下一年">»</button>
+      <button type="button" class="cal-nav" data-action="cal-shift" data-months="1" title="下个月">›</button>
+      <button type="button" class="cal-nav" data-action="cal-shift" data-months="12" title="下一年">»</button>
     </div>
     <div class="cal-week">
       <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
     </div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hideCalendar()">取消</button>
-      <button class="modal-btn confirm" onclick="calPickToday()">回到今天</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-calendar">取消</button>
+      <button type="button" class="modal-btn confirm" data-action="cal-pick-today">回到今天</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="spendModal" onclick="if(event.target===this) hideSpendModal()">
+<div class="modal-overlay" id="spendModal">
   <div class="modal-box">
     <div class="modal-emoji" id="spendModalEmoji"></div>
     <div class="modal-title">确定要兑换吗？</div>
     <div class="modal-msg" id="spendModalMsg"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hideSpendModal()">取消</button>
-      <button class="modal-btn confirm" onclick="confirmSpend()">确定兑换</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-spend-modal">取消</button>
+      <button type="button" class="modal-btn confirm" data-action="confirm-spend">确定兑换</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="deleteModal" onclick="if(event.target===this) hideDeleteConfirmModal()">
+<div class="modal-overlay" id="deleteModal">
   <div class="modal-box">
     <div class="modal-emoji" id="deleteModalEmoji"><img class="ui-ic" src="icons/caution.svg" alt=""></div>
     <div class="modal-title">确定删除记录吗？</div>
     <div class="modal-msg" id="deleteModalMsg"></div>
     <div class="modal-btns">
-      <button class="modal-btn cancel" onclick="hideDeleteConfirmModal()">取消</button>
-      <button class="modal-btn danger" onclick="confirmDeleteSelected()">确认删除</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-delete-confirm-modal">取消</button>
+      <button type="button" class="modal-btn danger" data-action="confirm-delete-selected">确认删除</button>
     </div>
   </div>
 </div>
 
-<div class="modal-overlay" id="updateModal" onclick="if(event.target===this) hideUpdateModal()">
+<div class="modal-overlay" id="updateModal">
   <div class="modal-box">
     <div class="modal-emoji"><img class="ui-ic" src="icons/star.svg" alt=""></div>
     <div class="modal-title" id="updateModalTitle">发现新版本</div>
     <div class="modal-msg" id="updateModalMsg">需要刷新以加载最新内容。</div>
     <div class="modal-btns">
-      <button type="button" class="modal-btn cancel" onclick="hideUpdateModal()">稍后</button>
-      <button type="button" class="modal-btn confirm" onclick="confirmAppRefresh()">立即刷新</button>
+      <button type="button" class="modal-btn cancel" data-action="hide-update-modal">稍后</button>
+      <button type="button" class="modal-btn confirm" data-action="confirm-app-refresh">立即刷新</button>
     </div>
   </div>
 </div>
 
-<!-- Firebase 云同步 SDK -->
+<!-- Firebase 认证 SDK（database 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="data.js?v=0.0.57"></script>
-<script src="js/sync.js?v=0.0.57"></script>
-<script src="js/history.js?v=0.0.57"></script>
-<script src="js/catalog.js?v=0.0.57"></script>
-<script src="js/ui.js?v=0.0.57"></script>
-<script src="js/auth.js?v=0.0.57"></script>
-<script src="js/pwa.js?v=0.0.57"></script>
+<script src="data.js?v=0.0.58"></script>
+<script src="js/firebase-loader.js?v=0.0.58"></script>
+<script src="js/sync.js?v=0.0.58"></script>
+<script src="js/history.js?v=0.0.58"></script>
+<script src="js/catalog.js?v=0.0.58"></script>
+<script src="js/ui.js?v=0.0.58"></script>
+<script src="js/auth.js?v=0.0.58"></script>
+<script src="js/pwa.js?v=0.0.58"></script>
 </body>
 </html>

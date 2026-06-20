@@ -586,13 +586,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function initCloud() {
-  tearDownCloud();
-  if (!firebaseReady || !firebaseConfig.databaseURL || !currentUser) {
-    const s = envStatusText();
-    setStatus(s.text, s.dev);
-    return;
-  }
+function attachCloudListener() {
   try {
     cloudRef = firebase.database().ref(cloudPathForUser(currentUser));
     let first = true;
@@ -606,19 +600,16 @@ function initCloud() {
           saveLocal();
           scheduleRender();
           applyingRemote = false;
-          lastSyncedCloud = stateToCloudBlob(merged);
-          const remoteCloud = stateToCloudBlob(val);
-          if (!stateContentEqual(merged, val)) {
-            const { patch, incremental } = buildCloudPatch(remoteCloud, lastSyncedCloud);
-            if (Object.keys(patch).length) {
-              const write = incremental
-                ? cloudRef.update(patch)
-                : cloudRef.set(lastSyncedCloud);
-              write.catch(err => console.warn('云同步合并回写失败', err));
-            }
-          }
-        } else {
-          lastSyncedCloud = stateToCloudBlob(merged);
+        }
+        lastSyncedCloud = stateToCloudBlob(merged);
+        if (!stateContentEqual(merged, val)) {
+          const blob = stateToCloudBlob(merged);
+          cloudRef.set(blob)
+            .then(() => {
+              lastSyncedCloud = blob;
+              cloudPushDirty = false;
+            })
+            .catch(err => console.warn('云同步合并回写失败', err));
         }
       } else if (first) {
         const blob = stateToCloudBlob(state);
@@ -636,4 +627,22 @@ function initCloud() {
     console.warn(e);
     setStatus('离线', true);
   }
+}
+
+function initCloud() {
+  tearDownCloud();
+  if (!firebaseReady || !firebaseConfig.databaseURL || !currentUser) {
+    const s = envStatusText();
+    setStatus(s.text, s.dev);
+    return;
+  }
+  ensureFirebaseDatabase()
+    .then(() => {
+      attachCloudListener();
+      if (cloudPushDirty) schedulePushToCloud();
+    })
+    .catch(e => {
+      console.warn('Database SDK 加载失败', e);
+      setStatus('离线', true);
+    });
 }

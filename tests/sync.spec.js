@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { gotoLoggedInApp } = require('./helpers');
+const { gotoLoggedInApp, waitForCloudSync, earnTask } = require('./helpers');
 
 test.describe('云同步合并逻辑', () => {
   test.beforeEach(async ({ page }) => {
@@ -213,5 +213,30 @@ test.describe('云同步合并逻辑', () => {
     expect(result.catalog.tasks.some(t => t.name === '本地任务')).toBe(true);
     expect(result.catalog.tasks.some(t => t.name === '远端任务')).toBe(false);
     expect(result.meta.catalogUpdatedAt).toBe(500);
+  });
+
+  test('离线改动上线后会补推到云端', async ({ page }) => {
+    await waitForCloudSync(page);
+
+    await page.evaluate(() => window.__testCloud.setWriteBlocked(true));
+    await earnTask(page, '自己洗手');
+    await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
+
+    const cloudWhileBlocked = await page.evaluate(() => window.__testCloud.getData().score);
+    expect(cloudWhileBlocked).toBe(0);
+
+    const dirtyWhileBlocked = await page.evaluate(() => cloudPushDirty);
+    expect(dirtyWhileBlocked).toBe(true);
+
+    await page.evaluate(() => {
+      window.__testCloud.setWriteBlocked(false);
+      window.dispatchEvent(new Event('online'));
+    });
+
+    await page.waitForFunction(
+      () => window.__testCloud.getData().score === 2 && !cloudPushDirty,
+      null,
+      { timeout: 10000 }
+    );
   });
 });
