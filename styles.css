@@ -820,6 +820,12 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 }
 .catalog-row.disabled { opacity: .55; }
 .catalog-row.spend-item.locked { filter: grayscale(.6); }
+.catalog-row.earn-item.cooldown {
+  filter: grayscale(.55);
+  opacity: .62;
+  transition: filter .35s ease, opacity .35s ease;
+}
+.catalog-row.earn-item.cooldown .catalog-pts.plus { color: #8ec9a8; }
 .catalog-row.sel {
   box-shadow: inset 0 0 0 2px #ffd4a8;
   background: #fff9f0;

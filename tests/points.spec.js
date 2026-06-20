@@ -37,7 +37,7 @@ test.describe('积分获取与消耗', () => {
     await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
 
     await wash.click();
-    await expect(page.locator('#toastEl')).toHaveText('刚刚已经做过啦', { timeout: 5000 });
+    await expect(wash).toHaveClass(/cooldown/);
     await expect(page.locator('#scoreNum')).toHaveText('2');
 
     const historyLen = await page.evaluate(() => state.history.length);

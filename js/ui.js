@@ -7,6 +7,7 @@ let currentView = 'tasks';
 let currentTab = 'earn';
 let pendingSpendItem = null;
 let catalogActionLockTimer = null;
+let earnCooldownRefreshTimer = null;
 
 const CATALOG_ACTION_LOCK_MS = 500;
 
@@ -239,11 +240,57 @@ function switchTab(t) {
   render();
 }
 
+function earnCooldownRemainingMs(taskId) {
+  const lastTs = lastEarnTimeForTask(taskId);
+  if (!lastTs) return 0;
+  return Math.max(0, EARN_COOLDOWN_MS - (Date.now() - lastTs));
+}
+
+function isTaskInEarnCooldown(taskId) {
+  return earnCooldownRemainingMs(taskId) > 0;
+}
+
+function scheduleEarnCooldownRefresh() {
+  if (earnCooldownRefreshTimer) {
+    clearTimeout(earnCooldownRefreshTimer);
+    earnCooldownRefreshTimer = null;
+  }
+  if (currentTab !== 'earn') return;
+
+  let minRemaining = Infinity;
+  getActiveTasks().forEach((it) => {
+    const remaining = earnCooldownRemainingMs(it.id);
+    if (remaining > 0) minRemaining = Math.min(minRemaining, remaining);
+  });
+  if (minRemaining === Infinity) return;
+
+  earnCooldownRefreshTimer = setTimeout(() => {
+    earnCooldownRefreshTimer = null;
+    if (currentTab === 'earn' && (currentView === 'tasks' || currentView === 'rewards')) {
+      renderCatalog();
+      scheduleEarnCooldownRefresh();
+    }
+  }, minRemaining + 50);
+}
+
+function shakeEarnRow(taskId) {
+  const row = document.querySelector('.earn-item[data-task-id="' + taskId + '"]');
+  if (!row || !row.animate) return;
+  row.animate(
+    [{ transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }],
+    { duration: 280 }
+  );
+}
+
 function buildCatalogItemEl(it, mode) {
   const row = document.createElement('div');
   const ptsClass = mode === 'earn' ? 'plus' : 'minus';
   const ptsLabel = mode === 'earn' ? `+${it.pts}` : `-${it.pts}`;
   row.className = 'catalog-row ' + (mode === 'earn' ? 'earn-item' : 'spend-item');
+  if (mode === 'earn') {
+    row.dataset.taskId = it.id;
+    if (isTaskInEarnCooldown(it.id)) row.classList.add('cooldown');
+  }
   if (mode === 'spend' && state.score < it.pts) row.classList.add('locked', 'disabled');
 
   const btn = document.createElement('button');
@@ -297,6 +344,7 @@ function renderCatalog() {
   const mode = currentTab === 'earn' ? 'earn' : 'spend';
   const list = sortItemsByPtsAsc(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
   list.forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
+  if (mode === 'earn') scheduleEarnCooldownRefresh();
 }
 
 function render() {
@@ -321,9 +369,8 @@ function lastEarnTimeForTask(taskId) {
 }
 
 function earn(it, e) {
-  const lastTs = lastEarnTimeForTask(it.id);
-  if (lastTs && Date.now() - lastTs < EARN_COOLDOWN_MS) {
-    toast('刚刚已经做过啦');
+  if (isTaskInEarnCooldown(it.id)) {
+    shakeEarnRow(it.id);
     return;
   }
   state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
