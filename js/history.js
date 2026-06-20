@@ -106,13 +106,14 @@ function visibleHistoryWithEids() {
 }
 
 function visibleHistoryPage() {
-  const items = visibleHistoryWithEids();
-  if (selectedDateKey !== 'all') return { items, hasMore: false, total: items.length };
+  const items = visibleHistoryWithEids().slice().reverse();
+  if (selectedDateKey !== 'all') {
+    return { items, hasMore: false, total: items.length };
+  }
 
-  const reversed = items.slice().reverse();
-  const total = reversed.length;
+  const total = items.length;
   return {
-    items: reversed.slice(0, historyAllLimit),
+    items: items.slice(0, historyAllLimit),
     hasMore: total > historyAllLimit,
     total
   };

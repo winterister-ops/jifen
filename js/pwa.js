@@ -1,19 +1,105 @@
 // ====== PWA：Service Worker 注册与安装提示 ======
 
 let deferredInstallPrompt = null;
+let updatePromptShown = false;
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
 }
 
+function getLocalAppVersion() {
+  const meta = document.querySelector('meta[name="app-version"]');
+  const fromMeta = meta && meta.getAttribute('content');
+  if (fromMeta && fromMeta.trim()) return fromMeta.trim();
+  if (typeof APP_VERSION === 'string' && APP_VERSION) return APP_VERSION;
+  return '';
+}
+
+async function fetchServerAppVersion() {
+  const res = await fetch('/index.html', { cache: 'no-store' });
+  if (!res.ok) return '';
+  const html = await res.text();
+  const match = html.match(/name="app-version"\s+content="([^"]+)"/);
+  return match ? match[1].trim() : '';
+}
+
+function promptAppRefresh(reason) {
+  if (updatePromptShown) return;
+  updatePromptShown = true;
+  const msg = reason === 'server'
+    ? '发现新版本，需要刷新以加载最新内容。'
+    : '应用已更新，需要刷新以加载最新内容。';
+  if (!window.confirm(msg + '\n\n是否立即刷新？')) {
+    updatePromptShown = false;
+    return;
+  }
+  refreshAppNow();
+}
+
+async function refreshAppNow() {
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) await reg.update();
+    } catch (err) {
+      console.warn('Service Worker 更新检查失败', err);
+    }
+  }
+  window.location.reload();
+}
+
+async function checkServerVersion() {
+  const localVer = getLocalAppVersion();
+  if (!localVer) return;
+  try {
+    const serverVer = await fetchServerAppVersion();
+    if (serverVer && serverVer !== localVer) {
+      promptAppRefresh('server');
+    }
+  } catch (err) {
+    console.warn('版本检查失败', err);
+  }
+}
+
+function watchServiceWorkerUpdates(registration) {
+  registration.addEventListener('updatefound', () => {
+    const worker = registration.installing;
+    if (!worker) return;
+    worker.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        promptAppRefresh('sw');
+      }
+    });
+  });
+}
+
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
     const v = (typeof APP_VERSION === 'string' && APP_VERSION) ? APP_VERSION : '';
-    navigator.serviceWorker.register('/sw.js?v=' + encodeURIComponent(v)).catch(err => {
-      console.warn('Service Worker 注册失败', err);
-    });
+    navigator.serviceWorker.register('/sw.js?v=' + encodeURIComponent(v))
+      .then(registration => {
+        watchServiceWorkerUpdates(registration);
+        checkServerVersion();
+      })
+      .catch(err => {
+        console.warn('Service Worker 注册失败', err);
+      });
+  });
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (updatePromptShown) window.location.reload();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update();
+      });
+    }
+    checkServerVersion();
   });
 }
 
