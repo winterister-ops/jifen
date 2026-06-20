@@ -131,6 +131,11 @@ function applyClearAndRevoked(history, lastClearAt, revokedSet) {
   });
 }
 
+function recomputeScore(history, lastClearAt, revokedEids) {
+  return applyClearAndRevoked(history, lastClearAt, new Set(revokedEids))
+    .reduce((s, h) => s + h.delta, 0);
+}
+
 function normalizeState(raw, forMerge) {
   if (!raw || typeof raw.score !== 'number') return defaultState();
   const history = (Array.isArray(raw.history) ? raw.history : []).map((h, i) => ({
@@ -151,7 +156,7 @@ function normalizeState(raw, forMerge) {
   }
   const filtered = applyClearAndRevoked(history, meta.lastClearAt, new Set(revokedEids))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  const score = filtered.reduce((s, h) => s + h.delta, 0);
+  const score = recomputeScore(history, meta.lastClearAt, revokedEids);
   return { score, history: filtered, profile, revokedEids, catalog, meta };
 }
 
@@ -259,6 +264,7 @@ function pushToCloud() {
 }
 
 function save() {
+  state = normalizeState(state);
   saveLocal();
   pushToCloud();
 }

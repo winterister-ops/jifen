@@ -274,7 +274,6 @@ function earn(it, e) {
     toast('刚刚已经做过啦');
     return;
   }
-  state.score += it.pts;
   state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
   touchMeta();
   save();
@@ -305,7 +304,6 @@ function confirmSpend() {
   const it = pendingSpendItem;
   if (!it) return;
   hideSpendModal();
-  state.score -= it.pts;
   state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
   touchMeta();
   save();

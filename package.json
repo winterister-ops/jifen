@@ -5,8 +5,9 @@
   "scripts": {
     "sync-version": "node scripts/sync-version.js",
     "version": "node scripts/sync-version.js",
-    "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test": "node node_modules/@playwright/test/cli.js test",
+    "test:ui": "node node_modules/@playwright/test/cli.js test --ui",
+    "playwright": "node node_modules/@playwright/test/cli.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0"

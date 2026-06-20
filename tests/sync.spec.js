@@ -75,6 +75,23 @@ test.describe('云同步合并逻辑', () => {
     expect(result.score).toBe(3);
   });
 
+  test('save 会从 history 重算积分', async ({ page }) => {
+    await page.evaluate(() => {
+      state.score = 999;
+      state.history = [{ eid: 'e1', id: 'wash', emoji: '🧼', name: '洗手', delta: 2, time: '', ts: Date.now() }];
+      state.revokedEids = [];
+      state.meta = { ...defaultMeta(), updatedAt: Date.now() };
+      save();
+    });
+
+    const stored = await page.evaluate(() => {
+      const raw = localStorage.getItem(KEY);
+      return raw ? JSON.parse(raw) : null;
+    });
+
+    expect(stored.score).toBe(2);
+  });
+
   test('save 会写入 localStorage', async ({ page }) => {
     await page.locator('.earn-item').filter({ hasText: '自己洗手' }).click();
     await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });

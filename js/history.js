@@ -255,17 +255,14 @@ function deleteHistoryRecords(eids) {
   if (!set.size) return;
 
   if (!Array.isArray(state.revokedEids)) state.revokedEids = [];
-  let removedDelta = 0;
 
   state.history = state.history.filter((h, i) => {
     const eid = logEid(h, i);
     if (!set.has(eid)) return true;
     state.revokedEids.push(eid);
-    removedDelta += h.delta;
     return false;
   });
 
-  state.score -= removedDelta;
   touchMeta();
   save();
 }
