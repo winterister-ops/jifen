@@ -171,7 +171,8 @@ function switchView(view) {
   applyViewVisibility(view);
   if (view === 'history') {
     exitHistoryEdit();
-    selectedDateKey = ymd(new Date());
+    focusedDateKey = null;
+    resetHistoryAllLimit();
     renderDateHeader();
     renderHistory();
   }

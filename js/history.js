@@ -1,13 +1,13 @@
-// ====== 积分记录页面 + 日期筛选 + 多选编辑 ======
+// ====== 积分记录页面 + 日期定位 + 多选编辑 ======
 
 const HISTORY_PAGE_SIZE = 50;
 
-let selectedDateKey = ymd(new Date()); // 'YYYY-MM-DD' 或 'all'
+let focusedDateKey = null; // 日历高亮 / 滚动定位 'YYYY-MM-DD'
 let calYear, calMonth; // calMonth: 0-11
 let historyEditMode = false;
 let selectedEids = new Set();
 let historyAllLimit = HISTORY_PAGE_SIZE;
-let historyDateKeysMonthCache = { key: '', days: null };
+let historyDateKeysMonthCache = { key: '', stats: null };
 
 function ymd(d) {
   const p = n => String(n).padStart(2, '0');
@@ -80,16 +80,54 @@ function appendHistoryInfo(parent, log) {
 }
 
 function filteredHistory() {
-  const out = [];
-  const list = state.history;
-  if (selectedDateKey === 'all') {
-    for (let i = 0; i < list.length; i++) out.push(list[i]);
-    return out;
+  return state.history.slice();
+}
+
+function historyReversedWithEids() {
+  return historyEntriesWithEids(state.history).slice().reverse();
+}
+
+function historyFirstIndexForDateKey(key) {
+  const items = historyReversedWithEids();
+  for (let i = 0; i < items.length; i++) {
+    if (entryDateKey(items[i].log) === key) return i;
   }
-  for (let i = 0; i < list.length; i++) {
-    if (entryDateKey(list[i]) === selectedDateKey) out.push(list[i]);
+  return -1;
+}
+
+function scrollToHistoryDateHead(key) {
+  updateHistoryStickyOffset();
+  const el = document.querySelector('#history .date-head[data-date="' + key + '"]');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function updateHistoryStickyOffset() {
+  const head = document.getElementById('hpStickyHead');
+  const view = document.getElementById('historyView');
+  if (!head || !view || view.style.display === 'none') return;
+  const h = Math.ceil(head.getBoundingClientRect().height);
+  view.style.setProperty('--hp-sticky-head-h', h + 'px');
+}
+
+function jumpToHistoryDate(key) {
+  if (historyEditMode) return;
+  const idx = historyFirstIndexForDateKey(key);
+  if (idx < 0) {
+    if (typeof toast === 'function') toast('这一天还没有积分记录哦');
+    return;
   }
-  return out;
+  focusedDateKey = key;
+  const need = idx + 1;
+  if (need > historyAllLimit) {
+    historyAllLimit = need;
+    renderHistory();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToHistoryDateHead(key));
+    });
+    return;
+  }
+  renderDateHeader();
+  scrollToHistoryDateHead(key);
 }
 
 function historyEntriesWithEids(items) {
@@ -106,11 +144,7 @@ function visibleHistoryWithEids() {
 }
 
 function visibleHistoryPage() {
-  const items = visibleHistoryWithEids().slice().reverse();
-  if (selectedDateKey !== 'all') {
-    return { items, hasMore: false, total: items.length };
-  }
-
+  const items = historyReversedWithEids();
   const total = items.length;
   return {
     items: items.slice(0, historyAllLimit),
@@ -120,7 +154,6 @@ function visibleHistoryPage() {
 }
 
 function loadMoreHistory() {
-  if (selectedDateKey !== 'all') return;
   historyAllLimit += HISTORY_PAGE_SIZE;
   renderHistory();
 }
@@ -130,23 +163,68 @@ function resetHistoryAllLimit() {
 }
 
 function invalidateHistoryDateKeysCache() {
-  historyDateKeysMonthCache = { key: '', days: null };
+  historyDateKeysMonthCache = { key: '', stats: null };
 }
 
-function historyDateKeysForMonth(year, month) {
+function historyDayStat(key) {
+  const stat = { earn: false, spend: false };
+  const list = state.history;
+  for (let i = 0; i < list.length; i++) {
+    if (entryDateKey(list[i]) !== key) continue;
+    if (list[i].delta > 0) stat.earn = true;
+    else if (list[i].delta < 0) stat.spend = true;
+  }
+  return stat;
+}
+
+function historyDayStatsForMonth(year, month) {
   const cacheKey = year + '-' + month;
-  if (historyDateKeysMonthCache.key === cacheKey && historyDateKeysMonthCache.days) {
-    return historyDateKeysMonthCache.days;
+  if (historyDateKeysMonthCache.key === cacheKey && historyDateKeysMonthCache.stats) {
+    return historyDateKeysMonthCache.stats;
   }
   const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
-  const days = new Set();
+  const stats = new Map();
   const list = state.history;
   for (let i = 0; i < list.length; i++) {
     const key = entryDateKey(list[i]);
-    if (key.startsWith(prefix)) days.add(key);
+    if (!key.startsWith(prefix)) continue;
+    let stat = stats.get(key);
+    if (!stat) {
+      stat = { earn: false, spend: false };
+      stats.set(key, stat);
+    }
+    if (list[i].delta > 0) stat.earn = true;
+    else if (list[i].delta < 0) stat.spend = true;
   }
-  historyDateKeysMonthCache = { key: cacheKey, days };
-  return days;
+  historyDateKeysMonthCache = { key: cacheKey, stats };
+  return stats;
+}
+
+function weekCalKeys() {
+  const keys = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    keys.push(ymd(d));
+  }
+  return keys;
+}
+
+function appendCalDayMarkers(cell, stat) {
+  if (!stat || (!stat.earn && !stat.spend)) return;
+  const marks = document.createElement('span');
+  marks.className = 'cal-marks';
+  if (stat.earn) {
+    const dot = document.createElement('i');
+    dot.className = 'dot earn';
+    marks.appendChild(dot);
+  }
+  if (stat.spend) {
+    const dot = document.createElement('i');
+    dot.className = 'dot spend';
+    marks.appendChild(dot);
+  }
+  cell.appendChild(marks);
 }
 
 function pruneSelection() {
@@ -201,9 +279,7 @@ function updateHistoryEditChrome() {
   const editBtn = document.getElementById('historyEditBtn');
   const cancelBtn = document.getElementById('historyCancelEditBtn');
   const editBar = document.getElementById('hpEditBar');
-  const allBtn = document.getElementById('allToggle');
-  const calBtn = document.getElementById('hpCalBtn');
-  const todayBtn = document.getElementById('todayBtn');
+  const weekExpand = document.getElementById('hpWeekCalExpand');
   const historyView = document.getElementById('historyView');
   const hasVisible = filteredHistory().length > 0;
 
@@ -219,8 +295,12 @@ function updateHistoryEditChrome() {
   if (typeof updateBottomNav === 'function') updateBottomNav(currentView === 'history' ? 'history' : currentView);
 
   const filterLocked = historyEditMode;
-  [allBtn, calBtn, todayBtn].forEach(el => {
-    if (!el) return;
+  if (weekExpand) {
+    weekExpand.disabled = filterLocked;
+    weekExpand.style.opacity = filterLocked ? '.45' : '';
+    weekExpand.style.pointerEvents = filterLocked ? 'none' : '';
+  }
+  document.querySelectorAll('.hp-weekcal-day').forEach(el => {
     el.disabled = filterLocked;
     el.style.opacity = filterLocked ? '.45' : '';
     el.style.pointerEvents = filterLocked ? 'none' : '';
@@ -245,13 +325,10 @@ function renderEditBar() {
 function renderDateHeader() {
   const titleEl = document.getElementById('hpDateTitle');
   const statsEl = document.getElementById('hpDateStats');
-  const allBtn = document.getElementById('allToggle');
-  const todayBtn = document.getElementById('todayBtn');
   if (!titleEl) return;
 
   const list = filteredHistory();
-  const showAll = selectedDateKey === 'all';
-  titleEl.textContent = showAll ? '全部记录' : dateHeadLabel(selectedDateKey);
+  titleEl.textContent = '全部记录';
 
   if (statsEl) {
     if (historyEditMode) {
@@ -259,48 +336,56 @@ function renderDateHeader() {
       statsEl.textContent = n ? `已选 ${n} 条` : '点选要删除的记录';
     } else {
       let statsHtml = buildStats(list);
-      if (showAll) {
-        const page = visibleHistoryPage();
-        if (page.total > page.items.length) {
-          statsHtml += ` · 已显示 ${page.items.length} / ${page.total}`;
-        }
+      const page = visibleHistoryPage();
+      if (page.total > page.items.length) {
+        statsHtml += ` · 已显示 ${page.items.length} / ${page.total}`;
       }
       statsEl.innerHTML = statsHtml;
     }
   }
 
-  if (allBtn) allBtn.classList.toggle('active', showAll);
-
-  const todayKey = ymd(new Date());
-  if (todayBtn) todayBtn.style.display = (selectedDateKey !== todayKey && selectedDateKey !== 'all') ? '' : 'none';
-
+  renderWeekCalendar();
   updateHistoryEditChrome();
+  updateHistoryStickyOffset();
   if (historyEditMode) renderEditBar();
 }
 
-function selectDate(key) {
-  if (key === 'all' && selectedDateKey !== 'all') resetHistoryAllLimit();
-  selectedDateKey = key;
-  if (historyEditMode) pruneSelection();
-  renderDateHeader();
-  renderHistory();
-}
+function renderWeekCalendar() {
+  const wrap = document.getElementById('hpWeekCalDays');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const todayKey = ymd(new Date());
+  weekCalKeys().forEach(key => {
+    const [y, mo, da] = key.split('-').map(Number);
+    const d = new Date(y, mo - 1, da);
+    const stat = historyDayStat(key);
+    const cell = document.createElement('button');
+    cell.type = 'button';
+    cell.className = 'hp-weekcal-day'
+      + (key === todayKey ? ' today' : '')
+      + (key === focusedDateKey ? ' sel' : '');
+    cell.disabled = historyEditMode;
 
-function toggleAllFilter() {
-  if (historyEditMode) return;
-  selectDate(selectedDateKey === 'all' ? ymd(new Date()) : 'all');
-}
+    const dow = document.createElement('span');
+    dow.className = 'hp-weekcal-dow';
+    dow.textContent = key === todayKey ? '今' : WEEKDAYS[d.getDay()].slice(-1);
 
-function goToToday() {
-  if (historyEditMode) return;
-  selectDate(ymd(new Date()));
+    const num = document.createElement('span');
+    num.className = 'hp-weekcal-num';
+    num.textContent = da;
+
+    cell.append(dow, num);
+    appendCalDayMarkers(cell, stat);
+    cell.onclick = () => jumpToHistoryDate(key);
+    wrap.appendChild(cell);
+  });
 }
 
 function openCalendar() {
   if (historyEditMode) return;
   let base;
-  if (selectedDateKey !== 'all' && selectedDateKey !== 'unknown') {
-    const [y, m] = selectedDateKey.split('-').map(Number);
+  if (focusedDateKey && focusedDateKey !== 'unknown') {
+    const [y, m] = focusedDateKey.split('-').map(Number);
     base = new Date(y, m - 1, 1);
   } else {
     base = new Date();
@@ -324,7 +409,7 @@ function calShift(deltaMonths) {
 
 function calSelect(key) {
   hideCalendar();
-  selectDate(key);
+  jumpToHistoryDate(key);
 }
 
 function calPickToday() {
@@ -338,7 +423,7 @@ function renderCalendar() {
   const startDow = new Date(calYear, calMonth, 1).getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const todayKey = ymd(new Date());
-  const recDays = historyDateKeysForMonth(calYear, calMonth);
+  const dayStats = historyDayStatsForMonth(calYear, calMonth);
 
   for (let i = 0; i < startDow; i++) {
     const b = document.createElement('div');
@@ -351,8 +436,9 @@ function renderCalendar() {
     cell.type = 'button';
     cell.className = 'cal-cell'
       + (key === todayKey ? ' today' : '')
-      + (key === selectedDateKey ? ' sel' : '');
-    cell.innerHTML = day + (recDays.has(key) ? '<i class="dot"></i>' : '');
+      + (key === focusedDateKey ? ' sel' : '');
+    cell.textContent = day;
+    appendCalDayMarkers(cell, dayStats.get(key));
     cell.onclick = () => calSelect(key);
     grid.appendChild(cell);
   }
@@ -422,14 +508,11 @@ function renderHistory() {
 
   const page = visibleHistoryPage();
   const list = page.items;
-  const showAll = selectedDateKey === 'all';
 
   if (!list.length) {
     const emptyMsg = historyEditMode
       ? `${ipIcon('inbox')}当前没有可删除的记录`
-      : (showAll
-        ? `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`
-        : `${ipIcon('inbox')}这一天还没有积分记录哦`);
+      : `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
     h.innerHTML = `<div class="empty">${emptyMsg}</div>`;
     if (historyEditMode) renderEditBar();
     return;
@@ -439,10 +522,11 @@ function renderHistory() {
   let lastKey = null;
   list.forEach(({ log, eid }) => {
     const key = entryDateKey(log);
-    if (showAll && key !== lastKey) {
+    if (key !== lastKey) {
       lastKey = key;
       const head = document.createElement('div');
       head.className = 'date-head';
+      head.dataset.date = key;
       head.textContent = dateHeadLabel(key);
       h.appendChild(head);
     }
@@ -507,7 +591,7 @@ function renderHistory() {
     h.appendChild(row);
   });
 
-  if (showAll && page.hasMore) {
+  if (page.hasMore) {
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
     moreBtn.className = 'filter-pill history-load-more';
@@ -524,3 +608,7 @@ function nowStr() {
   const p = n => String(n).padStart(2, '0');
   return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+window.addEventListener('resize', () => {
+  if (typeof currentView !== 'undefined' && currentView === 'history') updateHistoryStickyOffset();
+});

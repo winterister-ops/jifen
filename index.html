@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.54">
+<meta name="app-version" content="0.0.55">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.54">
+<link rel="stylesheet" href="styles.css?v=0.0.55">
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -85,18 +85,22 @@
  </div>
 
  <div id="historyView" style="display:none">
-  <div class="hp-datebar">
+  <div class="hp-sticky-head" id="hpStickyHead">
+   <div class="hp-datebar">
     <div class="hp-date-main">
-      <div class="hp-date-title" id="hpDateTitle">今天</div>
-      <div class="hp-date-stats" id="hpDateStats"></div>
+     <div class="hp-date-title" id="hpDateTitle">今天</div>
+     <div class="hp-date-stats" id="hpDateStats"></div>
     </div>
     <div class="hp-date-actions">
-      <button class="filter-pill" id="allToggle" onclick="toggleAllFilter()">全部</button>
-      <button class="cal-btn cal-btn-sm" id="hpCalBtn" onclick="openCalendar()" title="选择其它日期"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
-      <button class="filter-pill filter-today" id="todayBtn" onclick="goToToday()" style="display:none">今天</button>
-      <button class="filter-pill" id="historyEditBtn" onclick="enterHistoryEdit()">编辑</button>
-      <button class="filter-pill" id="historyCancelEditBtn" onclick="exitHistoryEdit()" style="display:none">取消</button>
+     <button class="filter-pill" id="historyEditBtn" onclick="enterHistoryEdit()">编辑</button>
+     <button class="filter-pill" id="historyCancelEditBtn" onclick="exitHistoryEdit()" style="display:none">取消</button>
     </div>
+   </div>
+
+   <div class="hp-weekcal" id="hpWeekCal">
+    <div class="hp-weekcal-days" id="hpWeekCalDays"></div>
+    <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" onclick="openCalendar()" title="万年历" aria-label="打开万年历"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
+   </div>
   </div>
 
   <div class="catalog-list" id="history"></div>
@@ -336,12 +340,12 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="data.js?v=0.0.54"></script>
-<script src="js/sync.js?v=0.0.54"></script>
-<script src="js/history.js?v=0.0.54"></script>
-<script src="js/catalog.js?v=0.0.54"></script>
-<script src="js/ui.js?v=0.0.54"></script>
-<script src="js/auth.js?v=0.0.54"></script>
-<script src="js/pwa.js?v=0.0.54"></script>
+<script src="data.js?v=0.0.55"></script>
+<script src="js/sync.js?v=0.0.55"></script>
+<script src="js/history.js?v=0.0.55"></script>
+<script src="js/catalog.js?v=0.0.55"></script>
+<script src="js/ui.js?v=0.0.55"></script>
+<script src="js/auth.js?v=0.0.55"></script>
+<script src="js/pwa.js?v=0.0.55"></script>
 </body>
 </html>
