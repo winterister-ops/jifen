@@ -328,8 +328,8 @@ body.history-editing #history {
   position: sticky;
   top: 0;
   z-index: 40;
-  margin-inline: calc(-1 * var(--shadow-bleed));
-  padding: 6px var(--shadow-bleed) 8px;
+  margin-inline: calc(-1 * (var(--page-inline) + var(--shadow-bleed)));
+  padding: 6px 0 8px var(--page-inline);
   font-size: .82rem;
   font-weight: 800;
   color: #b0772f;
