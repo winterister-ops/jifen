@@ -22,18 +22,22 @@ const VIEW_IDS = {
 };
 
 function bottomNavKey(view) {
-  if (view === 'taskManage' || view === 'rewardManage') return 'settings';
   if (view === 'tasks' || view === 'rewards') return view;
   return view;
 }
 
 function shouldShowBottomNav(view) {
-  return PRIMARY_VIEWS.includes(bottomNavKey(view))
-    || view === 'taskManage' || view === 'rewardManage';
+  return PRIMARY_VIEWS.includes(view);
 }
 
 let safeAreaProbe;
 let safeAreaBurstTimer;
+
+function lockPageScroll() {
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
 
 function mountSafeAreaProbe() {
   if (safeAreaProbe) safeAreaProbe.remove();
@@ -46,16 +50,17 @@ function mountSafeAreaProbe() {
   document.documentElement.appendChild(safeAreaProbe);
 }
 
-function syncSafeAreaInsets() {
+function syncSafeAreaInsets(useViewportOffset) {
   if (!safeAreaProbe) mountSafeAreaProbe();
   void safeAreaProbe.offsetHeight;
   const s = getComputedStyle(safeAreaProbe);
   const root = document.documentElement;
   let top = s.paddingTop;
   const bottom = s.paddingBottom;
-  if (isIOS() && window.visualViewport) {
+  if (useViewportOffset && isIOS() && window.visualViewport) {
     const vvTop = Math.round(window.visualViewport.offsetTop);
-    if (vvTop > 0) top = `${vvTop}px`;
+    const envTop = parseFloat(top) || 0;
+    if (vvTop > envTop) top = `${vvTop}px`;
   }
   root.style.setProperty('--safe-top', top);
   root.style.setProperty('--safe-bottom', bottom);
@@ -66,18 +71,19 @@ function burstSafeAreaSync() {
   mountSafeAreaProbe();
   clearTimeout(safeAreaBurstTimer);
   [0, 50, 150, 300, 600, 1000].forEach(ms => {
-    setTimeout(syncSafeAreaInsets, ms);
+    setTimeout(() => syncSafeAreaInsets(true), ms);
   });
-  safeAreaBurstTimer = setTimeout(syncSafeAreaInsets, 1500);
+  safeAreaBurstTimer = setTimeout(() => syncSafeAreaInsets(true), 1500);
 }
 
 function initSafeAreaSync() {
-  burstSafeAreaSync();
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  lockPageScroll();
+  syncSafeAreaInsets(false);
   window.addEventListener('orientationchange', burstSafeAreaSync);
-  window.addEventListener('resize', syncSafeAreaInsets);
+  window.addEventListener('resize', () => syncSafeAreaInsets(false));
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', syncSafeAreaInsets);
-    window.visualViewport.addEventListener('scroll', syncSafeAreaInsets);
+    window.visualViewport.addEventListener('resize', () => syncSafeAreaInsets(false));
   }
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') burstSafeAreaSync();
@@ -92,7 +98,9 @@ function updateBottomNav(view) {
   nav.classList.toggle('is-hidden', !show);
   nav.setAttribute('aria-hidden', show ? 'false' : 'true');
   document.body.classList.toggle('has-bottom-nav', show);
-  if (show) syncSafeAreaInsets();
+  document.body.classList.toggle('is-subpage', view === 'taskManage' || view === 'rewardManage');
+  lockPageScroll();
+  if (show) syncSafeAreaInsets(false);
   nav.querySelectorAll('.bottom-nav-item').forEach(btn => {
     const active = show && btn.dataset.nav === navKey;
     btn.classList.toggle('active', active);
@@ -137,6 +145,7 @@ function startApp() {
   switchView('tasks');
   updateSettingsSection();
   render();
+  lockPageScroll();
 }
 
 function renderHeader() {
@@ -189,7 +198,7 @@ function markCatalogAction() {
 
 function resetViewScroll() {
   if (currentView === 'history') {
-    const el = document.getElementById('hpHistoryScroll');
+    const el = document.getElementById('history');
     if (el) { el.scrollTop = 0; return; }
   }
   const viewId = (currentView === 'tasks' || currentView === 'rewards')

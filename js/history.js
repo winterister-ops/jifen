@@ -98,7 +98,7 @@ function historyFirstIndexForDateKey(key) {
 
 function scrollToHistoryDateHead(key) {
   const el = document.querySelector('#history .date-head[data-date="' + key + '"]');
-  const scrollEl = document.getElementById('hpHistoryScroll');
+  const scrollEl = document.getElementById('history');
   if (!el) return;
   if (scrollEl) {
     const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;

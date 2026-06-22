@@ -10,12 +10,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.60">
+<meta name="app-version" content="0.0.61">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.60">
+<link rel="stylesheet" href="styles.css?v=0.0.61">
+<script>
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+scrollTo(0, 0);
+</script>
 </head>
 <body>
 <div id="splashView" class="splash-view">
@@ -202,9 +206,9 @@
  </div>
 
  <div id="taskManageView" class="catalog-manage-view" style="display:none">
-  <div class="manage-head">
-    <div class="manage-title">任务管理</div>
-    <div class="manage-hint">点底部「我的」返回</div>
+  <div class="subpage-head">
+    <button type="button" class="back-btn" data-action="nav" data-nav="settings">‹ 返回</button>
+    <div class="subpage-title">任务管理</div>
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="taskManageCount">已启用 0 / 共 0 项</div>
@@ -217,9 +221,9 @@
  </div>
 
  <div id="rewardManageView" class="catalog-manage-view" style="display:none">
-  <div class="manage-head">
-    <div class="manage-title">奖励管理</div>
-    <div class="manage-hint">点底部「我的」返回</div>
+  <div class="subpage-head">
+    <button type="button" class="back-btn" data-action="nav" data-nav="settings">‹ 返回</button>
+    <div class="subpage-title">奖励管理</div>
   </div>
   <div class="catalog-manage-bar">
     <div class="catalog-hint" id="rewardManageCount">已启用 0 / 共 0 项</div>
@@ -352,13 +356,13 @@
 <!-- Firebase 认证 SDK（database 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.60"></script>
-<script src="js/firebase-loader.js?v=0.0.60"></script>
-<script src="js/sync.js?v=0.0.60"></script>
-<script src="js/history.js?v=0.0.60"></script>
-<script src="js/catalog.js?v=0.0.60"></script>
-<script src="js/ui.js?v=0.0.60"></script>
-<script src="js/auth.js?v=0.0.60"></script>
-<script src="js/pwa.js?v=0.0.60"></script>
+<script src="data.js?v=0.0.61"></script>
+<script src="js/firebase-loader.js?v=0.0.61"></script>
+<script src="js/sync.js?v=0.0.61"></script>
+<script src="js/history.js?v=0.0.61"></script>
+<script src="js/catalog.js?v=0.0.61"></script>
+<script src="js/ui.js?v=0.0.61"></script>
+<script src="js/auth.js?v=0.0.61"></script>
+<script src="js/pwa.js?v=0.0.61"></script>
 </body>
 </html>

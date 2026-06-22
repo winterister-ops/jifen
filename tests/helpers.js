@@ -113,8 +113,11 @@ async function openRewardManage(page) {
 }
 
 async function exitManageViews(page) {
-  if (await page.locator('#taskManageView').isVisible() || await page.locator('#rewardManageView').isVisible()) {
-    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
+  if (await page.locator('#taskManageView').isVisible()) {
+    await page.locator('#taskManageView .back-btn').click();
+    await expect(page.locator('#settingsView')).toBeVisible();
+  } else if (await page.locator('#rewardManageView').isVisible()) {
+    await page.locator('#rewardManageView .back-btn').click();
     await expect(page.locator('#settingsView')).toBeVisible();
   }
 }

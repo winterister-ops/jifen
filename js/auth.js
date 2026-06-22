@@ -50,6 +50,7 @@ function showAuthShell() {
     nav.setAttribute('aria-hidden', 'true');
   }
   document.body.classList.remove('has-bottom-nav');
+  document.body.classList.remove('is-subpage');
 }
 
 function showAuthView() {
@@ -366,5 +367,6 @@ initFirebase();
 
 // Chrome 崩溃恢复后，可能留下启动屏遮挡已登录界面，导致无法点击
 window.addEventListener('pageshow', () => {
+  if (typeof lockPageScroll === 'function') lockPageScroll();
   if (currentUser) ensureAppVisible();
 });
