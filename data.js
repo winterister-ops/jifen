@@ -1,5 +1,5 @@
 // ====== 应用版本（单一来源 package.json，发版：npm version patch） ======
-const APP_VERSION = '0.0.65';
+const APP_VERSION = '0.0.66';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
@@ -29,13 +29,6 @@ const DEFAULT_REWARDS = [
   { id: 'icecream', emoji: '🍦', name: '冰淇淋一个',     pts: 15, enabled: true, preset: true },
   { id: 'toy',      emoji: '🚗', name: '小玩具一个',     pts: 30, enabled: true, preset: true },
   { id: 'park',     emoji: '🎡', name: '去游乐场玩',     pts: 50, enabled: true, preset: true },
-];
-
-// 任务/奖励编辑时的 emoji 候选
-const CATALOG_EMOJI_OPTIONS = [
-  '🧼', '🍚', '🥬', '🪥', '👕', '👟', '🧸', '😴', '🙏', '🤽', '🌊', '📚', '📷',
-  '📺', '🍪', '🍦', '🚗', '🎡', '⭐', '🎁', '🎮', '📖', '🎨', '🏃', '💪', '🌟',
-  '🎯', '🏆', '❤️', '🎵', '🛁', '🧹', '🐶', '🌈', '✨', '🎂', '🍎', '🥛', '🛏️'
 ];
 
 // ====== 环境隔离：本地开发 vs 线上真实 ======

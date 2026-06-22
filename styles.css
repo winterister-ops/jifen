@@ -951,6 +951,13 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .catalog-check input {
   width: 1.15rem; height: 1.15rem; accent-color: var(--accent); cursor: pointer;
 }
-#catalogEmojiPicker { grid-template-columns: repeat(6, 1fr); max-height: 180px; overflow-y: auto; }
+.catalog-emoji-section { margin-bottom: 14px; }
+.catalog-emoji-label {
+  font-size: 0.85rem; font-weight: 700; color: var(--text);
+  text-align: center; margin-bottom: 6px;
+}
+.catalog-emoji-input {
+  font-size: 2rem; line-height: 1.2; margin-bottom: 0;
+}
 #catalogEditModal .modal-btns { flex-wrap: wrap; }
 #catalogEditModal .modal-btn.danger { flex: 1 1 100%; margin-bottom: 4px; }

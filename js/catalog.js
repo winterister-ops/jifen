@@ -2,7 +2,6 @@
 
 let catalogManageType = 'tasks';
 let catalogEditId = null;
-let catalogEditEmoji = '⭐';
 
 function getActiveTasks() {
   return (state.catalog?.tasks || []).filter(t => t.enabled);
@@ -115,14 +114,13 @@ function openCatalogEditModal(type, id) {
     : findCatalogItem(type, id);
   if (!item && !isNew) return;
 
-  catalogEditEmoji = item.emoji || '⭐';
   document.getElementById('catalogEditTitle').textContent =
     isNew ? (type === 'rewards' ? '添加奖励' : '添加任务') : (type === 'rewards' ? '编辑奖励' : '编辑任务');
   document.getElementById('catalogNameInput').value = item.name || '';
   document.getElementById('catalogPtsInput').value = item.pts || 5;
+  document.getElementById('catalogEmojiInput').value = item.emoji || '⭐';
   document.getElementById('catalogDeleteBtn').style.display =
     (!isNew && !item.preset) ? '' : 'none';
-  renderCatalogEmojiPicker();
   document.getElementById('catalogEditModal').classList.add('show');
   setTimeout(() => document.getElementById('catalogNameInput').focus(), 200);
 }
@@ -130,20 +128,6 @@ function openCatalogEditModal(type, id) {
 function hideCatalogEditModal() {
   document.getElementById('catalogEditModal').classList.remove('show');
   catalogEditId = null;
-}
-
-function renderCatalogEmojiPicker() {
-  const grid = document.getElementById('catalogEmojiPicker');
-  if (!grid) return;
-  grid.innerHTML = '';
-  CATALOG_EMOJI_OPTIONS.forEach(em => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'emoji-opt' + (em === catalogEditEmoji ? ' selected' : '');
-    btn.textContent = em;
-    btn.onclick = () => { catalogEditEmoji = em; renderCatalogEmojiPicker(); };
-    grid.appendChild(btn);
-  });
 }
 
 function saveCatalogEdit() {
@@ -155,16 +139,17 @@ function saveCatalogEdit() {
   }
   const ptsRaw = parseInt(document.getElementById('catalogPtsInput').value, 10);
   const pts = Math.max(1, Math.min(999, isNaN(ptsRaw) ? 1 : ptsRaw));
+  const emoji = (document.getElementById('catalogEmojiInput').value.trim() || '⭐').slice(0, 8);
   const list = catalogList(type);
 
   if (catalogEditId) {
     const idx = list.findIndex(it => it.id === catalogEditId);
     if (idx < 0) return;
-    list[idx] = { ...list[idx], name: name.slice(0, 20), pts, emoji: catalogEditEmoji };
+    list[idx] = { ...list[idx], name: name.slice(0, 20), pts, emoji };
   } else {
     list.push({
       id: newCatalogId(),
-      emoji: catalogEditEmoji,
+      emoji,
       name: name.slice(0, 20),
       pts,
       enabled: true,
