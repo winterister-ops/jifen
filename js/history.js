@@ -96,16 +96,25 @@ function historyFirstIndexForDateKey(key) {
   return -1;
 }
 
+function historyDateHeadScrollTop(el, scrollEl) {
+  const styles = getComputedStyle(scrollEl);
+  const gap = parseFloat(styles.rowGap || styles.gap) || 0;
+  let top = 0;
+  let node = el.previousElementSibling;
+  while (node) {
+    top += node.offsetHeight + gap;
+    node = node.previousElementSibling;
+  }
+  top += parseFloat(getComputedStyle(el).marginTop) || 0;
+  return top;
+}
+
 function scrollToHistoryDateHead(key) {
   const el = document.querySelector('#history .date-head[data-date="' + key + '"]');
   const scrollEl = document.getElementById('history');
-  if (!el) return;
-  if (scrollEl) {
-    const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop;
-    scrollEl.scrollTo({ top, behavior: 'smooth' });
-    return;
-  }
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!el || !scrollEl) return;
+  const top = historyDateHeadScrollTop(el, scrollEl);
+  scrollEl.scrollTo({ top, behavior: 'smooth' });
 }
 
 function updateHistoryStickyOffset() {

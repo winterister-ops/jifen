@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.66">
+<meta name="app-version" content="0.0.67">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.66">
+<link rel="stylesheet" href="styles.css?v=0.0.67">
 <script>
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo(0, 0);
@@ -232,13 +232,19 @@ scrollTo(0, 0);
 </nav>
 
 <div class="modal-overlay" id="catalogEditModal">
-  <div class="modal-box">
+  <div class="modal-box catalog-edit-sheet">
     <div class="modal-title" id="catalogEditTitle">编辑任务</div>
-    <input class="profile-input modal-input" id="catalogNameInput" type="text" maxlength="20" placeholder="名称" data-action-key="focus-next" data-focus-target="catalogPtsInput">
-    <input class="profile-input modal-input" id="catalogPtsInput" type="number" min="1" max="999" placeholder="星星分值" data-action-key="focus-next" data-focus-target="catalogEmojiInput">
-    <div class="catalog-emoji-section">
-      <div class="catalog-emoji-label">图标</div>
-      <input class="profile-input modal-input catalog-emoji-input" id="catalogEmojiInput" type="text" maxlength="8" placeholder="输入或粘贴 emoji" autocomplete="off" data-action-key="save-catalog-edit">
+    <div class="catalog-field">
+      <label class="catalog-field-label" for="catalogNameInput">名称</label>
+      <input class="profile-input modal-input catalog-field-input" id="catalogNameInput" type="text" maxlength="20" data-action-key="focus-next" data-focus-target="catalogPtsInput">
+    </div>
+    <div class="catalog-field">
+      <label class="catalog-field-label" for="catalogPtsInput">星星分值</label>
+      <input class="profile-input modal-input catalog-field-input" id="catalogPtsInput" type="number" min="1" max="999" data-action-key="focus-next" data-focus-target="catalogEmojiInput">
+    </div>
+    <div class="catalog-field">
+      <label class="catalog-field-label" for="catalogEmojiInput">图标</label>
+      <input class="profile-input modal-input catalog-field-input catalog-emoji-input" id="catalogEmojiInput" type="text" maxlength="8" autocomplete="off" data-action-key="save-catalog-edit">
     </div>
     <div class="modal-btns">
       <button type="button" class="modal-btn danger" id="catalogDeleteBtn" data-action="delete-catalog-item" style="display:none">删除</button>
@@ -333,13 +339,13 @@ scrollTo(0, 0);
 <!-- Firebase 认证 SDK（database 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.66"></script>
-<script src="js/firebase-loader.js?v=0.0.66"></script>
-<script src="js/sync.js?v=0.0.66"></script>
-<script src="js/history.js?v=0.0.66"></script>
-<script src="js/catalog.js?v=0.0.66"></script>
-<script src="js/ui.js?v=0.0.66"></script>
-<script src="js/auth.js?v=0.0.66"></script>
-<script src="js/pwa.js?v=0.0.66"></script>
+<script src="data.js?v=0.0.67"></script>
+<script src="js/firebase-loader.js?v=0.0.67"></script>
+<script src="js/sync.js?v=0.0.67"></script>
+<script src="js/history.js?v=0.0.67"></script>
+<script src="js/catalog.js?v=0.0.67"></script>
+<script src="js/ui.js?v=0.0.67"></script>
+<script src="js/auth.js?v=0.0.67"></script>
+<script src="js/pwa.js?v=0.0.67"></script>
 </body>
 </html>

@@ -951,13 +951,46 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .catalog-check input {
   width: 1.15rem; height: 1.15rem; accent-color: var(--accent); cursor: pointer;
 }
-.catalog-emoji-section { margin-bottom: 14px; }
-.catalog-emoji-label {
-  font-size: 0.85rem; font-weight: 700; color: var(--text);
-  text-align: center; margin-bottom: 6px;
+/* 目录编辑底部弹层 */
+#catalogEditModal {
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
 }
-.catalog-emoji-input {
-  font-size: 2rem; line-height: 1.2; margin-bottom: 0;
+#catalogEditModal .catalog-edit-sheet {
+  max-width: 100%;
+  border-radius: 28px 28px 0 0;
+  text-align: left;
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.32, .72, 0, 1);
+  padding: 24px 24px calc(24px + env(safe-area-inset-bottom));
+  box-shadow: 0 -8px 40px rgba(120, 110, 160, .22);
 }
-#catalogEditModal .modal-btns { flex-wrap: wrap; }
+#catalogEditModal.show .catalog-edit-sheet { transform: translateY(0); }
+#catalogEditModal .modal-title { text-align: center; margin-bottom: 20px; }
+#catalogEditModal .catalog-field { position: relative; margin-bottom: 12px; }
+#catalogEditModal .catalog-field-label {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  font-size: .72rem;
+  font-weight: 700;
+  color: #b08a5e;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+#catalogEditModal .catalog-field-input {
+  height: 56px;
+  padding: 22px 14px 8px;
+  margin-bottom: 0;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+#catalogEditModal .catalog-emoji-input {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+#catalogEditModal .modal-btns { flex-wrap: wrap; margin-top: 8px; }
 #catalogEditModal .modal-btn.danger { flex: 1 1 100%; margin-bottom: 4px; }
