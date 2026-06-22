@@ -1,6 +1,5 @@
-// ====== PWA：Service Worker 注册与安装提示 ======
+// ====== PWA：Service Worker 注册与版本更新 ======
 
-let deferredInstallPrompt = null;
 let updatePromptShown = false;
 
 async function fetchServerAppVersion() {
@@ -108,57 +107,5 @@ function registerServiceWorker() {
     checkServerVersion();
   });
 }
-
-function updatePwaInstallUI() {
-  const item = document.getElementById('pwaInstallItem');
-  const iosHint = document.getElementById('pwaIosHint');
-  const installed = document.getElementById('pwaInstalledItem');
-  if (!item && !iosHint && !installed) return;
-
-  if (isStandalone()) {
-    if (item) item.style.display = 'none';
-    if (iosHint) iosHint.style.display = 'none';
-    if (installed) installed.style.display = '';
-    return;
-  }
-  if (installed) installed.style.display = 'none';
-
-  if (deferredInstallPrompt) {
-    if (item) item.style.display = '';
-    if (iosHint) iosHint.style.display = 'none';
-    return;
-  }
-
-  if (typeof isIOS === 'function' && isIOS()) {
-    if (item) item.style.display = 'none';
-    if (iosHint) iosHint.style.display = '';
-    return;
-  }
-
-  if (item) item.style.display = 'none';
-  if (iosHint) iosHint.style.display = 'none';
-}
-
-async function promptInstallApp() {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  updatePwaInstallUI();
-  if (outcome === 'accepted' && typeof toast === 'function') {
-    toast('已添加到主屏幕', 'success');
-  }
-}
-
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  updatePwaInstallUI();
-});
-
-window.addEventListener('appinstalled', () => {
-  deferredInstallPrompt = null;
-  updatePwaInstallUI();
-});
 
 registerServiceWorker();

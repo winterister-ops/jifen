@@ -273,7 +273,6 @@ function updateSettingsSection() {
   if (vibSetting) vibSetting.style.display = vibrationSupported ? '' : 'none';
   const vibToggle = document.getElementById('vibrationToggle');
   if (vibToggle) vibToggle.checked = vibrationEnabled;
-  if (typeof updatePwaInstallUI === 'function') updatePwaInstallUI();
 }
 
 function toggleVibration() {
@@ -592,7 +591,6 @@ const CLICK_ACTION_HANDLERS = {
   'show-delete-confirm': () => showDeleteConfirmModal(),
   'open-profile-modal': () => openProfileModal(),
   'open-catalog-manage': el => openCatalogManage(el.dataset.catalogType),
-  'prompt-install-app': () => promptInstallApp(),
   'open-password-modal': () => openPasswordModal(),
   'logout': () => logoutApp(),
   'open-catalog-edit': el => openCatalogEditModal(el.dataset.catalogType),
