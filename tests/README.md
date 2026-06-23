@@ -45,6 +45,7 @@ npx playwright test tests/catalog.spec.js
 | `points.spec.js` | 完成任务加分、积分不足提示、兑换扣减 |
 | `catalog.spec.js` | 任务/奖励管理：增删改、启停、预设保护、分值排序、localStorage |
 | `sync.spec.js` | `mergeStates` / `normalizeState` 等云同步合并逻辑 |
+| `history.spec.js` | 记录删除与积分重算；`jumpToHistoryDate` 连续跳转、周历切换 |
 | `helpers.js` | 注入 Firebase 桩、自动登录、`openTaskManage` 等公共辅助函数 |
 
 ## 测试环境说明
