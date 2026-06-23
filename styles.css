@@ -92,37 +92,6 @@ body.catalog-action-lock .bottom-nav {
 #mainView .catalog-list {
   margin-bottom: 4px;
 }
-.catalog-section-title {
-  font-size: .92rem;
-  font-weight: 800;
-  color: #8a6f5a;
-  margin: 6px 0 2px;
-  padding: 0 2px;
-}
-.catalog-section-title:first-child {
-  margin-top: 0;
-}
-.task-group-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.task-group-chip {
-  border: 1.5px solid #f0dcc8;
-  background: #fffaf4;
-  color: #6b5344;
-  border-radius: 999px;
-  padding: 8px 12px;
-  font: inherit;
-  font-size: .88rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-.task-group-chip.selected {
-  border-color: #ffb347;
-  background: #fff3e0;
-  color: #a65f00;
-}
 .wrap { width: 100%; max-width: 720px; margin: 0 auto; }
 
 /* 滚动容器：page-inline + shadow 留白；带阴影子项用负 margin 收回内容宽度 */

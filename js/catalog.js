@@ -23,49 +23,6 @@ function sortItemsByPtsAsc(items) {
   return items.slice().sort((a, b) => a.pts - b.pts || a.name.localeCompare(b.name, 'zh-CN'));
 }
 
-function groupActiveTasks(tasks) {
-  const buckets = new Map(TASK_GROUPS.map(g => [g.id, []]));
-  tasks.forEach(t => {
-    const gid = resolveTaskGroup(t);
-    if (!buckets.has(gid)) buckets.set(gid, []);
-    buckets.get(gid).push(t);
-  });
-  return TASK_GROUPS
-    .map(g => ({ ...g, items: sortItemsByPtsAsc(buckets.get(g.id) || []) }))
-    .filter(sec => sec.items.length > 0);
-}
-
-function renderCatalogGroupChips(selectedGroup) {
-  const chipsEl = document.getElementById('catalogGroupChips');
-  if (!chipsEl) return;
-  const selected = TASK_GROUP_IDS.has(selectedGroup) ? selectedGroup : DEFAULT_CUSTOM_TASK_GROUP;
-  chipsEl.innerHTML = '';
-  TASK_GROUPS.forEach(g => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'task-group-chip' + (g.id === selected ? ' selected' : '');
-    btn.dataset.group = g.id;
-    btn.textContent = g.title;
-    btn.onclick = () => {
-      chipsEl.querySelectorAll('.task-group-chip').forEach(el => {
-        el.classList.toggle('selected', el.dataset.group === g.id);
-      });
-    };
-    chipsEl.appendChild(btn);
-  });
-}
-
-function readCatalogGroupFromChips() {
-  const selected = document.querySelector('#catalogGroupChips .task-group-chip.selected');
-  const group = selected && selected.dataset.group;
-  return TASK_GROUP_IDS.has(group) ? group : DEFAULT_CUSTOM_TASK_GROUP;
-}
-
-function setCatalogGroupFieldVisible(visible) {
-  const field = document.getElementById('catalogGroupField');
-  if (field) field.style.display = visible ? '' : 'none';
-}
-
 function newCatalogId() {
   return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
@@ -164,11 +121,6 @@ function openCatalogEditModal(type, id) {
   document.getElementById('catalogEmojiInput').value = item.emoji || '⭐';
   document.getElementById('catalogDeleteBtn').style.display =
     (!isNew && !item.preset) ? '' : 'none';
-  const showGroup = type === 'tasks' && !item.preset;
-  setCatalogGroupFieldVisible(showGroup);
-  if (showGroup) {
-    renderCatalogGroupChips(isNew ? DEFAULT_CUSTOM_TASK_GROUP : resolveTaskGroup(item));
-  }
   document.getElementById('catalogEditModal').classList.add('show');
   setTimeout(() => document.getElementById('catalogNameInput').focus(), 200);
 }
@@ -193,20 +145,16 @@ function saveCatalogEdit() {
   if (catalogEditId) {
     const idx = list.findIndex(it => it.id === catalogEditId);
     if (idx < 0) return;
-    const patch = { ...list[idx], name: name.slice(0, 20), pts, emoji };
-    if (type === 'tasks' && !list[idx].preset) patch.group = readCatalogGroupFromChips();
-    list[idx] = patch;
+    list[idx] = { ...list[idx], name: name.slice(0, 20), pts, emoji };
   } else {
-    const entry = {
+    list.push({
       id: newCatalogId(),
       emoji,
       name: name.slice(0, 20),
       pts,
       enabled: true,
       preset: false
-    };
-    if (type === 'tasks') entry.group = readCatalogGroupFromChips();
-    list.push(entry);
+    });
   }
 
   touchCatalogMeta();

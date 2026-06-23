@@ -58,21 +58,13 @@ function presetRewardIds() {
   return new Set(DEFAULT_REWARDS.map(r => r.id));
 }
 
-function normalizeTaskGroup(item) {
-  let group = item.group;
-  if (!TASK_GROUP_IDS.has(group) && item.categoryId) {
-    group = LEGACY_TASK_CATEGORY_MAP[item.categoryId];
-  }
-  return TASK_GROUP_IDS.has(group) ? group : DEFAULT_CUSTOM_TASK_GROUP;
-}
-
 function normalizeCatalogItem(item, presetIds) {
   if (!item || typeof item.id !== 'string' || !item.id) return null;
   const name = typeof item.name === 'string' ? item.name.trim().slice(0, 20) : '';
   if (!name) return null;
   const pts = Math.max(1, Math.min(999, Math.round(Number(item.pts) || 1)));
   const preset = presetIds.has(item.id);
-  const out = {
+  return {
     id: item.id,
     emoji: typeof item.emoji === 'string' && item.emoji ? item.emoji : '⭐',
     name,
@@ -80,8 +72,6 @@ function normalizeCatalogItem(item, presetIds) {
     enabled: item.enabled !== false,
     preset
   };
-  if (!preset) out.group = normalizeTaskGroup(item);
-  return out;
 }
 
 function normalizeCatalogList(rawList, defaults, presetIds) {
@@ -351,8 +341,7 @@ function catalogQuickSig(catalog) {
   if (!catalog) return '';
   const parts = [];
   (catalog.tasks || []).forEach(t => {
-    const group = t.preset ? '' : (t.group || '');
-    parts.push('t' + t.id + ':' + t.pts + ':' + (t.enabled === false ? 0 : 1) + ':' + group);
+    parts.push('t' + t.id + ':' + t.pts + ':' + (t.enabled === false ? 0 : 1));
   });
   (catalog.rewards || []).forEach(r => {
     parts.push('r' + r.id + ':' + r.pts + ':' + (r.enabled === false ? 0 : 1));
