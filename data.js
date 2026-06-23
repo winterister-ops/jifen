@@ -31,6 +31,39 @@ const DEFAULT_REWARDS = [
   { id: 'park',     emoji: '🎡', name: '去游乐场玩',     pts: 50, enabled: true, preset: true },
 ];
 
+// ====== 任务软分组（固定三类，预设写死映射，自定义可编辑 group） ======
+const TASK_GROUPS = [
+  { id: 'daily',  title: '🧼 生活日常', order: 1 },
+  { id: 'growth', title: '⭐ 成长进步', order: 2 },
+  { id: 'family', title: '🏠 我家任务', order: 3 },
+];
+
+const PRESET_TASK_GROUP = {
+  wash: 'daily', eat: 'daily', veggie: 'daily', brush: 'daily',
+  dress: 'daily', shoes: 'daily', tidy: 'daily', sleep: 'daily',
+  polite: 'growth', learn: 'growth',
+};
+
+const DEFAULT_CUSTOM_TASK_GROUP = 'family';
+
+const LEGACY_TASK_CATEGORY_MAP = {
+  daily: 'daily',
+  habit: 'growth',
+  study: 'growth',
+};
+
+const TASK_GROUP_IDS = new Set(TASK_GROUPS.map(g => g.id));
+
+function resolveTaskGroup(task) {
+  if (!task) return DEFAULT_CUSTOM_TASK_GROUP;
+  if (task.preset && PRESET_TASK_GROUP[task.id]) return PRESET_TASK_GROUP[task.id];
+  if (TASK_GROUP_IDS.has(task.group)) return task.group;
+  if (task.categoryId && LEGACY_TASK_CATEGORY_MAP[task.categoryId]) {
+    return LEGACY_TASK_CATEGORY_MAP[task.categoryId];
+  }
+  return DEFAULT_CUSTOM_TASK_GROUP;
+}
+
 // ====== 环境隔离：本地开发 vs 线上真实 ======
 const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname)
   || location.protocol === 'file:';

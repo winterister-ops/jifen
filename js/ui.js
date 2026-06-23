@@ -403,9 +403,19 @@ function renderCatalog() {
 
   grid.innerHTML = '';
   const mode = currentTab === 'earn' ? 'earn' : 'spend';
-  const list = sortItemsByPtsAsc(currentTab === 'earn' ? getActiveTasks() : getActiveRewards());
-  list.forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
-  if (mode === 'earn') scheduleEarnCooldownRefresh();
+  if (mode === 'earn') {
+    groupActiveTasks(getActiveTasks()).forEach(sec => {
+      const title = document.createElement('div');
+      title.className = 'catalog-section-title';
+      title.textContent = sec.title;
+      grid.appendChild(title);
+      sec.items.forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
+    });
+    scheduleEarnCooldownRefresh();
+    return;
+  }
+
+  sortItemsByPtsAsc(getActiveRewards()).forEach(it => grid.appendChild(buildCatalogItemEl(it, mode)));
 }
 
 function render() {

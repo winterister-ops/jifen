@@ -246,6 +246,10 @@ scrollTo(0, 0);
       <label class="catalog-field-label" for="catalogEmojiInput">图标</label>
       <input class="profile-input modal-input catalog-field-input catalog-emoji-input" id="catalogEmojiInput" type="text" maxlength="8" autocomplete="off" data-action-key="save-catalog-edit">
     </div>
+    <div class="catalog-field" id="catalogGroupField" style="display:none">
+      <label class="catalog-field-label">归属分组</label>
+      <div class="task-group-chips" id="catalogGroupChips"></div>
+    </div>
     <div class="modal-btns">
       <button type="button" class="modal-btn danger" id="catalogDeleteBtn" data-action="delete-catalog-item" style="display:none">删除</button>
       <button type="button" class="modal-btn cancel" data-action="hide-catalog-edit-modal">取消</button>

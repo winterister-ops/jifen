@@ -19,13 +19,31 @@ test.describe('任务与奖励管理', () => {
     await expect(page.locator('.earn-item').filter({ hasText: '自己洗手' })).toBeVisible();
     await expect(page.locator('.earn-item').filter({ hasText: '认真学习' })).toBeVisible();
     await expect(page.locator('#sortBar')).toHaveCount(0);
+    await expect(page.locator('.catalog-section-title')).toHaveCount(2);
+    await expect(page.locator('.catalog-section-title').filter({ hasText: '生活日常' })).toBeVisible();
+    await expect(page.locator('.catalog-section-title').filter({ hasText: '成长进步' })).toBeVisible();
   });
 
-  test('首页按分值从低到高排列', async ({ page }) => {
-    const pts = await page.locator('.earn-item .catalog-pts').allTextContents();
-    const values = pts.map(t => parseInt(t.replace('+', ''), 10));
-    for (let i = 1; i < values.length; i++) {
-      expect(values[i]).toBeGreaterThanOrEqual(values[i - 1]);
+  test('首页组内按分值从低到高排列', async ({ page }) => {
+    const sections = page.locator('.catalog-section-title');
+    const count = await sections.count();
+    for (let i = 0; i < count; i++) {
+      const title = sections.nth(i);
+      const pts = await title.evaluate(el => {
+        const items = [];
+        let node = el.nextElementSibling;
+        while (node && !node.classList.contains('catalog-section-title')) {
+          if (node.classList.contains('earn-item')) {
+            const ptsEl = node.querySelector('.catalog-pts');
+            items.push(parseInt((ptsEl?.textContent || '').replace('+', ''), 10));
+          }
+          node = node.nextElementSibling;
+        }
+        return items;
+      });
+      for (let j = 1; j < pts.length; j++) {
+        expect(pts[j]).toBeGreaterThanOrEqual(pts[j - 1]);
+      }
     }
   });
 
@@ -112,15 +130,47 @@ test.describe('任务与奖励管理', () => {
       render();
     });
     await expect(page.locator('.earn-item').filter({ hasText: '自己洗手' })).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('.catalog-section-title')).toHaveCount(0);
+    await expect(page.locator('.catalog-section-title').filter({ hasText: '生活日常' })).toBeVisible();
+    await expect(page.locator('.catalog-section-title').filter({ hasText: '成长进步' })).toBeVisible();
+  });
+
+  test('无 group 的自定义任务默认归入我家任务', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem(KEY, JSON.stringify({
+        score: 0,
+        history: [],
+        profile: { name: '宝贝', avatar: '👧' },
+        revoked: {},
+        catalog: {
+          tasks: [
+            ...DEFAULT_TASKS,
+            { id: 'c_legacy', emoji: '🎯', name: '旧自定义', pts: 6, enabled: true, preset: false },
+          ],
+          rewards: DEFAULT_REWARDS.map(r => ({ ...r })),
+        },
+        meta: { lastClearAt: 0, profileUpdatedAt: 0, catalogUpdatedAt: 0, updatedAt: 0 },
+      }));
+      state = loadLocal();
+      render();
+    });
+    const familyTitle = page.locator('.catalog-section-title').filter({ hasText: '我家任务' });
+    await expect(familyTitle).toBeVisible({ timeout: 5000 });
+    const inFamily = await familyTitle.evaluate(el => {
+      let node = el.nextElementSibling;
+      while (node && !node.classList.contains('catalog-section-title')) {
+        if (node.classList.contains('earn-item') && node.textContent.includes('旧自定义')) return true;
+        node = node.nextElementSibling;
+      }
+      return false;
+    });
+    expect(inFamily).toBe(true);
   });
 
   test('自定义目录会写入 localStorage', async ({ page }) => {
     await openTaskManage(page);
     await addCatalogItem(page, { type: 'tasks', name: CUSTOM_TASK, pts: 4 });
-    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
-    await expect(page.locator('#settingsView')).toBeVisible();
-    await page.locator('.menu-item').filter({ hasText: '奖励管理' }).click();
+    await page.locator('#taskManageView .back-btn').click();
+    await openRewardManage(page);
     await addCatalogItem(page, { type: 'rewards', name: CUSTOM_REWARD, pts: 12 });
 
     const stored = await page.evaluate(({ taskName, rewardName }) => {
@@ -129,7 +179,7 @@ test.describe('任务与奖励管理', () => {
       const task = data.catalog.tasks.find(t => t.name === taskName);
       const reward = data.catalog.rewards.find(r => r.name === rewardName);
       return {
-        hasTask: !!task && !task.preset && task.pts === 4 && task.enabled,
+        hasTask: !!task && !task.preset && task.pts === 4 && task.enabled && task.group === 'family',
         hasReward: !!reward && !reward.preset && reward.pts === 12 && reward.enabled,
         noCategories: !data.catalog.taskCategories && !data.catalog.rewardCategories,
         catalogUpdatedAt: data.meta.catalogUpdatedAt > 0,
