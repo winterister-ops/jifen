@@ -36,11 +36,8 @@ body {
   min-height: 100dvh;
   padding: calc(16px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
 }
+body.has-bottom-nav,
 body.is-subpage {
-  padding-left: 0;
-  padding-right: 0;
-}
-body.has-bottom-nav {
   overflow: hidden;
   position: fixed;
   inset: 0;
@@ -54,7 +51,8 @@ body.has-bottom-nav {
   padding-right: 0;
   padding-bottom: var(--safe-bottom);
 }
-body.has-bottom-nav #appRoot {
+body.has-bottom-nav #appRoot,
+body.is-subpage #appRoot {
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -62,7 +60,8 @@ body.has-bottom-nav #appRoot {
   flex-direction: column;
   overflow: visible;
 }
-body.has-bottom-nav #appRoot > .wrap {
+body.has-bottom-nav #appRoot > .wrap,
+body.is-subpage #appRoot > .wrap {
   flex: 1;
   min-height: 0;
   width: 100%;
@@ -78,6 +77,14 @@ body.has-bottom-nav #settingsView {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding-bottom: calc(var(--bottom-nav-h) + var(--bottom-nav-gap) + var(--safe-bottom));
+}
+body.is-subpage #taskManageView,
+body.is-subpage #rewardManageView {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 body.catalog-action-lock .bottom-nav {
   pointer-events: none;

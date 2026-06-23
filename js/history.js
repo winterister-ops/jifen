@@ -97,15 +97,10 @@ function historyFirstIndexForDateKey(key) {
 }
 
 function historyDateHeadScrollTop(el, scrollEl) {
-  const styles = getComputedStyle(scrollEl);
-  const gap = parseFloat(styles.rowGap || styles.gap) || 0;
-  let top = 0;
-  let node = el.previousElementSibling;
-  while (node) {
-    top += node.offsetHeight + gap;
-    node = node.previousElementSibling;
-  }
-  top += parseFloat(getComputedStyle(el).marginTop) || 0;
+  const prev = scrollEl.scrollTop;
+  if (prev !== 0) scrollEl.scrollTop = 0;
+  const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top;
+  if (prev !== 0) scrollEl.scrollTop = prev;
   return top;
 }
 
@@ -113,8 +108,8 @@ function scrollToHistoryDateHead(key) {
   const el = document.querySelector('#history .date-head[data-date="' + key + '"]');
   const scrollEl = document.getElementById('history');
   if (!el || !scrollEl) return;
-  const top = historyDateHeadScrollTop(el, scrollEl);
-  scrollEl.scrollTo({ top, behavior: 'smooth' });
+  const top = Math.max(0, Math.ceil(historyDateHeadScrollTop(el, scrollEl)));
+  scrollEl.scrollTop = top;
 }
 
 function updateHistoryStickyOffset() {
