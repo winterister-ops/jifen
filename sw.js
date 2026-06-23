@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.68';
+const CACHE_VERSION = '0.0.69';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
