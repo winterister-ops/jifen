@@ -4,7 +4,6 @@ const CLOUD_PUSH_DEBOUNCE_MS = 400;
 const REVOKED_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 
 let KEY = null;
-let VIBRATION_KEY = null;
 let state = defaultState();
 let cloudRef = null;
 let cloudUnsubscribe = null;
@@ -569,8 +568,6 @@ function tearDownCloud() {
 
 function storageKeysForUser(uid) {
   KEY = STORAGE_PREFIX + uid;
-  VIBRATION_KEY = STORAGE_PREFIX + uid + '_vibration';
-  vibrationEnabled = vibrationSupported && localStorage.getItem(VIBRATION_KEY) !== '0';
 }
 
 function cloudPathForUser(user) {

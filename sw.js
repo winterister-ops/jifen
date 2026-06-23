@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.70';
+const CACHE_VERSION = '0.0.71';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -25,7 +25,6 @@ const PRECACHE_URLS = [
   '/icons/user.svg',
   '/icons/edit.svg',
   '/icons/lock.svg',
-  '/icons/shake.svg',
   '/icons/caution.svg',
   '/icons/home.svg',
   '/icons/clear.svg',

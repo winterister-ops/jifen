@@ -114,9 +114,6 @@ function isIOS() {
   return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 }
 
-const vibrationSupported = !isIOS() && typeof navigator.vibrate === 'function';
-let vibrationEnabled = vibrationSupported;
-
 function ipIcon(name, cls = 'ui-ic') {
   return `<img class="${cls}" src="icons/${name}.svg" alt="">`;
 }
@@ -143,7 +140,6 @@ function startApp() {
   initCloud();
   renderAppMeta();
   switchView('tasks');
-  updateSettingsSection();
   render();
   lockPageScroll();
 }
@@ -265,21 +261,6 @@ function switchView(view) {
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
-  updateSettingsSection();
-}
-
-function updateSettingsSection() {
-  const vibSetting = document.getElementById('vibrationSetting');
-  if (vibSetting) vibSetting.style.display = vibrationSupported ? '' : 'none';
-  const vibToggle = document.getElementById('vibrationToggle');
-  if (vibToggle) vibToggle.checked = vibrationEnabled;
-}
-
-function toggleVibration() {
-  const vibToggle = document.getElementById('vibrationToggle');
-  vibrationEnabled = !!vibToggle?.checked;
-  if (VIBRATION_KEY) localStorage.setItem(VIBRATION_KEY, vibrationEnabled ? '1' : '0');
-  if (vibrationEnabled) vibrateFeedback('earn');
 }
 
 function saveProfile() {
@@ -442,7 +423,6 @@ function earn(it, e) {
   touchMeta();
   save();
   bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();
-  vibrateFeedback('earn');
   render();
 }
 
@@ -472,7 +452,6 @@ function confirmSpend() {
   touchMeta();
   save();
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji); confetti();
-  vibrateFeedback('spend');
   markCatalogAction();
   render();
 }
@@ -500,12 +479,6 @@ function animateScoreNum(from, to) {
     }
   }
   scoreAnimFrame = requestAnimationFrame(tick);
-}
-
-function vibrateFeedback(kind) {
-  if (!vibrationSupported || !vibrationEnabled) return;
-  const pattern = kind === 'earn' ? [35, 40, 55] : [50, 30, 50, 30, 70];
-  try { navigator.vibrate(pattern); } catch (e) {}
 }
 
 function bump() {
@@ -654,11 +627,6 @@ function initAppEvents() {
     if (handler) handler(el);
   });
 
-  document.addEventListener('change', e => {
-    const el = findActionEl(e.target, 'data-action');
-    if (!el || el.dataset.action !== 'toggle-vibration') return;
-    toggleVibration();
-  });
 }
 
 initAppEvents();

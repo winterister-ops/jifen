@@ -303,7 +303,6 @@ function logoutApp() {
   if (!firebaseReady) return;
   tearDownCloud();
   KEY = null;
-  VIBRATION_KEY = null;
   state = defaultState();
   lastDisplayedScore = null;
   showAuthView();
@@ -320,7 +319,6 @@ function onAuthChanged(user) {
   } else {
     tearDownCloud();
     KEY = null;
-    VIBRATION_KEY = null;
     state = defaultState();
     lastDisplayedScore = null;
     if (passwordResetCodeFromUrl) {
