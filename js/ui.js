@@ -8,6 +8,7 @@ let currentTab = 'earn';
 let pendingSpendItem = null;
 let catalogActionLockTimer = null;
 let earnCooldownRefreshTimer = null;
+let lastEarnByTaskId = null; // Map<taskId, last earn ts>
 
 const CATALOG_ACTION_LOCK_MS = 500;
 
@@ -136,6 +137,7 @@ function renderAppMeta() {
 
 function startApp() {
   state = loadLocal();
+  invalidateLastEarnByTaskId();
   lastDisplayedScore = null;
   initCloud();
   renderAppMeta();
@@ -282,10 +284,37 @@ function switchTab(t) {
   render();
 }
 
-function earnCooldownRemainingMs(taskId) {
-  const lastTs = lastEarnTimeForTask(taskId);
+function buildLastEarnByTaskId() {
+  const map = new Map();
+  for (let i = 0; i < state.history.length; i++) {
+    const h = state.history[i];
+    if (h.delta <= 0 || !h.id) continue;
+    const ts = h.ts || 0;
+    const prev = map.get(h.id);
+    if (!prev || ts > prev) map.set(h.id, ts);
+  }
+  return map;
+}
+
+function getLastEarnByTaskId() {
+  if (!lastEarnByTaskId) lastEarnByTaskId = buildLastEarnByTaskId();
+  return lastEarnByTaskId;
+}
+
+function invalidateLastEarnByTaskId() {
+  lastEarnByTaskId = null;
+}
+
+function recordLastEarn(taskId, ts) {
+  if (!lastEarnByTaskId) lastEarnByTaskId = buildLastEarnByTaskId();
+  const prev = lastEarnByTaskId.get(taskId) || 0;
+  if (ts >= prev) lastEarnByTaskId.set(taskId, ts);
+}
+
+function earnCooldownRemainingMs(taskId, now) {
+  const lastTs = getLastEarnByTaskId().get(taskId);
   if (!lastTs) return 0;
-  return Math.max(0, EARN_COOLDOWN_MS - (Date.now() - lastTs));
+  return Math.max(0, EARN_COOLDOWN_MS - ((now ?? Date.now()) - lastTs));
 }
 
 function isTaskInEarnCooldown(taskId) {
@@ -299,9 +328,13 @@ function scheduleEarnCooldownRefresh() {
   }
   if (currentTab !== 'earn') return;
 
+  const earnMap = getLastEarnByTaskId();
+  const now = Date.now();
   let minRemaining = Infinity;
   getActiveTasks().forEach((it) => {
-    const remaining = earnCooldownRemainingMs(it.id);
+    const lastTs = earnMap.get(it.id);
+    if (!lastTs) return;
+    const remaining = EARN_COOLDOWN_MS - (now - lastTs);
     if (remaining > 0) minRemaining = Math.min(minRemaining, remaining);
   });
   if (minRemaining === Infinity) return;
@@ -407,11 +440,7 @@ function render() {
 }
 
 function lastEarnTimeForTask(taskId) {
-  for (let i = state.history.length - 1; i >= 0; i--) {
-    const h = state.history[i];
-    if (h.id === taskId && h.delta > 0) return h.ts || 0;
-  }
-  return 0;
+  return getLastEarnByTaskId().get(taskId) || 0;
 }
 
 function earn(it, e) {
@@ -419,7 +448,9 @@ function earn(it, e) {
     shakeEarnRow(it.id);
     return;
   }
-  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts: Date.now() });
+  const ts = Date.now();
+  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts });
+  recordLastEarn(it.id, ts);
   touchMeta();
   save();
   bump(); popup('+' + it.pts, '#06d6a0', it.emoji); confetti();

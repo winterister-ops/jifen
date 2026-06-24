@@ -436,6 +436,7 @@ function finishCloudPush(error, snapshotVal) {
     if (!stateContentEqual(state, merged)) {
       applyingRemote = true;
       state = merged;
+      if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
       saveLocal();
       scheduleRender();
       applyingRemote = false;
@@ -595,6 +596,7 @@ function attachCloudListener() {
         if (!stateContentEqual(state, merged)) {
           applyingRemote = true;
           state = merged;
+          if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
           saveLocal();
           scheduleRender();
           applyingRemote = false;

@@ -486,6 +486,7 @@ function deleteHistoryRecords(eids) {
   });
 
   invalidateHistoryDateKeysCache();
+  if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
   touchMeta();
   save();
 }
