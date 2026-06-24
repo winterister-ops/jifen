@@ -9,6 +9,7 @@ let selectedEids = new Set();
 let historyAllLimit = HISTORY_PAGE_SIZE;
 let historyDayStatsIndex = null;
 let historyDateKeysMonthCache = { key: '', stats: null };
+let historyReversedCache = null; // { items, dateFirstIndex }
 
 function ymd(d) {
   const p = n => String(n).padStart(2, '0');
@@ -84,16 +85,27 @@ function filteredHistory() {
   return state.history.slice();
 }
 
+function getHistoryReversedCache() {
+  if (!historyReversedCache) {
+    const items = historyEntriesWithEids(state.history);
+    items.reverse();
+    const dateFirstIndex = new Map();
+    for (let i = 0; i < items.length; i++) {
+      const key = entryDateKey(items[i].log);
+      if (!dateFirstIndex.has(key)) dateFirstIndex.set(key, i);
+    }
+    historyReversedCache = { items, dateFirstIndex };
+  }
+  return historyReversedCache;
+}
+
 function historyReversedWithEids() {
-  return historyEntriesWithEids(state.history).slice().reverse();
+  return getHistoryReversedCache().items;
 }
 
 function historyFirstIndexForDateKey(key) {
-  const items = historyReversedWithEids();
-  for (let i = 0; i < items.length; i++) {
-    if (entryDateKey(items[i].log) === key) return i;
-  }
-  return -1;
+  const idx = getHistoryReversedCache().dateFirstIndex.get(key);
+  return idx !== undefined ? idx : -1;
 }
 
 function historyDateHeadScrollTop(el, scrollEl) {
@@ -176,6 +188,7 @@ function resetHistoryAllLimit() {
 function invalidateHistoryDateKeysCache() {
   historyDayStatsIndex = null;
   historyDateKeysMonthCache = { key: '', stats: null };
+  historyReversedCache = null;
 }
 
 function buildHistoryDayStatsIndex() {
