@@ -65,7 +65,7 @@ function normalizeCatalogItem(item, presetIds) {
   const preset = presetIds.has(item.id);
   return {
     id: item.id,
-    emoji: typeof item.emoji === 'string' && item.emoji ? item.emoji : '⭐',
+    emoji: typeof item.emoji === 'string' && item.emoji ? firstEmojiOrDefault(item.emoji) : '⭐',
     name,
     pts,
     enabled: item.enabled !== false,

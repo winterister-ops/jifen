@@ -40,6 +40,21 @@ test.describe('任务与奖励管理', () => {
     await expect(page.locator('#scoreNum')).toHaveText('7', { timeout: 5000 });
   });
 
+  test('编辑任务图标仅保留一个 emoji', async ({ page }) => {
+    await openTaskManage(page);
+    await page.locator('#taskManageList .catalog-row').filter({ hasText: '自己洗手' }).locator('.catalog-main').click();
+    await page.evaluate(() => {
+      const input = document.getElementById('catalogEmojiInput');
+      input.value = '🧼🍚📚';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.locator('#catalogEmojiInput')).toHaveValue('🧼');
+    await page.locator('#catalogEditModal .modal-btn.confirm').click();
+
+    await goHome(page);
+    await expect(page.locator('.earn-item').filter({ hasText: '自己洗手' }).locator('.catalog-emoji')).toHaveText('🧼');
+  });
+
   test('修改任务分值后按新分值赚取积分', async ({ page }) => {
     await openTaskManage(page);
     await page.locator('#taskManageList .catalog-row').filter({ hasText: '自己洗手' }).locator('.catalog-main').click();

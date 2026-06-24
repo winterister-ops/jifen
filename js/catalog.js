@@ -118,7 +118,7 @@ function openCatalogEditModal(type, id) {
     isNew ? (type === 'rewards' ? '添加奖励' : '添加任务') : (type === 'rewards' ? '编辑奖励' : '编辑任务');
   document.getElementById('catalogNameInput').value = item.name || '';
   document.getElementById('catalogPtsInput').value = item.pts || 5;
-  document.getElementById('catalogEmojiInput').value = item.emoji || '⭐';
+  document.getElementById('catalogEmojiInput').value = firstEmojiOrDefault(item.emoji);
   document.getElementById('catalogDeleteBtn').style.display =
     (!isNew && !item.preset) ? '' : 'none';
   document.getElementById('catalogEditModal').classList.add('show');
@@ -139,7 +139,7 @@ function saveCatalogEdit() {
   }
   const ptsRaw = parseInt(document.getElementById('catalogPtsInput').value, 10);
   const pts = Math.max(1, Math.min(999, isNaN(ptsRaw) ? 1 : ptsRaw));
-  const emoji = (document.getElementById('catalogEmojiInput').value.trim() || '⭐').slice(0, 8);
+  const emoji = firstEmojiOrDefault(document.getElementById('catalogEmojiInput').value);
   const list = catalogList(type);
 
   if (catalogEditId) {
@@ -183,3 +183,17 @@ function deleteCatalogItem() {
   render();
   toast('已删除');
 }
+
+function bindCatalogEmojiInput() {
+  const input = document.getElementById('catalogEmojiInput');
+  if (!input || input.dataset.emojiBound) return;
+  input.dataset.emojiBound = '1';
+  const clamp = () => {
+    const one = takeFirstEmoji(input.value);
+    if (input.value !== one) input.value = one;
+  };
+  input.addEventListener('input', clamp);
+  input.addEventListener('paste', () => setTimeout(clamp, 0));
+}
+
+bindCatalogEmojiInput();

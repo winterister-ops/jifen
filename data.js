@@ -83,3 +83,18 @@ function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
 }
+
+function takeFirstEmoji(str) {
+  const s = (str || '').trim();
+  if (!s) return '';
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const first = seg.segment(s)[Symbol.iterator]().next();
+    return first.done ? '' : first.value.segment;
+  }
+  return [...s][0] || '';
+}
+
+function firstEmojiOrDefault(str, fallback = '⭐') {
+  return takeFirstEmoji(str) || fallback;
+}
