@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.75';
+const CACHE_VERSION = '0.0.76';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -9,9 +9,11 @@ const PRECACHE_URLS = [
   '/data.js',
   '/js/firebase-loader.js',
   '/js/sync.js',
+  '/js/firestore-sync.js',
   '/js/history.js',
   '/js/catalog.js',
   '/js/ui.js',
+  '/js/onboarding.js',
   '/js/auth.js',
   '/js/pwa.js',
   '/manifest.webmanifest',
