@@ -144,6 +144,7 @@ function startApp() {
   switchView('tasks');
   render();
   lockPageScroll();
+  if (typeof onboardingAfterStartApp === 'function') onboardingAfterStartApp();
 }
 
 function renderHeader() {
@@ -598,6 +599,7 @@ const CLICK_ACTION_HANDLERS = {
   'select-all-history': () => selectAllVisibleHistory(),
   'show-delete-confirm': () => showDeleteConfirmModal(),
   'open-profile-modal': () => openProfileModal(),
+  'open-onboarding': () => openOnboardingReconfigure(),
   'open-catalog-manage': el => openCatalogManage(el.dataset.catalogType),
   'open-password-modal': () => openPasswordModal(),
   'logout': () => logoutApp(),

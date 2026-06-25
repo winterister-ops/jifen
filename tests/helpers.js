@@ -1,14 +1,17 @@
 const { expect } = require('@playwright/test');
 
 /** 在页面加载前注入 Firebase 桩，自动以测试用户登录并进入主界面 */
-async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
+async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {}) {
+  const { skipOnboarding = true } = options;
   await page.route('**/*gstatic.com/firebasejs/**', route => route.abort());
 
-  await page.addInitScript((testUid) => {
+  await page.addInitScript(({ testUid, skipOnboarding }) => {
+    window.__testFlags = { skipOnboarding };
     const authInstance = {
       setPersistence: () => Promise.resolve(),
       onAuthStateChanged: (cb) => {
-        setTimeout(() => cb({ uid: testUid, email: 'test@example.com' }), 0);
+        cb({ uid: testUid, email: 'test@example.com' });
+        return () => {};
       },
       signInWithEmailAndPassword: () => Promise.resolve(),
       signOut: () => Promise.resolve(),
@@ -87,12 +90,15 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user') {
       }),
       database: () => ({ ref: () => fakeRef }),
     };
-  }, uid);
+  }, { testUid: uid, skipOnboarding });
 
   await page.goto('/');
-  await expect(page.locator('#appRoot')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('#mainView')).toBeVisible();
-  await expect(page.locator('#scoreNum')).toHaveText('0', { timeout: 5000 });
+  if (skipOnboarding) {
+    await expect(page.locator('#mainView')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#scoreNum')).toHaveText('0', { timeout: 5000 });
+    return;
+  }
+  await expect(page.locator('#onboardingView')).toBeVisible({ timeout: 10000 });
 }
 
 async function openSettings(page) {
@@ -150,8 +156,32 @@ async function earnTask(page, name) {
   await page.locator('.earn-item').filter({ hasText: name }).click();
 }
 
+async function gotoOnboardingApp(page, uid = 'test-playwright-new-user') {
+  await gotoLoggedInApp(page, uid, { skipOnboarding: false });
+  await expect(page.locator('#obStep-profile')).toHaveClass(/active/);
+}
+
+async function completeOnboardingFlow(page, { name = '小星星', avatar = '👦' } = {}) {
+  await page.locator('#obNameInput').fill(name);
+  await page.locator('.ob-avatar-btn').filter({ hasText: avatar }).click();
+  await page.locator('[data-ob-action="ob-profile-next"]').click();
+  await expect(page.locator('#obStep-habits')).toHaveClass(/active/);
+
+  await page.locator('[data-ob-action="ob-habits-next"]').click();
+  await expect(page.locator('#obStep-rewards')).toHaveClass(/active/);
+
+  await page.locator('[data-ob-action="ob-rewards-done"]').click();
+  await expect(page.locator('#obStep-done')).toHaveClass(/active/);
+
+  await page.locator('[data-ob-action="ob-enter-app"]').click();
+  await expect(page.locator('#mainView')).toBeVisible();
+  await expect(page.locator('#welcomeName')).toHaveText(name);
+}
+
 module.exports = {
   gotoLoggedInApp,
+  gotoOnboardingApp,
+  completeOnboardingFlow,
   openSettings,
   openTaskManage,
   openRewardManage,

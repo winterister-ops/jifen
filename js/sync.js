@@ -39,7 +39,18 @@ function normalizeProfile(p) {
 }
 
 function defaultMeta() {
-  return { lastClearAt: 0, profileUpdatedAt: 0, catalogUpdatedAt: 0, updatedAt: 0 };
+  return { lastClearAt: 0, profileUpdatedAt: 0, catalogUpdatedAt: 0, updatedAt: 0, onboardingDone: false };
+}
+
+function needsOnboarding(s) {
+  if (typeof window !== 'undefined' && window.__testFlags?.skipOnboarding) return false;
+  const st = s || state;
+  if (!st || !st.meta) return false;
+  if (st.meta.onboardingDone === true) return false;
+  if ((st.history || []).length > 0) return false;
+  if (st.meta.catalogUpdatedAt > 0) return false;
+  if (st.meta.profileUpdatedAt > 0) return false;
+  return true;
 }
 
 function defaultCatalog() {
@@ -327,7 +338,8 @@ function mergeStates(localRaw, remoteRaw) {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
       catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
-      updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt)
+      updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt),
+      onboardingDone: !!(local.meta.onboardingDone || remote.meta.onboardingDone)
     }
   };
 }

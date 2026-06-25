@@ -14,7 +14,8 @@
       "package.json",
       "package-lock.json",
       "playwright.config.js",
-      "scripts/**"
+      "scripts/**",
+      "prototypes/**"
     ],
     "rewrites": [
       {

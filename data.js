@@ -1,5 +1,5 @@
 // ====== 应用版本（单一来源 package.json，发版：npm version patch） ======
-const APP_VERSION = '0.0.74';
+const APP_VERSION = '0.0.75';
 
 // ====== 宝贝信息默认值（首次使用或未设置时） ======
 const DEFAULT_CHILD_NAME = '宝贝';
@@ -11,24 +11,71 @@ const AVATAR_OPTIONS = [
 ];
 
 // ====== 系统预设任务和奖励（不可删除，可改分值/emoji/名称/启用状态） ======
+// 新用户引导默认启用 RECOMMENDED_*_IDS 中的项，其余默认关闭
+const RECOMMENDED_TASK_IDS = ['brush', 'wash', 'eat', 'sleep', 'tidy', 'learn', 'polite'];
+const RECOMMENDED_REWARD_IDS = ['cartoon', 'snack', 'icecream', 'toy', 'park'];
+
+const ONBOARDING_HABIT_CATS = [
+  { id: 'all', label: '全部' },
+  { id: 'self', label: '自理' },
+  { id: 'routine', label: '作息' },
+  { id: 'chore', label: '家务' },
+  { id: 'learn', label: '学习' },
+  { id: 'social', label: '礼貌' },
+];
+
+const HABIT_CAT_BY_ID = {
+  wash: 'self', brush: 'self', eat: 'self', veggie: 'self', dress: 'self', shoes: 'self', water: 'self',
+  sleep: 'routine', wakeup: 'routine', nap: 'routine', screen: 'routine',
+  tidy: 'chore', table: 'chore', trash: 'chore', pet: 'chore',
+  learn: 'learn', read: 'learn', sport: 'learn', instrument: 'learn',
+  polite: 'social', share: 'social', calm: 'social',
+};
+
+function isRecommendedTask(id) {
+  return RECOMMENDED_TASK_IDS.includes(id);
+}
+
+function isRecommendedReward(id) {
+  return RECOMMENDED_REWARD_IDS.includes(id);
+}
+
 const DEFAULT_TASKS = [
-  { id: 'wash',    emoji: '🧼', name: '自己洗手',   pts: 2,  enabled: true, preset: true },
-  { id: 'eat',     emoji: '🍚', name: '自己吃饭',   pts: 5,  enabled: true, preset: true },
-  { id: 'veggie',  emoji: '🥬', name: '吃蔬菜',     pts: 4,  enabled: true, preset: true },
-  { id: 'brush',   emoji: '🪥', name: '认真刷牙',   pts: 3,  enabled: true, preset: true },
-  { id: 'dress',   emoji: '👕', name: '自己穿衣服', pts: 5,  enabled: true, preset: true },
-  { id: 'shoes',   emoji: '👟', name: '自己穿鞋',   pts: 3,  enabled: true, preset: true },
-  { id: 'tidy',    emoji: '🧸', name: '收拾玩具',   pts: 4,  enabled: true, preset: true },
-  { id: 'sleep',   emoji: '😴', name: '按时睡觉',   pts: 4,  enabled: true, preset: true },
-  { id: 'polite',  emoji: '🙏', name: '讲礼貌',     pts: 2,  enabled: true, preset: true },
-  { id: 'learn',   emoji: '📚', name: '认真学习',   pts: 5,  enabled: true, preset: true },
+  { id: 'brush',   emoji: '🪥', name: '认真刷牙',   pts: 3, enabled: true,  preset: true },
+  { id: 'wash',    emoji: '🧼', name: '自己洗手',   pts: 2, enabled: true,  preset: true },
+  { id: 'eat',     emoji: '🍚', name: '自己吃饭',   pts: 5, enabled: true,  preset: true },
+  { id: 'sleep',   emoji: '😴', name: '按时睡觉',   pts: 5, enabled: true,  preset: true },
+  { id: 'tidy',    emoji: '🧸', name: '收拾玩具',   pts: 4, enabled: true,  preset: true },
+  { id: 'learn',   emoji: '📚', name: '完成作业',   pts: 5, enabled: true,  preset: true },
+  { id: 'polite',  emoji: '🙏', name: '讲礼貌',     pts: 2, enabled: true,  preset: true },
+  { id: 'veggie',  emoji: '🥬', name: '吃蔬菜',     pts: 4, enabled: false, preset: true },
+  { id: 'dress',   emoji: '👕', name: '自己穿衣服', pts: 4, enabled: false, preset: true },
+  { id: 'shoes',   emoji: '👟', name: '自己穿鞋',   pts: 3, enabled: false, preset: true },
+  { id: 'wakeup',  emoji: '☀️', name: '按时起床',   pts: 5, enabled: false, preset: true },
+  { id: 'read',    emoji: '📖', name: '阅读15分钟', pts: 5, enabled: false, preset: true },
+  { id: 'screen',  emoji: '📵', name: '控制屏幕时间', pts: 5, enabled: false, preset: true },
+  { id: 'table',   emoji: '🍽️', name: '帮忙摆碗筷', pts: 3, enabled: false, preset: true },
+  { id: 'trash',   emoji: '🗑️', name: '扔垃圾',     pts: 2, enabled: false, preset: true },
+  { id: 'share',   emoji: '🤝', name: '懂得分享',   pts: 3, enabled: false, preset: true },
+  { id: 'calm',    emoji: '😌', name: '不乱发脾气', pts: 5, enabled: false, preset: true },
+  { id: 'water',   emoji: '🥤', name: '多喝白开水', pts: 2, enabled: false, preset: true },
+  { id: 'nap',     emoji: '💤', name: '好好午睡',   pts: 4, enabled: false, preset: true },
+  { id: 'sport',   emoji: '⚽', name: '运动锻炼',   pts: 5, enabled: false, preset: true },
+  { id: 'instrument', emoji: '🎹', name: '练习乐器', pts: 6, enabled: false, preset: true },
+  { id: 'pet',     emoji: '🐾', name: '照顾宠物',   pts: 5, enabled: false, preset: true },
 ];
 const DEFAULT_REWARDS = [
-  { id: 'cartoon',  emoji: '📺', name: '看动画片15分钟', pts: 10, enabled: true, preset: true },
-  { id: 'snack',    emoji: '🍪', name: '小零食一份',     pts: 8,  enabled: true, preset: true },
-  { id: 'icecream', emoji: '🍦', name: '冰淇淋一个',     pts: 15, enabled: true, preset: true },
-  { id: 'toy',      emoji: '🚗', name: '小玩具一个',     pts: 30, enabled: true, preset: true },
-  { id: 'park',     emoji: '🎡', name: '去游乐场玩',     pts: 50, enabled: true, preset: true },
+  { id: 'cartoon',  emoji: '📺', name: '看动画片15分钟', pts: 10, enabled: true,  preset: true },
+  { id: 'snack',    emoji: '🍪', name: '小零食一份',     pts: 8,  enabled: true,  preset: true },
+  { id: 'icecream', emoji: '🍦', name: '冰淇淋一个',     pts: 15, enabled: true,  preset: true },
+  { id: 'toy',      emoji: '🚗', name: '小玩具一个',     pts: 35, enabled: true,  preset: true },
+  { id: 'park',     emoji: '🎡', name: '去游乐场玩',     pts: 50, enabled: true,  preset: true },
+  { id: 'story',    emoji: '📕', name: '多讲一个故事',   pts: 8,  enabled: false, preset: true },
+  { id: 'game',     emoji: '🎮', name: '亲子游戏15分钟', pts: 10, enabled: false, preset: true },
+  { id: 'sticker',  emoji: '⭐', name: '贴纸一张',       pts: 5,  enabled: false, preset: true },
+  { id: 'late',     emoji: '🌙', name: '晚睡15分钟',     pts: 15, enabled: false, preset: true },
+  { id: 'dinner',   emoji: '🍕', name: '今晚吃什么我来选', pts: 20, enabled: false, preset: true },
+  { id: 'cinema',   emoji: '🎬', name: '去看电影',       pts: 45, enabled: false, preset: true },
 ];
 
 // ====== 环境隔离：本地开发 vs 线上真实 ======

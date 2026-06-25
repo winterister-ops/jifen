@@ -17,7 +17,7 @@ test.describe('任务与奖励管理', () => {
 
   test('首页展示预设任务', async ({ page }) => {
     await expect(page.locator('.earn-item').filter({ hasText: '自己洗手' })).toBeVisible();
-    await expect(page.locator('.earn-item').filter({ hasText: '认真学习' })).toBeVisible();
+    await expect(page.locator('.earn-item').filter({ hasText: '完成作业' })).toBeVisible();
     await expect(page.locator('#sortBar')).toHaveCount(0);
     await expect(page.locator('.catalog-section-title')).toHaveCount(0);
   });

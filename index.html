@@ -10,12 +10,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.74">
+<meta name="app-version" content="0.0.75">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=0.0.74">
+<link rel="stylesheet" href="styles.css?v=0.0.75">
 <script>
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 scrollTo(0, 0);
@@ -63,6 +63,102 @@ scrollTo(0, 0);
 </div>
 
 <div id="appRoot" style="display:none">
+<div id="onboardingView" class="onboarding-view" style="display:none" hidden>
+  <div class="ob-screen" id="obStep-profile">
+    <div class="ob-head">
+      <div class="ob-step-dots" aria-hidden="true">
+        <span class="ob-step-dot current"></span>
+        <span class="ob-step-dot"></span>
+        <span class="ob-step-dot"></span>
+      </div>
+      <h1 class="ob-title">先认识一下宝贝</h1>
+      <p class="ob-sub">设置昵称和头像，星星银行会更有专属感。</p>
+    </div>
+    <div class="ob-body" id="onboardingBody">
+      <div class="ob-preview-card">
+        <div class="ob-preview-avatar" id="obPreviewAvatar">👧</div>
+        <div>
+          <div class="ob-preview-greet">你好，<span id="obPreviewName">宝贝</span>！</div>
+          <div class="ob-preview-sub">今天也要攒星星哦</div>
+        </div>
+      </div>
+      <label class="ob-field-label" for="obNameInput">宝贝昵称</label>
+      <input class="profile-input ob-text-input" id="obNameInput" type="text" maxlength="12" placeholder="最多 12 个字" value="宝贝">
+      <div class="ob-field-label">选个头像</div>
+      <div class="ob-avatar-grid" id="obAvatarGrid"></div>
+    </div>
+    <div class="ob-foot">
+      <button type="button" class="ob-btn-primary" data-ob-action="ob-profile-next">下一步：选习惯</button>
+    </div>
+  </div>
+
+  <div class="ob-screen" id="obStep-habits">
+    <div class="ob-head">
+      <div class="ob-step-dots" aria-hidden="true">
+        <span class="ob-step-dot done"></span>
+        <span class="ob-step-dot current"></span>
+        <span class="ob-step-dot"></span>
+      </div>
+      <h1 class="ob-title">选今天的习惯</h1>
+      <p class="ob-sub">先选 5–8 个就够啦，太多孩子容易放弃。</p>
+      <div class="ob-count-pill" id="obHabitCount">已选 7 项</div>
+    </div>
+    <div class="ob-body">
+      <div class="ob-hint-box"><strong>推荐</strong> 项已帮你选好，点一下可以增减。完成后每天点一下就能赚星星。</div>
+      <div class="ob-cat-tabs" id="obHabitTabs"></div>
+      <div class="ob-pick-list" id="obHabitList"></div>
+    </div>
+    <div class="ob-foot">
+      <button type="button" class="ob-btn-primary" id="obHabitsNextBtn" data-ob-action="ob-habits-next">下一步：选奖励</button>
+      <button type="button" class="ob-btn-ghost" data-ob-action="ob-habits-restore">恢复推荐配置</button>
+      <button type="button" class="ob-btn-ghost" id="obHabitsBackBtn" data-ob-action="ob-habits-back">上一步</button>
+    </div>
+  </div>
+
+  <div class="ob-screen" id="obStep-rewards">
+    <div class="ob-head">
+      <div class="ob-step-dots" aria-hidden="true">
+        <span class="ob-step-dot done"></span>
+        <span class="ob-step-dot done"></span>
+        <span class="ob-step-dot current"></span>
+      </div>
+      <h1 class="ob-title">选想要的奖励</h1>
+      <p class="ob-sub">奖励要让孩子等一等，攒星星才更有动力。</p>
+      <div class="ob-count-pill" id="obRewardCount">已选 5 项</div>
+    </div>
+    <div class="ob-body">
+      <div class="ob-hint-box" id="obEconomyHint">按你选的习惯估算：每天大约能攒 <strong>14–20</strong> 颗星星。</div>
+      <div class="ob-pick-list" id="obRewardList"></div>
+    </div>
+    <div class="ob-foot">
+      <button type="button" class="ob-btn-primary" id="obRewardsDoneBtn" data-ob-action="ob-rewards-done">开始星星计划</button>
+      <button type="button" class="ob-btn-ghost" data-ob-action="ob-rewards-restore">恢复推荐配置</button>
+      <button type="button" class="ob-btn-ghost" data-ob-action="ob-rewards-back">上一步</button>
+    </div>
+  </div>
+
+  <div class="ob-screen" id="obStep-done">
+    <div class="ob-body ob-done-body">
+      <div class="ob-done-hero">
+        <div class="ob-done-star">⭐</div>
+        <h1 class="ob-title">计划准备好了！</h1>
+        <p class="ob-sub" id="obDoneGreet">宝贝，今天开始攒星星吧！</p>
+      </div>
+      <div class="ob-summary-block">
+        <div class="ob-summary-title">每日习惯 · <span id="obDoneHabitCount">7</span> 项</div>
+        <div class="ob-summary-chips" id="obDoneHabits"></div>
+      </div>
+      <div class="ob-summary-block">
+        <div class="ob-summary-title">可兑换奖励 · <span id="obDoneRewardCount">5</span> 项</div>
+        <div class="ob-summary-chips" id="obDoneRewards"></div>
+      </div>
+      <div class="ob-economy-card" id="obDoneEconomy"></div>
+    </div>
+    <div class="ob-foot">
+      <button type="button" class="ob-btn-primary" data-ob-action="ob-enter-app">进入任务页</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
  <div id="mainView">
   <div class="score-card">
@@ -125,6 +221,14 @@ scrollTo(0, 0);
   </div>
 
   <div class="menu-list">
+    <button type="button" class="menu-item" data-action="open-onboarding">
+      <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">习惯计划</span>
+        <span class="menu-desc">重新选择每日习惯与奖励</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
     <button type="button" class="menu-item" data-action="open-catalog-manage" data-catalog-type="tasks">
       <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
       <span class="menu-tx">
@@ -328,13 +432,14 @@ scrollTo(0, 0);
 <!-- Firebase 认证 SDK（database 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.74"></script>
-<script src="js/firebase-loader.js?v=0.0.74"></script>
-<script src="js/sync.js?v=0.0.74"></script>
-<script src="js/history.js?v=0.0.74"></script>
-<script src="js/catalog.js?v=0.0.74"></script>
-<script src="js/ui.js?v=0.0.74"></script>
-<script src="js/auth.js?v=0.0.74"></script>
-<script src="js/pwa.js?v=0.0.74"></script>
+<script src="data.js?v=0.0.75"></script>
+<script src="js/firebase-loader.js?v=0.0.75"></script>
+<script src="js/sync.js?v=0.0.75"></script>
+<script src="js/history.js?v=0.0.75"></script>
+<script src="js/catalog.js?v=0.0.75"></script>
+<script src="js/ui.js?v=0.0.75"></script>
+<script src="js/onboarding.js?v=0.0.75"></script>
+<script src="js/auth.js?v=0.0.75"></script>
+<script src="js/pwa.js?v=0.0.75"></script>
 </body>
 </html>

@@ -34,3 +34,6 @@ test-results/
 playwright-report/
 
 # .cursor/ 已整体忽略（含 hooks 运行时 .test-* 临时文件）
+
+# 交互稿 / 原型（仅本地评审，不提交、不部署）
+prototypes/
