@@ -39,7 +39,14 @@ function normalizeProfile(p) {
 }
 
 function defaultMeta() {
-  return { lastClearAt: 0, profileUpdatedAt: 0, catalogUpdatedAt: 0, updatedAt: 0, onboardingDone: false };
+  return {
+    lastClearAt: 0,
+    profileUpdatedAt: 0,
+    catalogUpdatedAt: 0,
+    updatedAt: 0,
+    onboardingDone: false,
+    firestoreMigratedAt: 0,
+  };
 }
 
 function needsOnboarding(s) {
@@ -166,6 +173,9 @@ function historyToCloudMap(history) {
 }
 
 function stateToCloudBlob(s) {
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    return stateToFirestoreUserDoc(s);
+  }
   const n = normalizeState(s);
   return {
     score: n.score,
@@ -233,6 +243,10 @@ function buildCloudPatch(prev, next) {
   });
   if (Object.keys(patch).some(k => k.startsWith('revoked/'))) hasStructuralChange = true;
 
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    return { patch, incremental: !hasStructuralChange };
+  }
+
   const prevHist = (prev && prev.history) || {};
   const nextHist = next.history || {};
   Object.keys(nextHist).forEach(eid => {
@@ -288,7 +302,8 @@ function recomputeScore(history, lastClearAt, revoked) {
     .reduce((s, h) => s + h.delta, 0);
 }
 
-function normalizeState(raw, forMerge) {
+function normalizeState(raw, forMerge, options) {
+  const firestoreMode = !!(options && options.firestoreMode);
   if (!raw || typeof raw.score !== 'number') return defaultState();
   const history = parseHistoryList(raw.history).map((h, i) => ({
     id: h.id ?? '',
@@ -307,6 +322,16 @@ function normalizeState(raw, forMerge) {
     return { score: raw.score, history, profile, revoked, catalog, meta };
   }
   revoked = compactRevoked(revoked);
+  if (firestoreMode) {
+    return {
+      score: raw.score,
+      history,
+      profile,
+      revoked,
+      catalog,
+      meta,
+    };
+  }
   const filtered = applyClearAndRevoked(history, meta.lastClearAt, revokedSet(revoked))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
   const score = recomputeScore(history, meta.lastClearAt, revoked);
@@ -365,7 +390,6 @@ function stateContentQuickKey(s) {
   const h = parseHistoryList(s.history);
   const parts = [
     s.score,
-    h.length,
     s.meta?.lastClearAt || 0,
     s.meta?.profileUpdatedAt || 0,
     s.meta?.catalogUpdatedAt || 0,
@@ -374,9 +398,12 @@ function stateContentQuickKey(s) {
     revokedFingerprint(normalizeRevoked(s)),
     catalogQuickSig(s.catalog)
   ];
-  for (let i = 0; i < h.length; i++) {
-    const item = h[i];
-    parts.push((item.eid || historyEid(item, i)) + ':' + (item.delta || 0));
+  if (!(typeof isFirestoreActive === 'function' && isFirestoreActive())) {
+    parts.splice(1, 0, h.length);
+    for (let i = 0; i < h.length; i++) {
+      const item = h[i];
+      parts.push((item.eid || historyEid(item, i)) + ':' + (item.delta || 0));
+    }
   }
   return parts.join('\x1e');
 }
@@ -385,13 +412,14 @@ function stateContentFullEqual(a, b) {
   const na = normalizeState(a);
   const nb = normalizeState(b);
   if (na.score !== nb.score) return false;
-  if (na.history.length !== nb.history.length) return false;
   if (na.meta.lastClearAt !== nb.meta.lastClearAt) return false;
   if (na.meta.profileUpdatedAt !== nb.meta.profileUpdatedAt) return false;
   if (na.meta.catalogUpdatedAt !== nb.meta.catalogUpdatedAt) return false;
   if (na.profile.name !== nb.profile.name || na.profile.avatar !== nb.profile.avatar) return false;
   if (revokedFingerprint(na.revoked) !== revokedFingerprint(nb.revoked)) return false;
   if (catalogQuickSig(na.catalog) !== catalogQuickSig(nb.catalog)) return false;
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) return true;
+  if (na.history.length !== nb.history.length) return false;
   for (let i = 0; i < na.history.length; i++) {
     const ah = na.history[i];
     const bh = nb.history[i];
@@ -425,7 +453,10 @@ function loadLocal() {
   if (!KEY) return defaultState();
   try {
     const d = JSON.parse(localStorage.getItem(KEY));
-    if (d && typeof d.score === 'number') return normalizeState(d);
+    if (d && typeof d.score === 'number') {
+      const firestoreMode = !!(d.meta && d.meta.firestoreMigratedAt);
+      return normalizeState(d, false, { firestoreMode });
+    }
   } catch (e) {}
   return defaultState();
 }
@@ -435,7 +466,7 @@ function saveLocal() {
   localStorage.setItem(KEY, JSON.stringify(state));
 }
 
-function finishCloudPush(error, snapshotVal) {
+function finishCloudPush(error) {
   cloudPushPending = false;
   if (error) {
     console.warn('云同步写入失败', error);
@@ -443,33 +474,31 @@ function finishCloudPush(error, snapshotVal) {
     schedulePushToCloud();
     return;
   }
-  if (snapshotVal) {
-    const merged = normalizeState(snapshotVal);
-    if (!stateContentEqual(state, merged)) {
-      applyingRemote = true;
-      state = merged;
-      if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
-      saveLocal();
-      scheduleRender();
-      applyingRemote = false;
-    }
-    lastSyncedCloud = stateToCloudBlob(merged);
-  }
+  lastSyncedCloud = stateToCloudBlob(state);
   if (cloudPushDirty) schedulePushToCloud();
 }
 
 function pushToCloudFull(nextCloud) {
   cloudPushPending = true;
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    pushUserDocToFirestore()
+      .then(() => finishCloudPush(null))
+      .catch(err => finishCloudPush(err));
+    return;
+  }
   cloudRef.set(nextCloud)
-    .then(() => {
-      lastSyncedCloud = nextCloud;
-      finishCloudPush(null);
-    })
+    .then(() => finishCloudPush(null))
     .catch(err => finishCloudPush(err));
 }
 
 function pushToCloudTransaction() {
   cloudPushPending = true;
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    pushUserDocToFirestore()
+      .then(() => finishCloudPush(null))
+      .catch(err => finishCloudPush(err));
+    return;
+  }
   cloudRef.transaction(current => {
     const remote = current ? normalizeState(current, true) : null;
     const merged = remote ? mergeStates(state, current) : normalizeState(state);
@@ -479,13 +508,18 @@ function pushToCloudTransaction() {
       finishCloudPush(error || new Error('transaction not committed'));
       return;
     }
-    lastSyncedCloud = snapshot.val() || stateToCloudBlob(state);
-    finishCloudPush(null, snapshot.val());
+    finishCloudPush(null);
   });
 }
 
 function pushToCloudIncremental(patch) {
   cloudPushPending = true;
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    pushUserDocToFirestore()
+      .then(() => finishCloudPush(null))
+      .catch(err => finishCloudPush(err));
+    return;
+  }
   cloudRef.update(patch)
     .then(() => {
       lastSyncedCloud = applyCloudPatch(lastSyncedCloud, patch);
@@ -500,7 +534,9 @@ function pushToCloudIncremental(patch) {
 
 function flushPushToCloud() {
   cloudPushTimer = null;
-  if (!cloudPushDirty || !cloudRef || applyingRemote) return;
+  const cloudReady = (typeof isFirestoreActive === 'function' && isFirestoreActive())
+    || cloudRef;
+  if (!cloudPushDirty || !cloudReady || applyingRemote) return;
   if (cloudPushPending) {
     cloudPushTimer = setTimeout(flushPushToCloud, 80);
     return;
@@ -525,7 +561,9 @@ function flushPushToCloud() {
 }
 
 function schedulePushToCloud() {
-  if (!cloudRef || applyingRemote) return;
+  const cloudReady = (typeof isFirestoreActive === 'function' && isFirestoreActive())
+    || cloudRef;
+  if (!cloudReady || applyingRemote) return;
   cloudPushDirty = true;
   if (cloudPushTimer) return;
   cloudPushTimer = setTimeout(flushPushToCloud, CLOUD_PUSH_DEBOUNCE_MS);
@@ -536,10 +574,20 @@ function pushToCloud() {
 }
 
 function save() {
-  state = normalizeState(state);
+  const firestoreMode = typeof isFirestoreActive === 'function' && isFirestoreActive();
+  state = normalizeState(state, false, { firestoreMode });
   if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
   saveLocal();
   pushToCloud();
+}
+
+function appendHistoryEntry(entry) {
+  state.history.push(entry);
+  state.score += entry.delta;
+  if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    writeHistoryEntryToFirestore(entry).catch(err => console.warn('历史写入失败', err));
+  }
 }
 
 let lastEnvStatus = null;
@@ -572,6 +620,7 @@ function tearDownCloud() {
   }
   cloudPushPending = false;
   lastSyncedCloud = null;
+  if (typeof tearDownFirestoreCloud === 'function') tearDownFirestoreCloud();
   if (cloudRef && cloudUnsubscribe) {
     try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
   }
@@ -589,72 +638,26 @@ function cloudPathForUser(user) {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    if (currentUser && typeof initCloud === 'function') initCloud();
-    else if (typeof renderAppMeta === 'function') renderAppMeta();
+    if (currentUser && typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+      if (cloudPushDirty) schedulePushToCloud();
+      if (typeof renderAppMeta === 'function') renderAppMeta();
+    } else if (currentUser && typeof initCloud === 'function') {
+      initCloud();
+    } else if (typeof renderAppMeta === 'function') {
+      renderAppMeta();
+    }
   });
   window.addEventListener('offline', () => {
     if (typeof renderAppMeta === 'function') renderAppMeta();
   });
 }
 
-function attachCloudListener() {
-  try {
-    cloudRef = firebase.database().ref(cloudPathForUser(currentUser));
-    let first = true;
-    cloudUnsubscribe = cloudRef.on('value', snap => {
-      const val = snap.val();
-      if (val && typeof val.score === 'number') {
-        const merged = mergeStates(state, val);
-        if (!stateContentEqual(state, merged)) {
-          applyingRemote = true;
-          state = merged;
-          if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
-          saveLocal();
-          scheduleRender();
-          applyingRemote = false;
-        }
-        lastSyncedCloud = stateToCloudBlob(merged);
-        if (!stateContentEqual(merged, val)) {
-          const blob = stateToCloudBlob(merged);
-          cloudRef.set(blob)
-            .then(() => {
-              lastSyncedCloud = blob;
-              cloudPushDirty = false;
-            })
-            .catch(err => console.warn('云同步合并回写失败', err));
-        }
-      } else if (first) {
-        const blob = stateToCloudBlob(state);
-        lastSyncedCloud = blob;
-        cloudRef.set(blob);
-      }
-      first = false;
-      const s = envStatusText();
-      setStatus(s.text, s.dev);
-    }, err => {
-      console.warn(err);
-      setStatus('离线', true);
-    });
-  } catch (e) {
-    console.warn(e);
-    setStatus('离线', true);
-  }
-}
-
 function initCloud() {
   tearDownCloud();
-  if (!firebaseReady || !firebaseConfig.databaseURL || !currentUser) {
+  if (!firebaseReady || !firebaseConfig.projectId || !currentUser) {
     const s = envStatusText();
     setStatus(s.text, s.dev);
     return;
   }
-  ensureFirebaseDatabase()
-    .then(() => {
-      attachCloudListener();
-      if (cloudPushDirty) schedulePushToCloud();
-    })
-    .catch(e => {
-      console.warn('Database SDK 加载失败', e);
-      setStatus('离线', true);
-    });
+  initFirestoreCloud();
 }

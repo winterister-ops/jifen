@@ -134,23 +134,34 @@ function updateHistoryStickyOffset() {
 
 function jumpToHistoryDate(key) {
   if (historyEditMode) return;
-  const idx = historyFirstIndexForDateKey(key);
-  if (idx < 0) {
-    if (typeof toast === 'function') toast('这一天还没有积分记录哦');
-    return;
-  }
-  focusedDateKey = key;
-  const need = idx + 1;
-  if (need > historyAllLimit) {
-    historyAllLimit = need;
-    renderHistory();
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => scrollToHistoryDateHead(key));
+  const go = () => {
+    const idx = historyFirstIndexForDateKey(key);
+    if (idx < 0) {
+      if (typeof toast === 'function') toast('这一天还没有积分记录哦');
+      return;
+    }
+    focusedDateKey = key;
+    const need = idx + 1;
+    if (!isFirestoreActive() && need > historyAllLimit) {
+      historyAllLimit = need;
+      renderHistory();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => scrollToHistoryDateHead(key));
+      });
+      return;
+    }
+    renderDateHeader();
+    scrollToHistoryDateHead(key);
+  };
+
+  if (isFirestoreActive() && historyFirstIndexForDateKey(key) < 0 && historyHasMoreInFirestore()) {
+    loadHistoryUntilDateKey(key).then(() => {
+      renderHistory();
+      requestAnimationFrame(() => go());
     });
     return;
   }
-  renderDateHeader();
-  scrollToHistoryDateHead(key);
+  go();
 }
 
 function historyEntriesWithEids(items) {
@@ -169,6 +180,13 @@ function visibleHistoryWithEids() {
 function visibleHistoryPage() {
   const items = historyReversedWithEids();
   const total = items.length;
+  if (isFirestoreActive()) {
+    return {
+      items,
+      hasMore: historyHasMoreInFirestore(),
+      total: historyHasMoreInFirestore() ? total + 1 : total,
+    };
+  }
   return {
     items: items.slice(0, historyAllLimit),
     hasMore: total > historyAllLimit,
@@ -177,6 +195,11 @@ function visibleHistoryPage() {
 }
 
 function loadMoreHistory() {
+  if (isFirestoreActive()) {
+    if (historyIsLoadingFromFirestore()) return;
+    loadMoreHistoryFromFirestore().then(() => renderHistory());
+    return;
+  }
   historyAllLimit += HISTORY_PAGE_SIZE;
   renderHistory();
 }
@@ -187,8 +210,17 @@ function resetHistoryAllLimit() {
 
 function invalidateHistoryDateKeysCache() {
   historyDayStatsIndex = null;
+  historyDayStatsPromise = null;
   historyDateKeysMonthCache = { key: '', stats: null };
   historyReversedCache = null;
+}
+
+let historyDayStatsPromise = null;
+
+function dayRangeTs(year, month, day) {
+  const start = new Date(year, month, day, 0, 0, 0, 0).getTime();
+  const end = new Date(year, month, day, 23, 59, 59, 999).getTime();
+  return { start, end };
 }
 
 function buildHistoryDayStatsIndex() {
@@ -208,15 +240,47 @@ function buildHistoryDayStatsIndex() {
   return stats;
 }
 
+function ensureHistoryDayStatsIndex() {
+  if (historyDayStatsIndex) return Promise.resolve(historyDayStatsIndex);
+  if (!isFirestoreActive()) {
+    historyDayStatsIndex = buildHistoryDayStatsIndex();
+    return Promise.resolve(historyDayStatsIndex);
+  }
+  if (historyDayStatsPromise) return historyDayStatsPromise;
+  const keys = weekCalKeys();
+  const [y0, m0, d0] = keys[0].split('-').map(Number);
+  const [y1, m1, d1] = keys[keys.length - 1].split('-').map(Number);
+  const start = dayRangeTs(y0, m0 - 1, d0).start;
+  const end = dayRangeTs(y1, m1 - 1, d1).end;
+  historyDayStatsPromise = queryHistoryDayStatsFromFirestore(start, end).then(stats => {
+    historyDayStatsIndex = stats;
+    historyDayStatsPromise = null;
+    return stats;
+  });
+  return historyDayStatsPromise;
+}
+
 function getHistoryDayStatsIndex() {
-  if (!historyDayStatsIndex) historyDayStatsIndex = buildHistoryDayStatsIndex();
-  return historyDayStatsIndex;
+  if (!historyDayStatsIndex && !isFirestoreActive()) {
+    historyDayStatsIndex = buildHistoryDayStatsIndex();
+  }
+  return historyDayStatsIndex || new Map();
 }
 
 function historyDayStatsForMonth(year, month) {
   const cacheKey = year + '-' + month;
   if (historyDateKeysMonthCache.key === cacheKey && historyDateKeysMonthCache.stats) {
     return historyDateKeysMonthCache.stats;
+  }
+  if (isFirestoreActive()) {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const start = dayRangeTs(year, month, 1).start;
+    const end = dayRangeTs(year, month, daysInMonth).end;
+    queryHistoryDayStatsFromFirestore(start, end).then(stats => {
+      historyDateKeysMonthCache = { key: cacheKey, stats };
+      renderCalendar();
+    });
+    return historyDateKeysMonthCache.stats || new Map();
   }
   const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
   const stats = new Map();
@@ -380,33 +444,40 @@ function renderDateHeader() {
 function renderWeekCalendar() {
   const wrap = document.getElementById('hpWeekCalDays');
   if (!wrap) return;
-  wrap.innerHTML = '';
-  const todayKey = ymd(new Date());
-  const dayStats = getHistoryDayStatsIndex();
-  weekCalKeys().forEach(key => {
-    const [y, mo, da] = key.split('-').map(Number);
-    const d = new Date(y, mo - 1, da);
-    const stat = dayStats.get(key);
-    const cell = document.createElement('button');
-    cell.type = 'button';
-    cell.className = 'hp-weekcal-day'
-      + (key === todayKey ? ' today' : '')
-      + (key === focusedDateKey ? ' sel' : '');
-    cell.disabled = historyEditMode;
+  const paint = () => {
+    wrap.innerHTML = '';
+    const todayKey = ymd(new Date());
+    const dayStats = getHistoryDayStatsIndex();
+    weekCalKeys().forEach(key => {
+      const [y, mo, da] = key.split('-').map(Number);
+      const d = new Date(y, mo - 1, da);
+      const stat = dayStats.get(key);
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'hp-weekcal-day'
+        + (key === todayKey ? ' today' : '')
+        + (key === focusedDateKey ? ' sel' : '');
+      cell.disabled = historyEditMode;
 
-    const dow = document.createElement('span');
-    dow.className = 'hp-weekcal-dow';
-    dow.textContent = key === todayKey ? '今' : WEEKDAYS[d.getDay()].slice(-1);
+      const dow = document.createElement('span');
+      dow.className = 'hp-weekcal-dow';
+      dow.textContent = key === todayKey ? '今' : WEEKDAYS[d.getDay()].slice(-1);
 
-    const num = document.createElement('span');
-    num.className = 'hp-weekcal-num';
-    num.textContent = da;
+      const num = document.createElement('span');
+      num.className = 'hp-weekcal-num';
+      num.textContent = da;
 
-    cell.append(dow, num);
-    appendCalDayMarkers(cell, stat);
-    cell.onclick = () => jumpToHistoryDate(key);
-    wrap.appendChild(cell);
-  });
+      cell.append(dow, num);
+      appendCalDayMarkers(cell, stat);
+      cell.onclick = () => jumpToHistoryDate(key);
+      wrap.appendChild(cell);
+    });
+  };
+  if (isFirestoreActive() && !historyDayStatsIndex) {
+    ensureHistoryDayStatsIndex().then(paint);
+    return;
+  }
+  paint();
 }
 
 function openCalendar() {
@@ -476,14 +547,27 @@ function deleteHistoryRecords(eids) {
   const set = new Set(eids);
   if (!set.size) return;
 
-  if (!state.revoked || typeof state.revoked !== 'object') state.revoked = {};
-
-  state.history = state.history.filter((h, i) => {
+  let removedDelta = 0;
+  const remaining = [];
+  for (let i = 0; i < state.history.length; i++) {
+    const h = state.history[i];
     const eid = logEid(h, i);
-    if (!set.has(eid)) return true;
-    state.revoked[eid] = Date.now();
-    return false;
-  });
+    if (set.has(eid)) {
+      removedDelta += h.delta;
+      if (!isFirestoreActive()) {
+        if (!state.revoked || typeof state.revoked !== 'object') state.revoked = {};
+        state.revoked[eid] = Date.now();
+      }
+    } else {
+      remaining.push(h);
+    }
+  }
+  state.history = remaining;
+  state.score -= removedDelta;
+
+  if (isFirestoreActive()) {
+    softDeleteHistoryInFirestore([...set]).catch(err => console.warn('历史删除同步失败', err));
+  }
 
   invalidateHistoryDateKeysCache();
   if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();

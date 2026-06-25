@@ -334,7 +334,7 @@ function onAuthChanged(user) {
 }
 
 function initFirebase() {
-  if (firebaseConfig.databaseURL) {
+  if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     try {
       firebase.initializeApp(firebaseConfig);
       firebaseReady = true;

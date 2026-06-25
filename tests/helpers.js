@@ -19,76 +19,187 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
       sendPasswordResetEmail: () => Promise.resolve(),
       confirmPasswordReset: () => Promise.resolve(),
     };
-    const fakeRef = (() => {
-      let cloudData = null;
+
+    const fakeFirestore = (() => {
+      const store = { users: {} };
       let writeBlocked = false;
-      function applyPatch(base, patch) {
-        const next = base ? JSON.parse(JSON.stringify(base)) : {};
-        Object.entries(patch || {}).forEach(([path, val]) => {
-          const slash = path.indexOf('/');
-          if (slash === -1) {
-            if (val === null) delete next[path];
-            else next[path] = val;
-            return;
-          }
-          const top = path.slice(0, slash);
-          const key = path.slice(slash + 1);
-          if (!next[top] || typeof next[top] !== 'object') next[top] = {};
-          if (val === null) delete next[top][key];
-          else next[top][key] = val;
-        });
-        return next;
+
+      function userBucket(uid) {
+        if (!store.users[uid]) store.users[uid] = { doc: null, history: {} };
+        return store.users[uid];
       }
+
       function rejectIfBlocked() {
         if (!writeBlocked) return null;
         return Promise.reject(new Error('cloud write blocked'));
       }
-      const ref = {
-        on: (_event, cb) => {
-          setTimeout(() => cb({ val: () => cloudData }), 0);
+
+      function applySet(segments, data, opts) {
+        if (segments.length === 2 && segments[0] === 'users') {
+          const bucket = userBucket(segments[1]);
+          bucket.doc = opts && opts.merge && bucket.doc
+            ? { ...bucket.doc, ...data, meta: { ...(bucket.doc.meta || {}), ...(data.meta || {}) } }
+            : data;
+          return;
+        }
+        if (segments.length === 4 && segments[2] === 'history') {
+          const bucket = userBucket(segments[1]);
+          const id = segments[3];
+          bucket.history[id] = opts && opts.merge && bucket.history[id]
+            ? { ...bucket.history[id], ...data }
+            : data;
+        }
+      }
+
+      function runQuery(segments, state) {
+        const bucket = userBucket(segments[1]);
+        let rows = Object.entries(bucket.history).map(([id, data]) => ({ id, data }));
+
+        state.filters.forEach(f => {
+          rows = rows.filter(({ data }) => {
+            const val = data[f.field];
+            if (f.op === '==') return val === f.val;
+            if (f.op === '>') return val > f.val;
+            if (f.op === '>=') return val >= f.val;
+            if (f.op === '<=') return val <= f.val;
+            return true;
+          });
+        });
+
+        state.orders.forEach(o => {
+          rows.sort((a, b) => {
+            const av = a.data[o.field];
+            const bv = b.data[o.field];
+            if (av === bv) {
+              if (o.field === 'ts') {
+                const ae = a.data.eid;
+                const be = b.data.eid;
+                if (ae === be) return 0;
+                const tie = ae < be ? -1 : 1;
+                return o.dir === 'desc' ? -tie : tie;
+              }
+              return 0;
+            }
+            const cmp = av < bv ? -1 : 1;
+            return o.dir === 'desc' ? -cmp : cmp;
+          });
+        });
+
+        if (state.startAfterDoc) {
+          const startId = state.startAfterDoc.id;
+          const idx = rows.findIndex(r => r.id === startId);
+          if (idx >= 0) rows = rows.slice(idx + 1);
+        }
+
+        if (state.limitN != null) rows = rows.slice(0, state.limitN);
+
+        const docs = rows.map(({ id, data }) => ({ id, data: () => data }));
+        return {
+          empty: docs.length === 0,
+          size: docs.length,
+          docs,
+          forEach(fn) { docs.forEach(fn); },
+        };
+      }
+
+      function docRef(segments) {
+        return {
+          get: () => {
+            const blocked = rejectIfBlocked();
+            if (blocked) return blocked;
+            if (segments.length === 2) {
+              const doc = userBucket(segments[1]).doc;
+              return Promise.resolve({ exists: !!doc, data: () => doc });
+            }
+            if (segments.length === 4) {
+              const doc = userBucket(segments[1]).history[segments[3]];
+              return Promise.resolve({ exists: !!doc, data: () => doc });
+            }
+            return Promise.resolve({ exists: false, data: () => null });
+          },
+          set: (data, opts) => {
+            const blocked = rejectIfBlocked();
+            if (blocked) return blocked;
+            applySet(segments, data, opts);
+            return Promise.resolve();
+          },
+          collection: (name) => collectionRef([...segments, name]),
+          onSnapshot: (cb) => {
+            const uid = segments[1];
+            const notify = () => cb({ data: () => userBucket(uid).doc });
+            setTimeout(notify, 0);
+            return () => {};
+          },
+        };
+      }
+
+      function makeQuery(segments, state) {
+        const api = {
+          where: (field, op, val) => {
+            state.filters.push({ field, op, val });
+            return api;
+          },
+          orderBy: (field, dir) => {
+            state.orders.push({ field, dir: dir || 'asc' });
+            return api;
+          },
+          limit: (n) => {
+            state.limitN = n;
+            return api;
+          },
+          startAfter: (doc) => {
+            state.startAfterDoc = doc;
+            return api;
+          },
+          get: () => {
+            const blocked = rejectIfBlocked();
+            if (blocked) return blocked;
+            return Promise.resolve(runQuery(segments, state));
+          },
+        };
+        return api;
+      }
+
+      function collectionRef(segments) {
+        return {
+          doc: (id) => docRef([...segments, id]),
+          where: (field, op, val) => makeQuery(segments, {
+            filters: [{ field, op, val }],
+            orders: [],
+            limitN: null,
+            startAfterDoc: null,
+          }),
+        };
+      }
+
+      return {
+        collection: (name) => collectionRef([name]),
+        batch: () => {
+          const ops = [];
+          return {
+            set: (ref, data, opts) => { ops.push(() => ref.set(data, opts)); },
+            commit: () => {
+              const blocked = rejectIfBlocked();
+              if (blocked) return blocked;
+              ops.forEach(fn => fn());
+              return Promise.resolve();
+            },
+          };
         },
-        off: () => {},
-        set: (data) => {
-          const blocked = rejectIfBlocked();
-          if (blocked) return blocked;
-          cloudData = data;
-          return Promise.resolve();
-        },
-        update: (patch) => {
-          const blocked = rejectIfBlocked();
-          if (blocked) return blocked;
-          cloudData = applyPatch(cloudData, patch);
-          return Promise.resolve();
-        },
-        transaction: (updateFn, complete) => {
-          const blocked = rejectIfBlocked();
-          if (blocked) {
-            if (complete) complete(new Error('cloud write blocked'), false, null);
-            return blocked;
-          }
-          try {
-            const result = updateFn(cloudData);
-            cloudData = result;
-            if (complete) complete(null, true, { val: () => cloudData });
-          } catch (e) {
-            if (complete) complete(e, false, null);
-          }
-          return Promise.resolve();
-        },
-      };
-      window.__testCloud = {
-        getData: () => cloudData,
+        getUserDoc: (uid) => userBucket(uid).doc,
+        getHistory: (uid) => userBucket(uid).history,
         setWriteBlocked: (blocked) => { writeBlocked = !!blocked; },
         isWriteBlocked: () => writeBlocked,
       };
-      return ref;
     })();
+
+    window.__testFirestore = fakeFirestore;
     window.firebase = {
       initializeApp: () => {},
       auth: Object.assign(() => authInstance, {
         Auth: { Persistence: { SESSION: 'session' } },
       }),
-      database: () => ({ ref: () => fakeRef }),
+      firestore: () => fakeFirestore,
     };
   }, { testUid: uid, skipOnboarding });
 
@@ -146,9 +257,9 @@ async function addCatalogItem(page, { type, name, pts }) {
 
 async function waitForCloudSync(page) {
   await page.waitForFunction(() => {
-    return window.__testCloud
-      && window.__testCloud.getData()
-      && typeof window.__testCloud.getData().score === 'number';
+    return window.__testFirestore
+      && window.__testFirestore.getUserDoc('test-playwright-user')
+      && typeof window.__testFirestore.getUserDoc('test-playwright-user').score === 'number';
   }, null, { timeout: 10000 });
 }
 

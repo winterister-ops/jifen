@@ -450,7 +450,8 @@ function earn(it, e) {
     return;
   }
   const ts = Date.now();
-  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts });
+  const entry = { eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: it.pts, time: nowStr(), ts };
+  appendHistoryEntry(entry);
   recordLastEarn(it.id, ts);
   touchMeta();
   save();
@@ -480,7 +481,16 @@ function confirmSpend() {
   const it = pendingSpendItem;
   if (!it) return;
   hideSpendModal();
-  state.history.push({ eid: newEid(), id: it.id, emoji: it.emoji, name: it.name, delta: -it.pts, time: nowStr(), ts: Date.now() });
+  const entry = {
+    eid: newEid(),
+    id: it.id,
+    emoji: it.emoji,
+    name: it.name,
+    delta: -it.pts,
+    time: nowStr(),
+    ts: Date.now(),
+  };
+  appendHistoryEntry(entry);
   touchMeta();
   save();
   bump(); popup('-' + it.pts, '#ff8fab', it.emoji); confetti();

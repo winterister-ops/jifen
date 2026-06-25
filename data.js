@@ -107,7 +107,8 @@ const firebaseConfig = (ENV === 'dev' && firebaseConfigDev.databaseURL)
   : firebaseConfigProd;
 
 // ====== 云数据与本地缓存（按登录用户 uid 隔离）======
-// 数据存在 users/<uid>/data，<uid> 必须等于登录账号的 uid（数据库规则要求）。
+// 业务数据在 Firestore：users/<uid> + users/<uid>/history/<eid>
+// 登录时若 Firestore 尚无数据，会一次性从 RTDB users/<uid>/data 迁移（仅迁移用）
 // 新账号在 Firebase Console → Authentication → Add user 创建，不支持前端自助注册。
 const STORAGE_PREFIX = 'kid_points_v1_' + ENV + '_';
 

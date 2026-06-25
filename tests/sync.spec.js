@@ -75,12 +75,12 @@ test.describe('云同步合并逻辑', () => {
     expect(result.score).toBe(3);
   });
 
-  test('save 会从 history 重算积分', async ({ page }) => {
+  test('save 在 Firestore 模式下保留权威积分', async ({ page }) => {
     await page.evaluate(() => {
       state.score = 999;
       state.history = [{ eid: 'e1', id: 'wash', emoji: '🧼', name: '洗手', delta: 2, time: '', ts: Date.now() }];
       state.revoked = {};
-      state.meta = { ...defaultMeta(), updatedAt: Date.now() };
+      state.meta = { ...defaultMeta(), updatedAt: Date.now(), firestoreMigratedAt: Date.now() };
       save();
     });
 
@@ -89,7 +89,7 @@ test.describe('云同步合并逻辑', () => {
       return raw ? JSON.parse(raw) : null;
     });
 
-    expect(stored.score).toBe(2);
+    expect(stored.score).toBe(999);
   });
 
   test('save 会写入 localStorage', async ({ page }) => {
@@ -152,7 +152,7 @@ test.describe('云同步合并逻辑', () => {
     expect(result.keep).toBeDefined();
   });
 
-  test('buildCloudPatch 仅追加 history 时走增量路径', async ({ page }) => {
+  test('buildCloudPatch Firestore 模式不写 history 字段', async ({ page }) => {
     const result = await page.evaluate(() => {
       const prev = {
         score: 2,
@@ -160,26 +160,19 @@ test.describe('云同步合并逻辑', () => {
         catalog: defaultCatalog(),
         meta: defaultMeta(),
         revoked: {},
-        history: { e1: { eid: 'e1', id: 'wash', emoji: '🧼', name: '洗手', delta: 2, time: '', ts: 1000 } },
       };
       const next = {
         ...prev,
         score: 5,
         meta: { ...defaultMeta(), updatedAt: 2000 },
-        history: {
-          ...prev.history,
-          e2: { eid: 'e2', id: 'eat', emoji: '🍚', name: '吃饭', delta: 3, time: '', ts: 2000 },
-        },
       };
       return buildCloudPatch(prev, next);
     });
 
     expect(result.incremental).toBe(true);
-    expect(result.patch['history/e2']).toBeDefined();
     expect(result.patch.score).toBe(5);
     expect(result.patch.meta).toBeDefined();
-    expect(result.patch.profile).toBeUndefined();
-    expect(result.patch.catalog).toBeUndefined();
+    expect(result.patch['history/e2']).toBeUndefined();
   });
 
   test('mergeStates 保留 catalogUpdatedAt 较新的目录', async ({ page }) => {
@@ -218,23 +211,23 @@ test.describe('云同步合并逻辑', () => {
   test('离线改动上线后会补推到云端', async ({ page }) => {
     await waitForCloudSync(page);
 
-    await page.evaluate(() => window.__testCloud.setWriteBlocked(true));
+    await page.evaluate(() => window.__testFirestore.setWriteBlocked(true));
     await earnTask(page, '自己洗手');
     await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
 
-    const cloudWhileBlocked = await page.evaluate(() => window.__testCloud.getData().score);
+    const cloudWhileBlocked = await page.evaluate(() => window.__testFirestore.getUserDoc('test-playwright-user')?.score);
     expect(cloudWhileBlocked).toBe(0);
 
     const dirtyWhileBlocked = await page.evaluate(() => cloudPushDirty);
     expect(dirtyWhileBlocked).toBe(true);
 
     await page.evaluate(() => {
-      window.__testCloud.setWriteBlocked(false);
-      window.dispatchEvent(new Event('online'));
+      window.__testFirestore.setWriteBlocked(false);
+      schedulePushToCloud();
     });
 
     await page.waitForFunction(
-      () => window.__testCloud.getData().score === 2 && !cloudPushDirty,
+      () => window.__testFirestore.getUserDoc('test-playwright-user')?.score === 2 && !cloudPushDirty,
       null,
       { timeout: 10000 }
     );

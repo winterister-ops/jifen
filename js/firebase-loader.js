@@ -1,9 +1,10 @@
-// ====== Firebase SDK 按需加载（database 在登录后加载） ======
+// ====== Firebase SDK 按需加载（database / firestore 在登录后加载） ======
 
 const FIREBASE_SDK_VERSION = '10.12.2';
 const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION;
 
 let firebaseDatabaseLoadPromise = null;
+let firebaseFirestoreLoadPromise = null;
 
 function loadFirebaseScript(src) {
   const existing = document.querySelector('script[src="' + src + '"]');
@@ -40,4 +41,19 @@ function ensureFirebaseDatabase() {
     });
   }
   return firebaseDatabaseLoadPromise;
+}
+
+function ensureFirebaseFirestore() {
+  if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
+    return Promise.resolve();
+  }
+  if (!firebaseFirestoreLoadPromise) {
+    firebaseFirestoreLoadPromise = loadFirebaseScript(
+      FIREBASE_CDN + '/firebase-firestore-compat.js'
+    ).catch(err => {
+      firebaseFirestoreLoadPromise = null;
+      throw err;
+    });
+  }
+  return firebaseFirestoreLoadPromise;
 }
