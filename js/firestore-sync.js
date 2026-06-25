@@ -10,6 +10,8 @@ let fsHistoryCursor = null;
 let fsHistoryHasMore = false;
 let fsHistoryLoading = false;
 let fsHistoryInitialLoaded = false;
+let fsHistoryTotalCount = null;
+let fsHistoryCountPromise = null;
 let fsMigrationPromise = null;
 
 function isFirestoreActive() {
@@ -195,10 +197,56 @@ function ensureFirestoreMigrated(uid) {
   return fsMigrationPromise;
 }
 
-function historyQuery(uid, lastClearAt) {
+function historyCountQuery(uid, lastClearAt) {
   let q = fsHistoryColRef(uid).where('deleted', '==', false);
   if (lastClearAt > 0) q = q.where('ts', '>', lastClearAt);
-  return q.orderBy('ts', 'desc').orderBy('eid', 'desc');
+  return q;
+}
+
+function historyQuery(uid, lastClearAt) {
+  return historyCountQuery(uid, lastClearAt)
+    .orderBy('ts', 'desc')
+    .orderBy('eid', 'desc');
+}
+
+function invalidateHistoryTotalCount() {
+  fsHistoryTotalCount = null;
+  fsHistoryCountPromise = null;
+}
+
+function fetchHistoryTotalCountFromFirestore() {
+  if (!firestoreActive || !currentUser) {
+    fsHistoryTotalCount = 0;
+    return Promise.resolve(0);
+  }
+  const lastClearAt = state.meta?.lastClearAt || 0;
+  const q = historyCountQuery(currentUser.uid, lastClearAt);
+  return q.count().get().then(snap => {
+    fsHistoryTotalCount = snap.data().count;
+    return fsHistoryTotalCount;
+  }).catch(err => {
+    console.warn('历史条数统计失败', err);
+    return fsHistoryTotalCount;
+  });
+}
+
+function ensureHistoryTotalCountFromFirestore() {
+  if (fsHistoryTotalCount !== null) return Promise.resolve(fsHistoryTotalCount);
+  if (fsHistoryCountPromise) return fsHistoryCountPromise;
+  fsHistoryCountPromise = fetchHistoryTotalCountFromFirestore().finally(() => {
+    fsHistoryCountPromise = null;
+  });
+  return fsHistoryCountPromise;
+}
+
+function getHistoryTotalCountFromFirestore() {
+  return fsHistoryTotalCount;
+}
+
+function bumpHistoryTotalCount(delta) {
+  if (fsHistoryTotalCount !== null && delta) {
+    fsHistoryTotalCount = Math.max(0, fsHistoryTotalCount + delta);
+  }
 }
 
 function mapHistorySnapshot(snap) {
@@ -231,7 +279,7 @@ function reloadHistoryFromFirestore(reset) {
     fsHistoryHasMore = page.hasMore;
     fsHistoryInitialLoaded = true;
     if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
-    return page;
+    return fetchHistoryTotalCountFromFirestore().then(() => page);
   }).catch(err => {
     fsHistoryInitialLoaded = true;
     console.warn('加载历史失败', err);
@@ -350,6 +398,8 @@ function tearDownFirestoreCloud() {
   fsHistoryHasMore = false;
   fsHistoryLoading = false;
   fsHistoryInitialLoaded = false;
+  fsHistoryTotalCount = null;
+  fsHistoryCountPromise = null;
   fsMigrationPromise = null;
 }
 
@@ -358,10 +408,13 @@ function attachFirestoreUserListener() {
   fsUserUnsubscribe = fsUserRef.onSnapshot(snap => {
     const data = snap.data();
     if (!data || typeof data.score !== 'number') return;
+    const prevClearAt = state.meta?.lastClearAt || 0;
     const merged = mergeUserDocs(state, {
       ...data,
       history: state.history,
     });
+    const clearAtChanged = (merged.meta?.lastClearAt || 0) !== prevClearAt;
+    if (clearAtChanged) invalidateHistoryTotalCount();
     if (!userDocContentEqual(state, merged)) {
       applyingRemote = true;
       state = merged;
@@ -369,6 +422,11 @@ function attachFirestoreUserListener() {
       saveLocal();
       scheduleRender();
       applyingRemote = false;
+    }
+    if (clearAtChanged) {
+      ensureHistoryTotalCountFromFirestore().then(() => {
+        if (typeof scheduleRender === 'function') scheduleRender();
+      });
     }
     lastSyncedCloud = stateToFirestoreUserDoc(merged);
     const s = envStatusText();

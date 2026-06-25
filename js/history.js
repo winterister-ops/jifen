@@ -38,12 +38,30 @@ function dateHeadLabel(key) {
   return prefix + `${yearPart}${mo}月${da}日 ${WEEKDAYS[d.getDay()]}`;
 }
 
+function formatStatsHtml(count, net) {
+  if (!count) return '暂无记录';
+  const cls = net >= 0 ? 'plus' : 'minus';
+  const sign = net > 0 ? '+' : '';
+  return `共 ${count} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ${ipIcon('star', 'ui-ic-sm')}`;
+}
+
 function buildStats(list) {
   if (!list.length) return '暂无记录';
   const net = list.reduce((s, x) => s + x.delta, 0);
+  return formatStatsHtml(list.length, net);
+}
+
+function buildFirestoreStatsHtml() {
+  const total = getHistoryTotalCountFromFirestore();
+  const net = state.score;
+  if (total !== null) return formatStatsHtml(total, net);
+  if (!historyInitialLoadedInFirestore()) return '加载中…';
+  ensureHistoryTotalCountFromFirestore().then(() => {
+    if (typeof currentView !== 'undefined' && currentView === 'history') renderDateHeader();
+  });
   const cls = net >= 0 ? 'plus' : 'minus';
   const sign = net > 0 ? '+' : '';
-  return `共 ${list.length} 条 · 净 <span class="net ${cls}">${sign}${net}</span> ${ipIcon('star', 'ui-ic-sm')}`;
+  return `共 … 条 · 净 <span class="net ${cls}">${sign}${net}</span> ${ipIcon('star', 'ui-ic-sm')}`;
 }
 
 function historyTimeLabel(log) {
@@ -428,11 +446,7 @@ function renderDateHeader() {
       const n = selectedEids.size;
       statsEl.textContent = n ? `已选 ${n} 条` : '点选要删除的记录';
     } else {
-      let statsHtml = buildStats(list);
-      const page = visibleHistoryPage();
-      if (!isFirestoreActive() && page.total > page.items.length) {
-        statsHtml += ` · 已显示 ${page.items.length} / ${page.total}`;
-      }
+      const statsHtml = isFirestoreActive() ? buildFirestoreStatsHtml() : buildStats(list);
       statsEl.innerHTML = statsHtml;
     }
   }
@@ -568,6 +582,7 @@ function deleteHistoryRecords(eids) {
   state.score -= removedDelta;
 
   if (isFirestoreActive()) {
+    bumpHistoryTotalCount(-set.size);
     softDeleteHistoryInFirestore([...set]).catch(err => console.warn('历史删除同步失败', err));
   }
 

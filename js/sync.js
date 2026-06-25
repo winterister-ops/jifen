@@ -586,6 +586,7 @@ function appendHistoryEntry(entry) {
   state.score += entry.delta;
   if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
   if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    bumpHistoryTotalCount(1);
     writeHistoryEntryToFirestore(entry).catch(err => console.warn('历史写入失败', err));
   }
 }

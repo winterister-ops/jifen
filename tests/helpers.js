@@ -156,6 +156,14 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
             if (blocked) return blocked;
             return Promise.resolve(runQuery(segments, state));
           },
+          count: () => ({
+            get: () => {
+              const blocked = rejectIfBlocked();
+              if (blocked) return blocked;
+              const snap = runQuery(segments, { ...state, limitN: null, startAfterDoc: null });
+              return Promise.resolve({ data: () => ({ count: snap.size }) });
+            },
+          }),
         };
         return api;
       }
