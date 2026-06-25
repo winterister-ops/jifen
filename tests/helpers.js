@@ -188,6 +188,16 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
         },
         getUserDoc: (uid) => userBucket(uid).doc,
         getHistory: (uid) => userBucket(uid).history,
+        seedHistory: (uid, entries) => {
+          const bucket = userBucket(uid);
+          (entries || []).forEach(e => {
+            bucket.history[e.eid] = {
+              deleted: false,
+              deletedAt: null,
+              ...e,
+            };
+          });
+        },
         setWriteBlocked: (blocked) => { writeBlocked = !!blocked; },
         isWriteBlocked: () => writeBlocked,
       };

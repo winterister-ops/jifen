@@ -136,3 +136,61 @@ test.describe('记录页编辑与删除', () => {
     expect(stored.history[0].name).toBe('自己吃饭');
   });
 });
+
+test.describe('Firestore 历史分页', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoLoggedInApp(page);
+  });
+
+  test('首屏加载一页，加载更多追加下一页', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const uid = 'test-playwright-user';
+      const entries = [];
+      for (let i = 0; i < 60; i++) {
+        entries.push({
+          eid: 'e' + String(i).padStart(3, '0'),
+          id: 'wash',
+          emoji: '🧼',
+          name: '记录' + i,
+          delta: 1,
+          time: '',
+          ts: 1000 + i * 1000,
+        });
+      }
+      window.__testFirestore.seedHistory(uid, entries);
+
+      await reloadHistoryFromFirestore(true);
+      const firstPage = {
+        loaded: state.history.length,
+        hasMore: historyHasMoreInFirestore(),
+      };
+
+      await loadMoreHistoryFromFirestore();
+      const secondPage = {
+        loaded: state.history.length,
+        hasMore: historyHasMoreInFirestore(),
+      };
+
+      return { firstPage, secondPage };
+    });
+
+    expect(result.firstPage.loaded).toBe(50);
+    expect(result.firstPage.hasMore).toBe(true);
+    expect(result.secondPage.loaded).toBe(60);
+    expect(result.secondPage.hasMore).toBe(false);
+  });
+
+  test('加载到记录页后异步数据会渲染出来', async ({ page }) => {
+    await page.evaluate(async () => {
+      const uid = 'test-playwright-user';
+      window.__testFirestore.seedHistory(uid, [{
+        eid: 'seed1', id: 'wash', emoji: '🧼', name: '异步记录', delta: 2, time: '', ts: Date.now(),
+      }]);
+      await reloadHistoryFromFirestore(true);
+      scheduleRender();
+    });
+
+    await page.locator('.bottom-nav-item[data-nav="history"]').click();
+    await expect(page.locator('.history-row').filter({ hasText: '异步记录' })).toBeVisible({ timeout: 5000 });
+  });
+});

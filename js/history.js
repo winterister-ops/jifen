@@ -197,7 +197,9 @@ function visibleHistoryPage() {
 function loadMoreHistory() {
   if (isFirestoreActive()) {
     if (historyIsLoadingFromFirestore()) return;
-    loadMoreHistoryFromFirestore().then(() => renderHistory());
+    const p = loadMoreHistoryFromFirestore();
+    renderHistory();
+    p.then(() => renderHistory());
     return;
   }
   historyAllLimit += HISTORY_PAGE_SIZE;
@@ -428,7 +430,7 @@ function renderDateHeader() {
     } else {
       let statsHtml = buildStats(list);
       const page = visibleHistoryPage();
-      if (page.total > page.items.length) {
+      if (!isFirestoreActive() && page.total > page.items.length) {
         statsHtml += ` · 已显示 ${page.items.length} / ${page.total}`;
       }
       statsEl.innerHTML = statsHtml;
@@ -623,9 +625,14 @@ function renderHistory() {
   const list = page.items;
 
   if (!list.length) {
-    const emptyMsg = historyEditMode
-      ? `${ipIcon('inbox')}当前没有可删除的记录`
-      : `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
+    let emptyMsg;
+    if (isFirestoreActive() && !historyInitialLoadedInFirestore() && !historyEditMode) {
+      emptyMsg = `${ipIcon('rocket')}正在加载记录…`;
+    } else if (historyEditMode) {
+      emptyMsg = `${ipIcon('inbox')}当前没有可删除的记录`;
+    } else {
+      emptyMsg = `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
+    }
     h.innerHTML = `<div class="empty">${emptyMsg}</div>`;
     if (historyEditMode) renderEditBar();
     return;
@@ -708,8 +715,15 @@ function renderHistory() {
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
     moreBtn.className = 'filter-pill history-load-more';
-    moreBtn.textContent = `加载更多（还剩 ${page.total - list.length} 条）`;
-    moreBtn.onclick = () => loadMoreHistory();
+    if (isFirestoreActive() && historyIsLoadingFromFirestore()) {
+      moreBtn.textContent = '加载中…';
+      moreBtn.disabled = true;
+    } else {
+      moreBtn.textContent = isFirestoreActive()
+        ? '加载更多'
+        : `加载更多（还剩 ${page.total - list.length} 条）`;
+      moreBtn.onclick = () => loadMoreHistory();
+    }
     h.appendChild(moreBtn);
   }
 

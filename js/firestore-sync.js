@@ -9,6 +9,7 @@ let fsUserUnsubscribe = null;
 let fsHistoryCursor = null;
 let fsHistoryHasMore = false;
 let fsHistoryLoading = false;
+let fsHistoryInitialLoaded = false;
 let fsMigrationPromise = null;
 
 function isFirestoreActive() {
@@ -228,8 +229,13 @@ function reloadHistoryFromFirestore(reset) {
     state.history = page.items;
     fsHistoryCursor = page.lastDoc;
     fsHistoryHasMore = page.hasMore;
+    fsHistoryInitialLoaded = true;
     if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
     return page;
+  }).catch(err => {
+    fsHistoryInitialLoaded = true;
+    console.warn('加载历史失败', err);
+    throw err;
   });
 }
 
@@ -343,6 +349,7 @@ function tearDownFirestoreCloud() {
   fsHistoryCursor = null;
   fsHistoryHasMore = false;
   fsHistoryLoading = false;
+  fsHistoryInitialLoaded = false;
   fsMigrationPromise = null;
 }
 
@@ -416,6 +423,7 @@ function initFirestoreCloud() {
         if (cloudPushDirty) schedulePushToCloud();
         const s = envStatusText();
         setStatus(s.text, s.dev);
+        if (typeof scheduleRender === 'function') scheduleRender();
       });
   }).catch(err => {
     console.warn('Firestore 初始化失败', err);
@@ -429,4 +437,8 @@ function historyHasMoreInFirestore() {
 
 function historyIsLoadingFromFirestore() {
   return fsHistoryLoading;
+}
+
+function historyInitialLoadedInFirestore() {
+  return fsHistoryInitialLoaded;
 }
