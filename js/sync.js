@@ -43,6 +43,7 @@ function defaultMeta() {
     lastClearAt: 0,
     profileUpdatedAt: 0,
     catalogUpdatedAt: 0,
+    scoreUpdatedAt: 0,
     updatedAt: 0,
     onboardingDone: false,
     firestoreMigratedAt: 0,
@@ -272,6 +273,27 @@ function historyEid(h, index) {
 
 function touchMeta() {
   state.meta = { ...defaultMeta(), ...state.meta, updatedAt: Date.now() };
+}
+
+function touchScoreMeta() {
+  const now = Date.now();
+  state.meta = { ...defaultMeta(), ...state.meta, scoreUpdatedAt: now, updatedAt: now };
+}
+
+function scoreAuthoredAt(meta) {
+  if (!meta) return 0;
+  if (typeof meta.scoreUpdatedAt === 'number' && meta.scoreUpdatedAt > 0) return meta.scoreUpdatedAt;
+  return 0;
+}
+
+function pickMergedScore(local, remote) {
+  const localScoreAt = scoreAuthoredAt(local.meta);
+  const remoteScoreAt = scoreAuthoredAt(remote.meta);
+  if (localScoreAt > 0 || remoteScoreAt > 0) {
+    return localScoreAt >= remoteScoreAt ? local.score : remote.score;
+  }
+  return (local.meta.updatedAt || 0) >= (remote.meta.updatedAt || 0)
+    ? local.score : remote.score;
 }
 
 function touchCatalogMeta() {
@@ -584,6 +606,7 @@ function save() {
 function appendHistoryEntry(entry) {
   state.history.push(entry);
   state.score += entry.delta;
+  touchScoreMeta();
   if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
   if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
     bumpHistoryTotalCount(1);
@@ -640,8 +663,16 @@ function cloudPathForUser(user) {
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     if (currentUser && typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-      if (cloudPushDirty) schedulePushToCloud();
-      if (typeof renderAppMeta === 'function') renderAppMeta();
+      const afterReconnect = () => {
+        cloudPushDirty = true;
+        schedulePushToCloud();
+        if (typeof renderAppMeta === 'function') renderAppMeta();
+      };
+      if (typeof retryPendingHistoryWrites === 'function') {
+        retryPendingHistoryWrites().finally(afterReconnect);
+      } else {
+        afterReconnect();
+      }
     } else if (currentUser && typeof initCloud === 'function') {
       initCloud();
     } else if (typeof renderAppMeta === 'function') {

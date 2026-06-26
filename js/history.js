@@ -599,6 +599,7 @@ function deleteHistoryRecords(eids) {
   }
   state.history = remaining;
   state.score -= removedDelta;
+  touchScoreMeta();
 
   if (isFirestoreActive()) {
     bumpHistoryTotalCount(-set.size);
@@ -607,7 +608,6 @@ function deleteHistoryRecords(eids) {
 
   invalidateHistoryDateKeysCache();
   if (typeof invalidateLastEarnByTaskId === 'function') invalidateLastEarnByTaskId();
-  touchMeta();
   save();
 }
 

@@ -232,4 +232,100 @@ test.describe('云同步合并逻辑', () => {
       { timeout: 10000 }
     );
   });
+
+  test('mergeUserDocs 凭 scoreUpdatedAt 合并积分，避免 catalog 更新覆盖离线加分', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const local = {
+        score: 7,
+        history: [],
+        profile: { name: '宝贝', avatar: '👧' },
+        revoked: {},
+        meta: {
+          lastClearAt: 0,
+          profileUpdatedAt: 0,
+          catalogUpdatedAt: 0,
+          scoreUpdatedAt: 5000,
+          updatedAt: 5000,
+          onboardingDone: true,
+        },
+      };
+      const remote = {
+        score: 0,
+        history: [],
+        profile: { name: '宝贝', avatar: '👧' },
+        revoked: {},
+        meta: {
+          lastClearAt: 0,
+          profileUpdatedAt: 0,
+          catalogUpdatedAt: 9000,
+          scoreUpdatedAt: 0,
+          updatedAt: 9000,
+          onboardingDone: true,
+        },
+      };
+      return mergeUserDocs(local, remote);
+    });
+
+    expect(result.score).toBe(7);
+  });
+
+  test('离线新增两条记录后历史已同步但分数滞后时恢复在线会补推积分', async ({ page }) => {
+    await waitForCloudSync(page);
+
+    await page.evaluate(() => window.__testFirestore.setWriteBlocked(true));
+    await earnTask(page, '自己洗手');
+    await earnTask(page, '自己吃饭');
+    await expect(page.locator('#scoreNum')).toHaveText('7', { timeout: 5000 });
+
+    const localEntries = await page.evaluate(() => state.history.map(h => ({
+      eid: h.eid,
+      id: h.id,
+      emoji: h.emoji,
+      name: h.name,
+      delta: h.delta,
+      ts: h.ts,
+      time: h.time,
+    })));
+    expect(localEntries).toHaveLength(2);
+
+    await page.evaluate(() => window.__testFirestore.setWriteBlocked(false));
+    await page.evaluate((entries) => {
+      const uid = 'test-playwright-user';
+      window.__testFirestore.seedHistory(uid, entries);
+      const doc = window.__testFirestore.getUserDoc(uid) || {};
+      return window.__testFirestore.collection('users').doc(uid).set({
+        ...doc,
+        score: 0,
+        meta: {
+          ...(doc.meta || defaultMeta()),
+          catalogUpdatedAt: Date.now() + 100000,
+          updatedAt: Date.now() + 100000,
+          scoreUpdatedAt: 0,
+        },
+      });
+    }, localEntries);
+
+    await page.evaluate(() => {
+      const remote = window.__testFirestore.getUserDoc('test-playwright-user');
+      state = mergeUserDocs(state, { ...remote, history: state.history });
+      saveLocal();
+      if (typeof scheduleRender === 'function') scheduleRender();
+    });
+    await expect(page.locator('#scoreNum')).toHaveText('7', { timeout: 5000 });
+
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('online'));
+    });
+
+    await page.waitForFunction(
+      () => window.__testFirestore.getUserDoc('test-playwright-user')?.score === 7 && !cloudPushDirty,
+      null,
+      { timeout: 10000 }
+    );
+
+    const cloudHistory = await page.evaluate(() => Object.keys(
+      window.__testFirestore.getHistory('test-playwright-user')
+    ));
+    expect(cloudHistory).toHaveLength(2);
+  });
 });

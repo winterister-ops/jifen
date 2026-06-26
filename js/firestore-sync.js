@@ -91,8 +91,7 @@ function mergeUserDocs(localRaw, remoteRaw) {
     ? local.profile : remote.profile;
   const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
     ? normalizeCatalog(local.catalog) : normalizeCatalog(remote.catalog);
-  const score = local.meta.updatedAt >= remote.meta.updatedAt
-    ? local.score : remote.score;
+  const score = pickMergedScore(local, remote);
   return {
     score,
     history: localRaw.history || [],
@@ -103,6 +102,7 @@ function mergeUserDocs(localRaw, remoteRaw) {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
       catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
+      scoreUpdatedAt: Math.max(local.meta.scoreUpdatedAt || 0, remote.meta.scoreUpdatedAt || 0),
       updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt),
       onboardingDone: !!(local.meta.onboardingDone || remote.meta.onboardingDone),
       firestoreMigratedAt: Math.max(
@@ -376,6 +376,15 @@ function writeHistoryEntryToFirestore(entry) {
   doc.deleted = false;
   doc.deletedAt = null;
   return fsHistoryColRef(currentUser.uid).doc(entry.eid).set(doc, { merge: true });
+}
+
+function retryPendingHistoryWrites() {
+  if (!firestoreActive || !currentUser) return Promise.resolve();
+  const entries = (state.history || []).filter(h => h && h.eid);
+  if (!entries.length) return Promise.resolve();
+  return Promise.all(
+    entries.map(h => writeHistoryEntryToFirestore(h).catch(err => console.warn('历史补写失败', err)))
+  );
 }
 
 function softDeleteHistoryInFirestore(eids) {
