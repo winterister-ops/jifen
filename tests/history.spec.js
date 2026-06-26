@@ -193,4 +193,34 @@ test.describe('Firestore 历史分页', () => {
     await page.locator('.bottom-nav-item[data-nav="history"]').click();
     await expect(page.locator('.history-row').filter({ hasText: '异步记录' })).toBeVisible({ timeout: 5000 });
   });
+
+  test('周历统计查询失败时仍显示日期格子', async ({ page }) => {
+    await page.evaluate(async () => {
+      const uid = 'test-playwright-user';
+      window.__testFirestore.seedHistory(uid, [{
+        eid: 'seed1', id: 'wash', emoji: '🧼', name: '离线记录', delta: 2, time: '', ts: Date.now(),
+      }]);
+      await reloadHistoryFromFirestore(true);
+      historyDayStatsIndex = null;
+      historyDayStatsPromise = null;
+      window.__testFirestore.setReadBlocked(true);
+    });
+
+    await page.locator('.bottom-nav-item[data-nav="history"]').click();
+    await expect(page.locator('#hpWeekCalDays .hp-weekcal-day')).toHaveCount(7, { timeout: 5000 });
+    await expect(page.locator('.history-row').filter({ hasText: '离线记录' })).toBeVisible();
+  });
+
+  test('历史缓存过期后进入记录页会重新渲染', async ({ page }) => {
+    await page.evaluate(() => {
+      const entry = {
+        eid: 'late1', id: 'wash', emoji: '🧼', name: '迟到记录', delta: 3, time: '', ts: Date.now(),
+      };
+      state.history = [entry];
+      historyReversedCache = { items: [], dateFirstIndex: new Map() };
+    });
+
+    await page.locator('.bottom-nav-item[data-nav="history"]').click();
+    await expect(page.locator('.history-row').filter({ hasText: '迟到记录' })).toBeVisible({ timeout: 5000 });
+  });
 });

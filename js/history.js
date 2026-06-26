@@ -104,6 +104,9 @@ function filteredHistory() {
 }
 
 function getHistoryReversedCache() {
+  if (historyReversedCache && historyReversedCache.items.length !== state.history.length) {
+    historyReversedCache = null;
+  }
   if (!historyReversedCache) {
     const items = historyEntriesWithEids(state.history);
     items.reverse();
@@ -276,6 +279,11 @@ function ensureHistoryDayStatsIndex() {
     historyDayStatsIndex = stats;
     historyDayStatsPromise = null;
     return stats;
+  }).catch(err => {
+    console.warn('周历统计查询失败', err);
+    historyDayStatsIndex = buildHistoryDayStatsIndex();
+    historyDayStatsPromise = null;
+    return historyDayStatsIndex;
   });
   return historyDayStatsPromise;
 }
@@ -297,6 +305,15 @@ function historyDayStatsForMonth(year, month) {
     const start = dayRangeTs(year, month, 1).start;
     const end = dayRangeTs(year, month, daysInMonth).end;
     queryHistoryDayStatsFromFirestore(start, end).then(stats => {
+      historyDateKeysMonthCache = { key: cacheKey, stats };
+      renderCalendar();
+    }).catch(err => {
+      console.warn('月历统计查询失败', err);
+      const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
+      const stats = new Map();
+      getHistoryDayStatsIndex().forEach((stat, key) => {
+        if (key.startsWith(prefix)) stats.set(key, stat);
+      });
       historyDateKeysMonthCache = { key: cacheKey, stats };
       renderCalendar();
     });
@@ -489,11 +506,12 @@ function renderWeekCalendar() {
       wrap.appendChild(cell);
     });
   };
-  if (isFirestoreActive() && !historyDayStatsIndex) {
-    ensureHistoryDayStatsIndex().then(paint);
-    return;
-  }
   paint();
+  if (isFirestoreActive() && !historyDayStatsIndex) {
+    ensureHistoryDayStatsIndex().then(() => {
+      if (typeof currentView !== 'undefined' && currentView === 'history') paint();
+    });
+  }
 }
 
 function openCalendar() {

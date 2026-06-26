@@ -32,6 +32,7 @@ serviceAccountKey.json
 package-lock.json
 test-results/
 playwright-report/
+.pw-browsers/
 
 # .cursor/ 已整体忽略（含 hooks 运行时 .test-* 临时文件）
 

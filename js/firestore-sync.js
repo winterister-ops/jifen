@@ -283,6 +283,7 @@ function reloadHistoryFromFirestore(reset) {
   }).catch(err => {
     fsHistoryInitialLoaded = true;
     console.warn('加载历史失败', err);
+    if (typeof scheduleRender === 'function') scheduleRender();
     throw err;
   });
 }
@@ -486,6 +487,7 @@ function initFirestoreCloud() {
   }).catch(err => {
     console.warn('Firestore 初始化失败', err);
     setStatus('离线', true);
+    if (typeof scheduleRender === 'function') scheduleRender();
   });
 }
 

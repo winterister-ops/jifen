@@ -5,6 +5,31 @@ const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSIO
 
 let firebaseDatabaseLoadPromise = null;
 let firebaseFirestoreLoadPromise = null;
+let firestorePersistencePromise = null;
+
+function ensureFirestorePersistence() {
+  if (firestorePersistencePromise) return firestorePersistencePromise;
+  if (typeof firebase === 'undefined' || typeof firebase.firestore !== 'function') {
+    return Promise.resolve();
+  }
+  firestorePersistencePromise = (() => {
+    const fs = firebase.firestore();
+    if (!fs || typeof fs.enablePersistence !== 'function') return Promise.resolve();
+    return fs.enablePersistence({ synchronizeTabs: true })
+      .catch(err => {
+        const code = err && err.code;
+        if (code === 'failed-precondition') {
+          console.warn('Firestore 持久化：其他标签页已开启');
+        } else if (code === 'unimplemented') {
+          console.warn('Firestore 持久化：当前环境不支持');
+        } else {
+          console.warn('Firestore 持久化失败', err);
+        }
+      })
+      .then(() => undefined);
+  })();
+  return firestorePersistencePromise;
+}
 
 function loadFirebaseScript(src) {
   const existing = document.querySelector('script[src="' + src + '"]');
@@ -45,12 +70,12 @@ function ensureFirebaseDatabase() {
 
 function ensureFirebaseFirestore() {
   if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
-    return Promise.resolve();
+    return ensureFirestorePersistence();
   }
   if (!firebaseFirestoreLoadPromise) {
     firebaseFirestoreLoadPromise = loadFirebaseScript(
       FIREBASE_CDN + '/firebase-firestore-compat.js'
-    ).catch(err => {
+    ).then(() => ensureFirestorePersistence()).catch(err => {
       firebaseFirestoreLoadPromise = null;
       throw err;
     });

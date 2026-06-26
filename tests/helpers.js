@@ -23,6 +23,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
     const fakeFirestore = (() => {
       const store = { users: {} };
       let writeBlocked = false;
+      let readBlocked = false;
 
       function userBucket(uid) {
         if (!store.users[uid]) store.users[uid] = { doc: null, history: {} };
@@ -32,6 +33,11 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
       function rejectIfBlocked() {
         if (!writeBlocked) return null;
         return Promise.reject(new Error('cloud write blocked'));
+      }
+
+      function rejectIfReadBlocked() {
+        if (!readBlocked) return null;
+        return Promise.reject(new Error('cloud read blocked'));
       }
 
       function applySet(segments, data, opts) {
@@ -105,7 +111,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
       function docRef(segments) {
         return {
           get: () => {
-            const blocked = rejectIfBlocked();
+            const blocked = rejectIfReadBlocked() || rejectIfBlocked();
             if (blocked) return blocked;
             if (segments.length === 2) {
               const doc = userBucket(segments[1]).doc;
@@ -152,13 +158,13 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
             return api;
           },
           get: () => {
-            const blocked = rejectIfBlocked();
+            const blocked = rejectIfReadBlocked() || rejectIfBlocked();
             if (blocked) return blocked;
             return Promise.resolve(runQuery(segments, state));
           },
           count: () => ({
             get: () => {
-              const blocked = rejectIfBlocked();
+              const blocked = rejectIfReadBlocked() || rejectIfBlocked();
               if (blocked) return blocked;
               const snap = runQuery(segments, { ...state, limitN: null, startAfterDoc: null });
               return Promise.resolve({ data: () => ({ count: snap.size }) });
@@ -182,6 +188,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
 
       return {
         collection: (name) => collectionRef([name]),
+        enablePersistence: () => Promise.resolve(),
         batch: () => {
           const ops = [];
           return {
@@ -208,6 +215,8 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
         },
         setWriteBlocked: (blocked) => { writeBlocked = !!blocked; },
         isWriteBlocked: () => writeBlocked,
+        setReadBlocked: (blocked) => { readBlocked = !!blocked; },
+        isReadBlocked: () => readBlocked,
       };
     })();
 
