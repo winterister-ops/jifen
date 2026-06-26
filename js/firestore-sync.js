@@ -221,8 +221,18 @@ function fetchHistoryTotalCountFromFirestore() {
   }
   const lastClearAt = state.meta?.lastClearAt || 0;
   const q = historyCountQuery(currentUser.uid, lastClearAt);
-  return q.count().get().then(snap => {
-    fsHistoryTotalCount = snap.data().count;
+  // count() 聚合查询只存在于 modular SDK，compat 版没有该方法（会抛
+  // “q.count is not a function”并导致初始化失败、页面误判离线）。这里改用
+  // 普通查询读取匹配文档数；任何失败都降级返回，绝不向上抛出。
+  let getPromise;
+  try {
+    getPromise = q.get();
+  } catch (err) {
+    console.warn('历史条数统计失败', err);
+    return Promise.resolve(fsHistoryTotalCount);
+  }
+  return getPromise.then(snap => {
+    fsHistoryTotalCount = snap.size;
     return fsHistoryTotalCount;
   }).catch(err => {
     console.warn('历史条数统计失败', err);
