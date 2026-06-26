@@ -269,6 +269,42 @@ test.describe('云同步合并逻辑', () => {
     expect(result.score).toBe(7);
   });
 
+  test('历史已同步但 score 被旧云端值覆盖时，重新加载会按历史净值自愈并回写', async ({ page }) => {
+    await waitForCloudSync(page);
+
+    const entries = [
+      { eid: 'r1', id: 'eat', emoji: '🍚', name: '吃饭', delta: 20, time: '', ts: 1000 },
+      { eid: 'r2', id: 'sleep', emoji: '😴', name: '睡觉', delta: 15, time: '', ts: 2000 },
+      { eid: 'r3', id: 'learn', emoji: '📚', name: '作业', delta: 10, time: '', ts: 3000 },
+      { eid: 'r4', id: 'tidy', emoji: '🧸', name: '收拾', delta: 5, time: '', ts: 4000 },
+      { eid: 'r5', id: 'polite', emoji: '🙏', name: '礼貌', delta: 4, time: '', ts: 5000 },
+    ];
+
+    await page.evaluate((entries) => {
+      const uid = 'test-playwright-user';
+      window.__testFirestore.seedHistory(uid, entries);
+      const doc = window.__testFirestore.getUserDoc(uid) || {};
+      window.__testFirestore.collection('users').doc(uid).set({
+        ...doc,
+        score: 47,
+        meta: { ...(doc.meta || defaultMeta()), scoreUpdatedAt: 1, updatedAt: 1 },
+      });
+      state.score = 47;
+      state.meta = { ...defaultMeta(), ...state.meta, scoreUpdatedAt: 1, updatedAt: 1, firestoreMigratedAt: Date.now() };
+      saveLocal();
+    }, entries);
+
+    await page.evaluate(() => reloadHistoryFromFirestore(true));
+
+    await expect(page.locator('#scoreNum')).toHaveText('54', { timeout: 5000 });
+
+    await page.waitForFunction(
+      () => window.__testFirestore.getUserDoc('test-playwright-user')?.score === 54,
+      null,
+      { timeout: 10000 }
+    );
+  });
+
   test('离线新增两条记录后历史已同步但分数滞后时恢复在线会补推积分', async ({ page }) => {
     await waitForCloudSync(page);
 
