@@ -374,8 +374,9 @@ function exitHistoryEdit() {
   selectedEids.clear();
   hideDeleteConfirmModal();
   document.body.classList.remove('history-editing');
-  updateHistoryEditChrome();
+  // 先重建列表，确保左侧单选框一定被移除，再更新顶部按钮等装饰。
   renderHistory();
+  updateHistoryEditChrome();
 }
 
 function toggleHistorySelection(eid) {
@@ -652,11 +653,12 @@ function confirmDeleteSelected() {
 function renderHistory() {
   const h = document.getElementById('history');
   if (!h) return;
-  renderDateHeader();
 
   const page = visibleHistoryPage();
   const list = page.items;
 
+  // 先重建列表本体，再渲染顶部日期头。这样即使日期头渲染（统计/周历可能触发
+  // Firestore 查询）抛错，也不会让带单选框的编辑行残留在 DOM 中无法隐藏。
   if (!list.length) {
     let emptyMsg;
     if (isFirestoreActive() && !historyInitialLoadedInFirestore() && !historyEditMode) {
@@ -667,6 +669,7 @@ function renderHistory() {
       emptyMsg = `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
     }
     h.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+    renderHistoryHeaderSafe();
     if (historyEditMode) renderEditBar();
     return;
   }
@@ -760,7 +763,16 @@ function renderHistory() {
     h.appendChild(moreBtn);
   }
 
+  renderHistoryHeaderSafe();
   if (historyEditMode) renderEditBar();
+}
+
+function renderHistoryHeaderSafe() {
+  try {
+    renderDateHeader();
+  } catch (err) {
+    console.warn('记录页头部渲染失败', err);
+  }
 }
 
 function nowStr() {
