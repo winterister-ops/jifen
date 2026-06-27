@@ -3,6 +3,23 @@
 const CLOUD_PUSH_DEBOUNCE_MS = 400;
 const REVOKED_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 
+function markBoot(label) {
+  if (typeof window === 'undefined' || !window.performance) return;
+  const boot = window.__bootPerf || (window.__bootPerf = { start: performance.now(), marks: [] });
+  boot.marks.push({ label, t: Math.round(performance.now() - boot.start) });
+  if (window.__testFlags?.logBootPerf || localStorage.getItem('stars_bank_boot_perf') === '1') {
+    console.debug('[boot]', label, boot.marks[boot.marks.length - 1].t + 'ms');
+  }
+}
+
+function reportBootPerf() {
+  if (typeof window === 'undefined') return;
+  const boot = window.__bootPerf;
+  if (!boot || boot.reported || !(window.__testFlags?.logBootPerf || localStorage.getItem('stars_bank_boot_perf') === '1')) return;
+  boot.reported = true;
+  console.table(boot.marks);
+}
+
 let KEY = null;
 let state = defaultState();
 let cloudRef = null;
@@ -701,17 +718,24 @@ function isCloudInitialSyncConfirmed() {
 function markCloudInitialSyncSettled(confirmed) {
   cloudInitialSyncPending = false;
   cloudInitialSyncConfirmed = confirmed === true;
-  if (appEntered) return;
+  markBoot(cloudInitialSyncConfirmed ? 'cloud-sync-confirmed' : 'cloud-sync-failed');
+  if (appEntered) {
+    reportBootPerf();
+    return;
+  }
   const hasUsableLocalData = typeof needsOnboarding === 'function' ? !needsOnboarding() : true;
   if (cloudInitialSyncConfirmed || hasUsableLocalData) {
     appEntered = true;
     if (typeof hideAuthView === 'function') hideAuthView();
     if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
+    markBoot('app-entered-cloud');
+    reportBootPerf();
     return;
   }
   if (typeof showAuthBootError === 'function') {
     showAuthBootError('网络连接失败，请检查后重新打开应用');
   }
+  reportBootPerf();
 }
 
 function initCloud() {
@@ -732,6 +756,8 @@ function initCloud() {
     appEntered = true;
     if (typeof hideAuthView === 'function') hideAuthView();
     if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
+    markBoot('app-entered-local');
   }
+  markBoot('cloud-init-start');
   initFirestoreCloud();
 }

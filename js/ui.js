@@ -137,6 +137,7 @@ function renderAppMeta() {
 
 function startApp() {
   state = loadLocal();
+  markBoot('local-state-loaded');
   invalidateLastEarnByTaskId();
   lastDisplayedScore = null;
   renderAppMeta();

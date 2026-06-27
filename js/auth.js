@@ -3,6 +3,7 @@
 let currentUser = null;
 let pendingResetEmail = '';
 let passwordResetCodeFromUrl = null;
+const AUTH_HINT_KEY = 'stars_bank_auth_hint';
 
 (function capturePasswordResetFromUrl() {
   const params = new URLSearchParams(window.location.search);
@@ -333,17 +334,21 @@ function logoutApp() {
   KEY = null;
   state = defaultState();
   lastDisplayedScore = null;
+  localStorage.setItem(AUTH_HINT_KEY, 'signed_out');
   showAuthView();
   firebase.auth().signOut().catch(err => console.warn('退出登录失败', err));
 }
 
 function onAuthChanged(user) {
+  markBoot(user ? 'auth-signed-in' : 'auth-signed-out');
   currentUser = user || null;
   if (user) {
+    localStorage.setItem(AUTH_HINT_KEY, 'signed_in');
     storageKeysForUser(user.uid);
     clearAuthMessages();
     startApp();
   } else {
+    localStorage.setItem(AUTH_HINT_KEY, 'signed_out');
     tearDownCloud();
     KEY = null;
     state = defaultState();
@@ -361,6 +366,7 @@ function onAuthChanged(user) {
 }
 
 function initFirebase() {
+  markBoot('auth-init-start');
   if (firebaseConfig.apiKey && firebaseConfig.projectId) {
     try {
       firebase.initializeApp(firebaseConfig);
@@ -377,6 +383,10 @@ function initFirebase() {
   }
 
   if (firebaseReady) {
+    if (!passwordResetCodeFromUrl && localStorage.getItem(AUTH_HINT_KEY) === 'signed_out') {
+      showAuthView();
+      markBoot('auth-hint-login-visible');
+    }
     const persistence = isStandalone()
       ? firebase.auth.Auth.Persistence.LOCAL
       : firebase.auth.Auth.Persistence.SESSION;

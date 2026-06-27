@@ -299,6 +299,20 @@ function mapHistorySnapshot(snap) {
   };
 }
 
+function fetchInitialHistoryPageFromFirestore(lastClearAt) {
+  return historyQuery(currentUser.uid, lastClearAt).limit(FS_HISTORY_PAGE_SIZE)
+    .get()
+    .then(mapHistorySnapshot);
+}
+
+function applyInitialHistoryPage(page) {
+  state.history = page.items;
+  fsHistoryCursor = page.lastDoc;
+  fsHistoryHasMore = page.hasMore;
+  fsHistoryInitialLoaded = true;
+  if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+}
+
 function reloadHistoryFromFirestore(reset, options) {
   if (!firestoreActive || !currentUser) return Promise.resolve();
   if (reset) {
@@ -306,14 +320,8 @@ function reloadHistoryFromFirestore(reset, options) {
     fsHistoryHasMore = false;
   }
   const lastClearAt = state.meta?.lastClearAt || 0;
-  let q = historyQuery(currentUser.uid, lastClearAt).limit(FS_HISTORY_PAGE_SIZE);
-  return q.get().then(snap => {
-    const page = mapHistorySnapshot(snap);
-    state.history = page.items;
-    fsHistoryCursor = page.lastDoc;
-    fsHistoryHasMore = page.hasMore;
-    fsHistoryInitialLoaded = true;
-    if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+  return fetchInitialHistoryPageFromFirestore(lastClearAt).then(page => {
+    applyInitialHistoryPage(page);
     if (options?.deferTotalCount) return page;
     return fetchHistoryTotalCountFromFirestore().then(() => page);
   }).catch(err => {
@@ -508,21 +516,35 @@ function initFirestoreCloud() {
   }
 
   return ensureFirebaseFirestore().then(() => {
+    markBoot('firestore-sdk-ready');
     return ensureFirestoreMigrated(currentUser.uid).then(() => {
       firestoreActive = true;
-      return fsUserDocRef(currentUser.uid).get();
-    }).then(snap => {
-      if (snap.exists) {
-        const remote = firestoreUserDocToState(snap.data(), state.history);
-        if (remote) {
-          const merged = mergeUserDocs(state, remote);
-          state = merged;
-          saveLocal();
+      fsUserRef = fsUserDocRef(currentUser.uid);
+      const historyLastClearAt = state.meta?.lastClearAt || 0;
+      const userDocPromise = fsUserRef.get();
+      const historyPagePromise = fetchInitialHistoryPageFromFirestore(historyLastClearAt);
+      markBoot('firestore-parallel-start');
+      return Promise.all([userDocPromise, historyPagePromise]).then(([snap, page]) => {
+        let shouldReloadHistory = false;
+        if (snap.exists) {
+          const remote = firestoreUserDocToState(snap.data(), state.history);
+          if (remote) {
+            const merged = mergeUserDocs(state, remote);
+            state = merged;
+            shouldReloadHistory = (state.meta?.lastClearAt || 0) !== historyLastClearAt;
+            saveLocal();
+          }
+        } else {
+          return pushUserDocToFirestore().then(() => page);
         }
-      } else {
-        return pushUserDocToFirestore();
+        return shouldReloadHistory ? reloadHistoryFromFirestore(true, { deferTotalCount: true }) : page;
+      });
+    }).then(page => {
+      if (page) {
+        applyInitialHistoryPage(page);
+        markBoot('firestore-history-ready');
       }
-    }).then(() => reloadHistoryFromFirestore(true, { deferTotalCount: true }))
+    })
       .then(() => {
         attachFirestoreUserListener();
         lastSyncedCloud = stateToFirestoreUserDoc(state);
