@@ -119,6 +119,36 @@ test.describe('新用户引导', () => {
     await expect(page.locator('#welcomeName')).toHaveText('小米');
   });
 
+  test('新浏览器登录已有数据账号不会停留在引导页', async ({ page }) => {
+    const uid = 'test-existing-cloud-user';
+    await gotoLoggedInApp(page, uid, {
+      skipOnboarding: false,
+      skipReadyAssert: true,
+      cloudDoc: {
+        score: 12,
+        profile: { name: '小云', avatar: '👦' },
+        revoked: {},
+        catalog: {
+          tasks: [{ id: 'wash', emoji: '🧼', name: '自己洗手', pts: 2, enabled: true, preset: true }],
+          rewards: [{ id: 'snack', emoji: '🍪', name: '小零食一份', pts: 8, enabled: true, preset: true }],
+        },
+        meta: {
+          lastClearAt: 0,
+          profileUpdatedAt: 100,
+          catalogUpdatedAt: 100,
+          scoreUpdatedAt: 100,
+          updatedAt: 100,
+          onboardingDone: true,
+          firestoreMigratedAt: 100,
+        },
+      },
+    });
+
+    await expect(page.locator('#mainView')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#onboardingView')).toBeHidden();
+    await expect(page.locator('#welcomeName')).toHaveText('小云');
+  });
+
   test('设置页可重新配置习惯计划', async ({ page }) => {
     await gotoLoggedInApp(page);
     await openSettings(page);

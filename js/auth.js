@@ -58,6 +58,13 @@ function showAuthView() {
   showLoginPanel();
 }
 
+function showAuthLoading(msg) {
+  showAuthShell();
+  hideAllAuthPanels();
+  clearAuthMessages();
+  setAuthSuccess(msg || '正在确认账号数据，请稍候');
+}
+
 function showLoginPanel() {
   hideAllAuthPanels();
   const login = document.getElementById('authLoginPanel');
@@ -314,7 +321,7 @@ function onAuthChanged(user) {
   if (user) {
     storageKeysForUser(user.uid);
     clearAuthMessages();
-    hideAuthView();
+    showAuthLoading('正在确认账号数据，请稍候');
     startApp();
   } else {
     tearDownCloud();

@@ -2,10 +2,10 @@ const { expect } = require('@playwright/test');
 
 /** 在页面加载前注入 Firebase 桩，自动以测试用户登录并进入主界面 */
 async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {}) {
-  const { skipOnboarding = true } = options;
+  const { skipOnboarding = true, cloudDoc = null, skipReadyAssert = false } = options;
   await page.route('**/*gstatic.com/firebasejs/**', route => route.abort());
 
-  await page.addInitScript(({ testUid, skipOnboarding }) => {
+  await page.addInitScript(({ testUid, skipOnboarding, cloudDoc }) => {
     window.__testFlags = { skipOnboarding };
     const authInstance = {
       setPersistence: () => Promise.resolve(),
@@ -213,12 +213,15 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
             };
           });
         },
+        seedUserDoc: (uid, doc) => { userBucket(uid).doc = doc; },
         setWriteBlocked: (blocked) => { writeBlocked = !!blocked; },
         isWriteBlocked: () => writeBlocked,
         setReadBlocked: (blocked) => { readBlocked = !!blocked; },
         isReadBlocked: () => readBlocked,
       };
     })();
+
+    if (cloudDoc) fakeFirestore.seedUserDoc(testUid, cloudDoc);
 
     window.__testFirestore = fakeFirestore;
     window.firebase = {
@@ -228,9 +231,10 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
       }),
       firestore: () => fakeFirestore,
     };
-  }, { testUid: uid, skipOnboarding });
+  }, { testUid: uid, skipOnboarding, cloudDoc });
 
   await page.goto('/');
+  if (skipReadyAssert) return;
   if (skipOnboarding) {
     await expect(page.locator('#mainView')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#scoreNum')).toHaveText('0', { timeout: 5000 });

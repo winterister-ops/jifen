@@ -684,12 +684,43 @@ if (typeof window !== 'undefined') {
   });
 }
 
+let cloudInitialSyncPending = false;
+let cloudInitialSyncConfirmed = false;
+
+function isCloudInitialSyncPending() {
+  return cloudInitialSyncPending;
+}
+
+function isCloudInitialSyncConfirmed() {
+  return cloudInitialSyncConfirmed;
+}
+
+// 云端首次同步结束后调用。只有确认过云端，或本地已有旧数据时，才开放应用。
+function markCloudInitialSyncSettled(confirmed) {
+  cloudInitialSyncPending = false;
+  cloudInitialSyncConfirmed = confirmed === true;
+  const hasUsableLocalData = typeof needsOnboarding === 'function' ? !needsOnboarding() : true;
+  if (cloudInitialSyncConfirmed || hasUsableLocalData) {
+    if (typeof hideAuthView === 'function') hideAuthView();
+    if (typeof onboardingAfterCloudReady === 'function') onboardingAfterCloudReady();
+    return;
+  }
+  if (typeof setAuthSuccess === 'function') setAuthSuccess('');
+  if (typeof setAuthError === 'function') {
+    setAuthError('暂时无法确认账号数据，请联网后重新打开应用');
+  }
+}
+
 function initCloud() {
   tearDownCloud();
   if (!firebaseReady || !firebaseConfig.projectId || !currentUser) {
+    cloudInitialSyncPending = false;
+    cloudInitialSyncConfirmed = false;
     const s = envStatusText();
     setStatus(s.text, s.dev);
     return;
   }
+  cloudInitialSyncPending = true;
+  cloudInitialSyncConfirmed = false;
   initFirestoreCloud();
 }

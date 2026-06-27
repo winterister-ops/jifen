@@ -264,6 +264,8 @@ function switchView(view) {
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
+  const obItem = document.getElementById('settingsOnboardingItem');
+  if (obItem) obItem.hidden = state.meta?.onboardingDone === true;
 }
 
 function saveProfile() {

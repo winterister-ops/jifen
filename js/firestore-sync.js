@@ -470,6 +470,7 @@ function attachFirestoreUserListener() {
         if (typeof scheduleRender === 'function') scheduleRender();
       });
     }
+    if (typeof reconcileOnboardingWithRemote === 'function') reconcileOnboardingWithRemote();
     lastSyncedCloud = stateToFirestoreUserDoc(merged);
     const s = envStatusText();
     setStatus(s.text, s.dev);
@@ -498,6 +499,7 @@ function initFirestoreCloud() {
   if (!firebaseReady || !firebaseConfig.projectId || !currentUser) {
     const s = envStatusText();
     setStatus(s.text, s.dev);
+    if (typeof markCloudInitialSyncSettled === 'function') markCloudInitialSyncSettled(false);
     return Promise.resolve();
   }
 
@@ -523,11 +525,13 @@ function initFirestoreCloud() {
         if (cloudPushDirty) schedulePushToCloud();
         const s = envStatusText();
         setStatus(s.text, s.dev);
+        if (typeof markCloudInitialSyncSettled === 'function') markCloudInitialSyncSettled(true);
         if (typeof scheduleRender === 'function') scheduleRender();
       });
   }).catch(err => {
     console.warn('Firestore 初始化失败', err);
     setStatus('离线', true);
+    if (typeof markCloudInitialSyncSettled === 'function') markCloudInitialSyncSettled(false);
     if (typeof scheduleRender === 'function') scheduleRender();
   });
 }

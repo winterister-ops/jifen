@@ -83,12 +83,44 @@ function finishOnboardingToApp() {
   lockPageScroll();
 }
 
-function onboardingAfterStartApp() {
+// 根据当前已确认过的账号状态决定是否显示初次引导。
+function decideInitialOnboarding() {
+  if (onboardingMode === 'reconfigure' && isOnboardingVisible()) return;
+  if (typeof isCloudInitialSyncPending === 'function' && isCloudInitialSyncPending()) {
+    hideOnboarding();
+    return;
+  }
+  if (typeof isCloudInitialSyncConfirmed === 'function' && !isCloudInitialSyncConfirmed() && needsOnboarding()) {
+    hideOnboarding();
+    return;
+  }
   if (needsOnboarding()) {
-    showOnboarding({ mode: 'initial' });
+    if (!isOnboardingVisible()) showOnboarding({ mode: 'initial' });
+  } else if (isOnboardingVisible()) {
+    finishOnboardingToApp();
   } else {
     hideOnboarding();
   }
+}
+
+// startApp 时调用。新浏览器里本地通常还没有数据，如果此刻就弹出引导，
+// 用户在已有账号上又走一遍，会用新选择覆盖云端的昵称/头像与习惯·奖励配置。
+// 因此在云端首次确认前先不显示引导，交给 onboardingAfterCloudReady 决定。
+function onboardingAfterStartApp() {
+  decideInitialOnboarding();
+}
+
+// 云端首次同步完成（或失败/离线）后调用，做出最终的引导显隐判断。
+function onboardingAfterCloudReady() {
+  decideInitialOnboarding();
+}
+
+// 实时同步（onSnapshot）后：若仍停留在初次引导但该账号其实已有数据，则自动退出引导。
+function reconcileOnboardingWithRemote() {
+  if (onboardingMode !== 'initial') return;
+  if (!isOnboardingVisible()) return;
+  if (needsOnboarding()) return;
+  finishOnboardingToApp();
 }
 
 function openOnboardingReconfigure() {
