@@ -23,7 +23,9 @@ serviceAccountKey.json
 # 编辑器 / IDE 本地配置
 .vscode/
 .idea/
-.cursor/
+# .cursor/ 整体忽略，但保留共享的自定义 Slash 命令
+.cursor/*
+!.cursor/commands/
 *.swp
 *.swo
 
