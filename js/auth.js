@@ -21,6 +21,26 @@ function hideSplash() {
   el.hidden = true;
 }
 
+function showSplash() {
+  const splash = document.getElementById('splashView');
+  const authView = document.getElementById('authView');
+  const appRoot = document.getElementById('appRoot');
+  const nav = document.getElementById('bottomNav');
+  if (splash) {
+    splash.style.display = 'flex';
+    splash.hidden = false;
+  }
+  if (authView) authView.style.display = 'none';
+  if (appRoot) appRoot.style.display = 'none';
+  if (nav) {
+    nav.classList.add('is-hidden');
+    nav.setAttribute('aria-hidden', 'true');
+  }
+  document.body.classList.remove('has-bottom-nav');
+  document.body.classList.remove('is-subpage');
+  clearAuthMessages();
+}
+
 function ensureAppVisible() {
   hideSplash();
   const authView = document.getElementById('authView');
@@ -58,11 +78,12 @@ function showAuthView() {
   showLoginPanel();
 }
 
-function showAuthLoading(msg) {
+function showAuthBootError(msg) {
+  hideSplash();
   showAuthShell();
   hideAllAuthPanels();
   clearAuthMessages();
-  setAuthSuccess(msg || '正在确认账号数据，请稍候');
+  setAuthError(msg || '网络连接失败，请检查后重新打开应用');
 }
 
 function showLoginPanel() {
@@ -321,7 +342,7 @@ function onAuthChanged(user) {
   if (user) {
     storageKeysForUser(user.uid);
     clearAuthMessages();
-    showAuthLoading('正在确认账号数据，请稍候');
+    showSplash();
     startApp();
   } else {
     tearDownCloud();

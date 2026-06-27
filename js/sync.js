@@ -705,9 +705,8 @@ function markCloudInitialSyncSettled(confirmed) {
     if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
     return;
   }
-  if (typeof setAuthSuccess === 'function') setAuthSuccess('');
-  if (typeof setAuthError === 'function') {
-    setAuthError('暂时无法确认账号数据，请联网后重新打开应用');
+  if (typeof showAuthBootError === 'function') {
+    showAuthBootError('网络连接失败，请检查后重新打开应用');
   }
 }
 
