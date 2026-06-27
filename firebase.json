@@ -9,6 +9,7 @@
       "firebase-debug.log",
       "firebase-debug.*.log",
       "README.md",
+      "AGENTS.md",
       ".cursor/**",
       ".pw-browsers/**",
       "tests/**",
