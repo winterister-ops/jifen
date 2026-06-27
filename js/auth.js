@@ -366,6 +366,9 @@ function initFirebase() {
     try {
       firebase.initializeApp(firebaseConfig);
       firebaseReady = true;
+      if (typeof ensureFirebaseFirestore === 'function') {
+        ensureFirebaseFirestore().catch(err => console.warn('Firestore SDK 预加载失败', err));
+      }
     } catch (e) {
       console.warn(e);
       firebaseReady = false;

@@ -644,6 +644,7 @@ function tearDownCloud() {
   }
   cloudPushPending = false;
   lastSyncedCloud = null;
+  appEntered = false;
   if (typeof tearDownFirestoreCloud === 'function') tearDownFirestoreCloud();
   if (cloudRef && cloudUnsubscribe) {
     try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
@@ -686,6 +687,7 @@ if (typeof window !== 'undefined') {
 
 let cloudInitialSyncPending = false;
 let cloudInitialSyncConfirmed = false;
+let appEntered = false;
 
 function isCloudInitialSyncPending() {
   return cloudInitialSyncPending;
@@ -699,8 +701,10 @@ function isCloudInitialSyncConfirmed() {
 function markCloudInitialSyncSettled(confirmed) {
   cloudInitialSyncPending = false;
   cloudInitialSyncConfirmed = confirmed === true;
+  if (appEntered) return;
   const hasUsableLocalData = typeof needsOnboarding === 'function' ? !needsOnboarding() : true;
   if (cloudInitialSyncConfirmed || hasUsableLocalData) {
+    appEntered = true;
     if (typeof hideAuthView === 'function') hideAuthView();
     if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
     return;
@@ -715,6 +719,7 @@ function initCloud() {
   if (!firebaseReady || !firebaseConfig.projectId || !currentUser) {
     cloudInitialSyncPending = false;
     cloudInitialSyncConfirmed = false;
+    appEntered = false;
     const s = envStatusText();
     setStatus(s.text, s.dev);
     markCloudInitialSyncSettled(false);
@@ -722,5 +727,11 @@ function initCloud() {
   }
   cloudInitialSyncPending = true;
   cloudInitialSyncConfirmed = false;
+  const hasUsableLocalData = typeof needsOnboarding === 'function' ? !needsOnboarding() : true;
+  if (hasUsableLocalData) {
+    appEntered = true;
+    if (typeof hideAuthView === 'function') hideAuthView();
+    if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
+  }
   initFirestoreCloud();
 }

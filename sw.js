@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.86';
+const CACHE_VERSION = '0.0.87';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 
@@ -58,11 +58,28 @@ async function matchCache(request) {
   return null;
 }
 
+// 缓存优先：命中立即返回，后台静默刷新缓存（stale-while-revalidate）
+async function cacheFirstRevalidate(request, cacheKey) {
+  const cache = await caches.open(PRECACHE);
+  const key = cacheKey || stripQuery(request.url);
+  const cached = await cache.match(key) || await cache.match(request);
+  const revalidate = fetch(request).then(res => {
+    if (res.ok) cache.put(key, res.clone());
+    return res;
+  }).catch(() => null);
+  if (cached) {
+    revalidate;
+    return cached;
+  }
+  const network = await revalidate;
+  if (network) return network;
+  return new Response('Offline', { status: 503, statusText: 'Offline' });
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(PRECACHE)
       .then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -99,30 +116,12 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname === '/data.js' || url.pathname === '/styles.css' || url.pathname.startsWith('/js/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(res => {
-          if (res.ok) {
-            const copy = res.clone();
-            caches.open(PRECACHE).then(c => c.put(stripQuery(event.request.url), copy));
-          }
-          return res;
-        })
-        .catch(() => matchCache(event.request))
-    );
+    event.respondWith(cacheFirstRevalidate(event.request));
     return;
   }
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then(res => {
-          const copy = res.clone();
-          caches.open(PRECACHE).then(c => c.put('/index.html', copy));
-          return res;
-        })
-        .catch(() => caches.match('/index.html'))
-    );
+    event.respondWith(cacheFirstRevalidate(event.request, '/index.html'));
     return;
   }
 

@@ -169,6 +169,9 @@ function migrateStateToFirestore(uid, mergedState) {
 
 function ensureFirestoreMigrated(uid) {
   if (fsMigrationPromise) return fsMigrationPromise;
+  if (state.meta?.firestoreMigratedAt > 0) {
+    return Promise.resolve(false);
+  }
   fsMigrationPromise = fsUserDocRef(uid).get().then(snap => {
     if (snap.exists && snap.data()?.meta?.firestoreMigratedAt) return false;
 
