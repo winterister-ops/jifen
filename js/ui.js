@@ -140,6 +140,9 @@ function startApp() {
   invalidateLastEarnByTaskId();
   lastDisplayedScore = null;
   renderAppMeta();
+  if (typeof needsOnboarding === 'function' && needsOnboarding()) {
+    showSplash();
+  }
   initCloud();
 }
 

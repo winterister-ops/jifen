@@ -1,6 +1,8 @@
-const CACHE_VERSION = '0.0.87';
+const CACHE_VERSION = '0.0.88';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
+const FIREBASE_SDK_VERSION = '10.12.2';
+const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION;
 
 const PRECACHE_URLS = [
   '/',
@@ -35,6 +37,11 @@ const PRECACHE_URLS = [
   '/icons/rocket.svg',
   '/icons/transaction-order.svg',
   '/icons/undo.svg'
+];
+
+const AUTH_SDK_URLS = [
+  FIREBASE_CDN + '/firebase-app-compat.js',
+  FIREBASE_CDN + '/firebase-auth-compat.js'
 ];
 
 const CDN_ORIGINS = [
@@ -78,8 +85,12 @@ async function cacheFirstRevalidate(request, cacheKey) {
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(PRECACHE)
-      .then(cache => cache.addAll(PRECACHE_URLS))
+    caches.open(PRECACHE).then(cache => {
+      const appShell = cache.addAll(PRECACHE_URLS);
+      const authSdk = cache.addAll(AUTH_SDK_URLS)
+        .catch(err => console.warn('Firebase Auth SDK 预缓存失败', err));
+      return Promise.all([appShell, authSdk]);
+    })
   );
 });
 

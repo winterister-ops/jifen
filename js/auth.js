@@ -342,7 +342,6 @@ function onAuthChanged(user) {
   if (user) {
     storageKeysForUser(user.uid);
     clearAuthMessages();
-    showSplash();
     startApp();
   } else {
     tearDownCloud();
