@@ -139,12 +139,8 @@ function startApp() {
   state = loadLocal();
   invalidateLastEarnByTaskId();
   lastDisplayedScore = null;
-  initCloud();
   renderAppMeta();
-  switchView('tasks');
-  render();
-  lockPageScroll();
-  if (typeof onboardingAfterStartApp === 'function') onboardingAfterStartApp();
+  initCloud();
 }
 
 function renderHeader() {

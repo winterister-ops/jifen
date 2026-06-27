@@ -695,14 +695,14 @@ function isCloudInitialSyncConfirmed() {
   return cloudInitialSyncConfirmed;
 }
 
-// 云端首次同步结束后调用。只有确认过云端，或本地已有旧数据时，才开放应用。
+// 云端首次同步结束后调用。只有确认过云端，或本地已有旧数据时，才离开加载页。
 function markCloudInitialSyncSettled(confirmed) {
   cloudInitialSyncPending = false;
   cloudInitialSyncConfirmed = confirmed === true;
   const hasUsableLocalData = typeof needsOnboarding === 'function' ? !needsOnboarding() : true;
   if (cloudInitialSyncConfirmed || hasUsableLocalData) {
     if (typeof hideAuthView === 'function') hideAuthView();
-    if (typeof onboardingAfterCloudReady === 'function') onboardingAfterCloudReady();
+    if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
     return;
   }
   if (typeof setAuthSuccess === 'function') setAuthSuccess('');
@@ -718,6 +718,7 @@ function initCloud() {
     cloudInitialSyncConfirmed = false;
     const s = envStatusText();
     setStatus(s.text, s.dev);
+    markCloudInitialSyncSettled(false);
     return;
   }
   cloudInitialSyncPending = true;
