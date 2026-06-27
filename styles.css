@@ -402,10 +402,12 @@ body.history-editing.has-bottom-nav .hp-editbar {
   background: var(--blue); color: #fff;
   border-color: transparent;
 }
-.history-load-more {
-  display: block;
-  width: calc(100% - 8px);
-  margin: 12px auto 4px;
+.history-load-more-status {
+  text-align: center;
+  color: #bbb;
+  font-size: .82rem;
+  font-weight: 700;
+  padding: 12px 0 4px;
 }
 .hp-weekcal {
   display: flex;

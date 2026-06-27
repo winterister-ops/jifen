@@ -227,6 +227,44 @@ function loadMoreHistory() {
   renderHistory();
 }
 
+let historyScrollBound = false;
+let historyAutoLoadRaf = null;
+
+function historyScrollEl() {
+  return document.getElementById('history');
+}
+
+function isHistoryNearBottom(el, threshold = 120) {
+  if (!el) return false;
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+function checkHistoryAutoLoad() {
+  if (typeof currentView !== 'undefined' && currentView !== 'history') return;
+  if (historyEditMode) return;
+  const page = visibleHistoryPage();
+  if (!page.hasMore) return;
+  if (isFirestoreActive() && historyIsLoadingFromFirestore()) return;
+  if (!isHistoryNearBottom(historyScrollEl())) return;
+  loadMoreHistory();
+}
+
+function scheduleHistoryAutoLoadCheck() {
+  if (historyAutoLoadRaf) return;
+  historyAutoLoadRaf = requestAnimationFrame(() => {
+    historyAutoLoadRaf = null;
+    checkHistoryAutoLoad();
+  });
+}
+
+function initHistoryInfiniteScroll() {
+  if (historyScrollBound) return;
+  const el = historyScrollEl();
+  if (!el) return;
+  historyScrollBound = true;
+  el.addEventListener('scroll', scheduleHistoryAutoLoadCheck, { passive: true });
+}
+
 function resetHistoryAllLimit() {
   historyAllLimit = HISTORY_PAGE_SIZE;
 }
@@ -747,24 +785,21 @@ function renderHistory() {
     h.appendChild(row);
   });
 
-  if (page.hasMore) {
-    const moreBtn = document.createElement('button');
-    moreBtn.type = 'button';
-    moreBtn.className = 'filter-pill history-load-more';
-    if (isFirestoreActive() && historyIsLoadingFromFirestore()) {
-      moreBtn.textContent = '加载中…';
-      moreBtn.disabled = true;
-    } else {
-      moreBtn.textContent = isFirestoreActive()
-        ? '加载更多'
-        : `加载更多（还剩 ${page.total - list.length} 条）`;
-      moreBtn.onclick = () => loadMoreHistory();
-    }
-    h.appendChild(moreBtn);
+  if (page.hasMore && isFirestoreActive() && historyIsLoadingFromFirestore()) {
+    const status = document.createElement('div');
+    status.className = 'history-load-more-status';
+    status.textContent = '加载中…';
+    h.appendChild(status);
+  } else if (!page.hasMore) {
+    const status = document.createElement('div');
+    status.className = 'history-load-more-status';
+    status.textContent = '到底了';
+    h.appendChild(status);
   }
 
   renderHistoryHeaderSafe();
   if (historyEditMode) renderEditBar();
+  scheduleHistoryAutoLoadCheck();
 }
 
 function renderHistoryHeaderSafe() {
@@ -780,4 +815,6 @@ function nowStr() {
   const p = n => String(n).padStart(2, '0');
   return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+initHistoryInfiniteScroll();
 
