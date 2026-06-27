@@ -121,8 +121,13 @@ body.has-bottom-nav #settingsView .section-title {
   padding-inline: calc(var(--page-inline) + var(--shadow-bleed));
   padding-bottom: calc(24px + var(--safe-bottom));
 }
-.catalog-manage-view :is(.catalog-row, .catalog-manage-bar, .subpage-head) {
+.catalog-manage-view :is(.catalog-row, .subpage-head) {
   margin-inline: calc(-1 * var(--shadow-bleed));
+}
+/* 与记录页吸顶栏一致：背景铺满整行，内容仍按 page-inline 内缩 */
+.catalog-manage-view .catalog-manage-bar {
+  margin-inline: calc(-1 * (var(--page-inline) + var(--shadow-bleed)));
+  padding-inline: var(--page-inline);
 }
 
 /* 顶部栏 */

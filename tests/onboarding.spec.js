@@ -3,8 +3,6 @@ const {
   gotoLoggedInApp,
   gotoOnboardingApp,
   completeOnboardingFlow,
-  openSettings,
-  earnTask,
 } = require('./helpers');
 
 test.describe('新用户引导', () => {
@@ -147,25 +145,6 @@ test.describe('新用户引导', () => {
     await expect(page.locator('#mainView')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#onboardingView')).toBeHidden();
     await expect(page.locator('#welcomeName')).toHaveText('小云');
-  });
-
-  test('设置页可重新配置习惯计划', async ({ page }) => {
-    await gotoLoggedInApp(page);
-    await openSettings(page);
-    await page.locator('.menu-item').filter({ hasText: '习惯计划' }).click();
-
-    await expect(page.locator('#obStep-habits')).toHaveClass(/active/);
-    await expect(page.locator('#obHabitsBackBtn')).toBeHidden();
-    await page.locator('.ob-pick-card').filter({ hasText: '吃蔬菜' }).click();
-    await page.locator('[data-ob-action="ob-habits-next"]').click();
-    await page.locator('[data-ob-action="ob-rewards-done"]').click();
-
-    await expect(page.locator('#settingsView')).toBeVisible();
-    await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
-    await expect(page.locator('.earn-item').filter({ hasText: '吃蔬菜' })).toBeVisible();
-
-    await earnTask(page, '吃蔬菜');
-    await expect(page.locator('#scoreNum')).toHaveText('4', { timeout: 5000 });
   });
 
   test('有历史记录的老用户跳过引导', async ({ page }) => {

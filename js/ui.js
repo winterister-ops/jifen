@@ -264,8 +264,6 @@ function switchView(view) {
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
-  const obItem = document.getElementById('settingsOnboardingItem');
-  if (obItem) obItem.hidden = state.meta?.onboardingDone === true;
 }
 
 function saveProfile() {
@@ -611,7 +609,6 @@ const CLICK_ACTION_HANDLERS = {
   'select-all-history': () => selectAllVisibleHistory(),
   'show-delete-confirm': () => showDeleteConfirmModal(),
   'open-profile-modal': () => openProfileModal(),
-  'open-onboarding': () => openOnboardingReconfigure(),
   'open-catalog-manage': el => openCatalogManage(el.dataset.catalogType),
   'open-password-modal': () => openPasswordModal(),
   'logout': () => logoutApp(),
