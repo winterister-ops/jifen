@@ -593,7 +593,6 @@ const OVERLAY_DISMISS_HANDLERS = {
   calModal: () => hideCalendar(),
   spendModal: () => hideSpendModal(),
   deleteModal: () => hideDeleteConfirmModal(),
-  updateModal: () => hideUpdateModal(),
 };
 
 const CLICK_ACTION_HANDLERS = {
@@ -628,8 +627,6 @@ const CLICK_ACTION_HANDLERS = {
   'confirm-spend': () => confirmSpend(),
   'hide-delete-confirm-modal': () => hideDeleteConfirmModal(),
   'confirm-delete-selected': () => confirmDeleteSelected(),
-  'hide-update-modal': () => hideUpdateModal(),
-  'confirm-app-refresh': () => confirmAppRefresh(),
 };
 
 const KEY_ACTION_HANDLERS = {

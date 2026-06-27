@@ -1,6 +1,6 @@
 // ====== PWA：Service Worker 注册与版本更新 ======
 
-let updatePromptShown = false;
+let refreshingForUpdate = false;
 
 async function fetchServerAppVersion() {
   const res = await fetch('/index.html', { cache: 'no-store' });
@@ -10,36 +10,10 @@ async function fetchServerAppVersion() {
   return match ? match[1].trim() : '';
 }
 
-function hideUpdateModal() {
-  const modal = document.getElementById('updateModal');
-  if (modal) modal.classList.remove('show');
-  updatePromptShown = false;
-}
-
-function showUpdateModal(reason) {
-  const titleEl = document.getElementById('updateModalTitle');
-  const msgEl = document.getElementById('updateModalMsg');
-  const isServer = reason === 'server';
-  if (titleEl) titleEl.textContent = isServer ? '发现新版本' : '应用已更新';
-  if (msgEl) {
-    msgEl.textContent = isServer
-      ? '发现新版本，需要刷新以加载最新内容。'
-      : '应用已更新，需要刷新以加载最新内容。';
-  }
-  const modal = document.getElementById('updateModal');
-  if (modal) modal.classList.add('show');
-}
-
-function confirmAppRefresh() {
-  const modal = document.getElementById('updateModal');
-  if (modal) modal.classList.remove('show');
+function promptAppRefresh() {
+  if (refreshingForUpdate) return;
+  refreshingForUpdate = true;
   refreshAppNow();
-}
-
-function promptAppRefresh(reason) {
-  if (updatePromptShown) return;
-  updatePromptShown = true;
-  showUpdateModal(reason);
 }
 
 async function refreshAppNow() {
@@ -60,7 +34,7 @@ async function checkServerVersion() {
   try {
     const serverVer = await fetchServerAppVersion();
     if (serverVer && serverVer !== localVer) {
-      promptAppRefresh('server');
+      promptAppRefresh();
     }
   } catch (err) {
     console.warn('版本检查失败', err);
@@ -73,7 +47,7 @@ function watchServiceWorkerUpdates(registration) {
     if (!worker) return;
     worker.addEventListener('statechange', () => {
       if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-        promptAppRefresh('sw');
+        promptAppRefresh();
       }
     });
   });
@@ -91,10 +65,6 @@ function registerServiceWorker() {
       .catch(err => {
         console.warn('Service Worker 注册失败', err);
       });
-  });
-
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (updatePromptShown) window.location.reload();
   });
 
   document.addEventListener('visibilitychange', () => {

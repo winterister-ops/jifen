@@ -1,11 +1,14 @@
 const { defineConfig } = require('@playwright/test');
 
+const browserChannel = process.env.PLAYWRIGHT_BROWSER_CHANNEL || 'chrome';
+
 module.exports = defineConfig({
   testDir: './tests',
   timeout: 30000,
   retries: 0,
   use: {
     baseURL: 'http://localhost:8080',
+    channel: browserChannel,
     headless: true,
   },
   webServer: {
