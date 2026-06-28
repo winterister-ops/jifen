@@ -46,23 +46,6 @@ function isOnboardingVisible() {
   return !!el && el.style.display !== 'none' && !el.hidden;
 }
 
-function setOnboardingShellVisible(visible) {
-  const view = document.getElementById('onboardingView');
-  const wrap = document.querySelector('#appRoot > .wrap');
-  const nav = document.getElementById('bottomNav');
-  if (view) {
-    view.style.display = visible ? 'flex' : 'none';
-    view.hidden = !visible;
-  }
-  if (wrap) wrap.style.display = visible ? 'none' : '';
-  document.body.classList.toggle('is-onboarding', visible);
-  if (nav) {
-    nav.classList.toggle('is-hidden', visible);
-    nav.setAttribute('aria-hidden', visible ? 'true' : 'false');
-  }
-  if (!visible) document.body.classList.remove('is-onboarding');
-}
-
 function showOnboarding(opts) {
   resetOnboardingDraft(opts);
   setOnboardingShellVisible(true);

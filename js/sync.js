@@ -707,6 +707,10 @@ function enterAppAfterCloudReadyLazy() {
       enterAppAfterCloudReady();
       return;
     }
+    if (typeof enterMainApp === 'function') {
+      enterMainApp();
+      return;
+    }
     if (typeof switchView === 'function') switchView('tasks');
     if (typeof render === 'function') render();
     if (typeof lockPageScroll === 'function') lockPageScroll();

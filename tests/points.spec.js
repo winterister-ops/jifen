@@ -6,6 +6,20 @@ test.describe('积分获取与消耗', () => {
     await gotoLoggedInApp(page);
   });
 
+  test('登录后显示底部导航并启用首页滚动', async ({ page }) => {
+    await expect(page.locator('#mainView')).toBeVisible();
+    await expect(page.locator('#bottomNav')).toBeVisible();
+    await expect(page.locator('#bottomNav')).not.toHaveClass(/is-hidden/);
+    const shell = await page.evaluate(() => ({
+      hasBottomNav: document.body.classList.contains('has-bottom-nav'),
+      wrapVisible: getComputedStyle(document.querySelector('#appRoot > .wrap')).display !== 'none',
+      mainScroll: getComputedStyle(document.getElementById('mainView')).overflowY,
+    }));
+    expect(shell.hasBottomNav).toBe(true);
+    expect(shell.wrapVisible).toBe(true);
+    expect(shell.mainScroll).toBe('auto');
+  });
+
   test('完成任务可增加积分', async ({ page }) => {
     await expect(page.locator('#todaySummary')).toHaveText('今天还没记录，快去做任务吧');
     await page.locator('.earn-item').filter({ hasText: '自己洗手' }).click();
