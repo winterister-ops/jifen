@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.99';
+const CACHE_VERSION = '0.1.0';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 const FIREBASE_SDK_VERSION = '10.12.2';
