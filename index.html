@@ -10,15 +10,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.96">
+<meta name="app-version" content="0.0.97">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="styles.css?v=0.0.96">
+<link rel="stylesheet" href="styles.css?v=0.0.97">
 <style id="critical-main-shell">
-.account-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:2px}.account-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.account-bar .avatar{width:40px;height:40px;font-size:1.4rem}.account-bar .welcome{min-width:0;flex:1;display:flex;align-items:baseline;gap:8px}.account-bar .greet-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.account-bar .sub{white-space:nowrap}.star-balance{display:flex;align-items:center;gap:6px;flex-shrink:0;background:transparent;padding:0}.star-balance .star-icon{width:28px;height:28px;border-radius:50%;background:#ffb627;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(200,140,60,.18)}.star-balance-ic{width:1rem;height:1rem;filter:brightness(0) invert(1)}.star-balance .score-num{font-family:"Fredoka",sans-serif;font-size:1.35rem;font-weight:700;line-height:1;color:#6b4a2b;min-width:1.1em;text-align:center}.main-hero{margin-bottom:14px;padding:0 2px}.main-hero-line{display:flex;align-items:baseline;gap:6px}.main-hero-icon{font-size:1.05rem;line-height:1;flex-shrink:0}.main-hero-main{font-size:1rem;font-weight:800;color:#6b4a2b;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.main-hero-sub{display:inline-block;margin-top:4px;padding:0;border:none;background:transparent;font:inherit;font-size:.76rem;font-weight:700;color:#b08a5e;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:10px 14px;background:#fff;border-radius:20px;box-shadow:0 4px 14px rgba(200,140,60,.1);border:1px solid rgba(255,226,191,.6)}.account-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.account-bar .avatar{width:40px;height:40px;font-size:1.4rem}.account-bar .welcome{min-width:0;flex:1;display:flex;align-items:baseline;gap:8px}.account-bar .greet-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.account-bar .sub{white-space:nowrap}.star-balance{display:flex;align-items:center;gap:6px;flex-shrink:0;background:transparent;padding:0}.star-balance .star-icon{width:28px;height:28px;border-radius:50%;background:#ffb627;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(200,140,60,.1)}.star-balance-ic{width:1rem;height:1rem;filter:brightness(0) invert(1)}.star-balance .score-num{font-family:"Fredoka",sans-serif;font-size:1.35rem;font-weight:700;line-height:1;color:#6b4a2b;min-width:1.1em;text-align:center}.main-hero{margin-bottom:14px;padding:12px 14px;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:20px;border:1px solid rgba(255,226,191,.55);box-shadow:0 4px 14px rgba(200,140,60,.1)}.main-hero-line{display:flex;align-items:baseline;gap:6px}.main-hero-icon{font-size:1.05rem;line-height:1;flex-shrink:0}.main-hero-main{font-size:1rem;font-weight:800;color:#6b4a2b;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.main-hero-sub{display:inline-block;margin-top:6px;padding:0;border:none;background:transparent;font:inherit;font-size:.76rem;font-weight:700;color:#b08a5e;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
 <script>
 window.__bootPerf = { start: performance.now(), marks: [{ label: 'html-inline', t: 0 }] };
@@ -116,6 +116,7 @@ scrollTo(0, 0);
     <div class="ob-foot">
       <button type="button" class="ob-btn-primary" id="obHabitsNextBtn" data-ob-action="ob-habits-next">下一步：选奖励</button>
       <button type="button" class="ob-btn-ghost" data-ob-action="ob-habits-restore">恢复推荐配置</button>
+      <button type="button" class="ob-btn-ghost ob-reconfigure-cancel" data-ob-action="ob-reconfigure-cancel" hidden>取消</button>
       <button type="button" class="ob-btn-ghost" id="obHabitsBackBtn" data-ob-action="ob-habits-back">上一步</button>
     </div>
   </div>
@@ -138,6 +139,7 @@ scrollTo(0, 0);
     <div class="ob-foot">
       <button type="button" class="ob-btn-primary" id="obRewardsDoneBtn" data-ob-action="ob-rewards-done">开始星星计划</button>
       <button type="button" class="ob-btn-ghost" data-ob-action="ob-rewards-restore">恢复推荐配置</button>
+      <button type="button" class="ob-btn-ghost ob-reconfigure-cancel" data-ob-action="ob-reconfigure-cancel" hidden>取消</button>
       <button type="button" class="ob-btn-ghost" data-ob-action="ob-rewards-back">上一步</button>
     </div>
   </div>
@@ -182,7 +184,6 @@ scrollTo(0, 0);
 
   <div class="main-hero main-hero--earn" id="mainHero">
     <div class="main-hero-line">
-      <span class="main-hero-icon" id="mainHeroIcon">💪</span>
       <span class="main-hero-main" id="mainHeroMain"></span>
     </div>
     <button type="button" class="main-hero-sub" id="mainHeroSub" style="display:none"></button>
@@ -207,7 +208,9 @@ scrollTo(0, 0);
    </div>
 
    <div class="hp-weekcal" id="hpWeekCal">
+    <button type="button" class="hp-weekcal-nav" id="hpWeekCalPrev" data-action="week-shift" data-weeks="-1" title="上一周" aria-label="上一周">‹</button>
     <div class="hp-weekcal-days" id="hpWeekCalDays"></div>
+    <button type="button" class="hp-weekcal-nav" id="hpWeekCalNext" data-action="week-shift" data-weeks="1" title="下一周" aria-label="下一周">›</button>
     <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" data-action="open-calendar" title="万年历" aria-label="打开万年历"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
    </div>
   </div>
@@ -229,6 +232,19 @@ scrollTo(0, 0);
     <button type="button" class="profile-edit" data-action="open-profile-modal" title="修改头像和昵称"><img class="ui-ic" src="icons/edit.svg" alt="">修改</button>
   </div>
 
+  <div class="section-label">星星计划</div>
+  <div class="menu-list">
+    <button type="button" class="menu-item" data-action="open-plan-reconfigure">
+      <span class="menu-ic"><img class="ui-ic" src="icons/rocket.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">调整习惯与奖励</span>
+        <span class="menu-desc">批量增减任务和奖励，重新规划计划</span>
+      </span>
+      <span class="menu-arrow">›</span>
+    </button>
+  </div>
+
+  <div class="section-label">管理</div>
   <div class="menu-list">
     <button type="button" class="menu-item" data-action="open-catalog-manage" data-catalog-type="tasks">
       <span class="menu-ic"><img class="ui-ic" src="icons/muscle.svg" alt=""></span>
@@ -249,7 +265,7 @@ scrollTo(0, 0);
   </div>
 
   <div id="settingsSection">
-    <div class="section-title"><img class="ui-ic" src="icons/setting-two.svg" alt="">设置</div>
+    <div class="section-label">账号</div>
     <div class="menu-list">
       <button type="button" class="menu-item" data-action="open-password-modal">
         <span class="menu-ic"><img class="ui-ic" src="icons/lock.svg" alt=""></span>
@@ -421,13 +437,13 @@ scrollTo(0, 0);
 <!-- Firebase 认证 SDK（firestore 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.96"></script>
-<script src="js/firebase-loader.js?v=0.0.96"></script>
-<script src="js/sync.js?v=0.0.96"></script>
-<script src="js/firestore-sync.js?v=0.0.96"></script>
-<script src="js/catalog.js?v=0.0.96"></script>
-<script src="js/ui.js?v=0.0.96"></script>
-<script src="js/auth.js?v=0.0.96"></script>
-<script src="js/pwa.js?v=0.0.96"></script>
+<script src="data.js?v=0.0.97"></script>
+<script src="js/firebase-loader.js?v=0.0.97"></script>
+<script src="js/sync.js?v=0.0.97"></script>
+<script src="js/firestore-sync.js?v=0.0.97"></script>
+<script src="js/catalog.js?v=0.0.97"></script>
+<script src="js/ui.js?v=0.0.97"></script>
+<script src="js/auth.js?v=0.0.97"></script>
+<script src="js/pwa.js?v=0.0.97"></script>
 </body>
 </html>

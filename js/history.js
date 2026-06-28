@@ -3,6 +3,9 @@
 const HISTORY_PAGE_SIZE = 50;
 
 let focusedDateKey = null; // 日历高亮 / 滚动定位 'YYYY-MM-DD'
+// 周历为 7 天条带，按 6 天步进（相邻两屏共享 1 天作为锚点）。0=含今天的最近 7 天，-1=向前翻一屏，以此类推。
+const WEEK_CAL_STEP = 6;
+let weekCalOffset = 0;
 let calYear, calMonth; // calMonth: 0-11
 let historyEditMode = false;
 let selectedEids = new Set();
@@ -163,6 +166,7 @@ function jumpToHistoryDate(key) {
       return;
     }
     focusedDateKey = key;
+    syncWeekOffsetToDate(key);
     const need = idx + 1;
     if (!isFirestoreActive() && need > historyAllLimit) {
       historyAllLimit = need;
@@ -307,6 +311,26 @@ function buildHistoryDayStatsIndex() {
   return stats;
 }
 
+function ensureWeekDayStats(keys) {
+  if (!isFirestoreActive()) {
+    if (!historyDayStatsIndex) historyDayStatsIndex = buildHistoryDayStatsIndex();
+    return Promise.resolve(historyDayStatsIndex);
+  }
+  const [y0, m0, d0] = keys[0].split('-').map(Number);
+  const [y1, m1, d1] = keys[keys.length - 1].split('-').map(Number);
+  const start = dayRangeTs(y0, m0 - 1, d0).start;
+  const end = dayRangeTs(y1, m1 - 1, d1).end;
+  return queryHistoryDayStatsFromFirestore(start, end).then(stats => {
+    if (!historyDayStatsIndex) historyDayStatsIndex = new Map();
+    stats.forEach((v, k) => historyDayStatsIndex.set(k, v));
+    return historyDayStatsIndex;
+  }).catch(err => {
+    console.warn('周历统计查询失败', err);
+    if (!historyDayStatsIndex) historyDayStatsIndex = buildHistoryDayStatsIndex();
+    return historyDayStatsIndex;
+  });
+}
+
 function ensureHistoryDayStatsIndex() {
   if (historyDayStatsIndex) return Promise.resolve(historyDayStatsIndex);
   if (!isFirestoreActive()) {
@@ -314,20 +338,9 @@ function ensureHistoryDayStatsIndex() {
     return Promise.resolve(historyDayStatsIndex);
   }
   if (historyDayStatsPromise) return historyDayStatsPromise;
-  const keys = weekCalKeys();
-  const [y0, m0, d0] = keys[0].split('-').map(Number);
-  const [y1, m1, d1] = keys[keys.length - 1].split('-').map(Number);
-  const start = dayRangeTs(y0, m0 - 1, d0).start;
-  const end = dayRangeTs(y1, m1 - 1, d1).end;
-  historyDayStatsPromise = queryHistoryDayStatsFromFirestore(start, end).then(stats => {
-    historyDayStatsIndex = stats;
+  historyDayStatsPromise = ensureWeekDayStats(weekCalKeys()).then(stats => {
     historyDayStatsPromise = null;
     return stats;
-  }).catch(err => {
-    console.warn('周历统计查询失败', err);
-    historyDayStatsIndex = buildHistoryDayStatsIndex();
-    historyDayStatsPromise = null;
-    return historyDayStatsIndex;
   });
   return historyDayStatsPromise;
 }
@@ -375,11 +388,48 @@ function historyDayStatsForMonth(year, month) {
 function weekCalKeys() {
   const keys = [];
   const now = new Date();
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + weekCalOffset * WEEK_CAL_STEP);
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() - i);
     keys.push(ymd(d));
   }
   return keys;
+}
+
+function syncWeekOffsetToDate(key) {
+  if (!key || key === 'unknown') return;
+  const [y, mo, da] = key.split('-').map(Number);
+  const target = new Date(y, mo - 1, da);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  target.setHours(0, 0, 0, 0);
+  const daysAgo = Math.round((today - target) / 86400000);
+  weekCalOffset = daysAgo <= 6 ? 0 : -Math.ceil((daysAgo - 6) / WEEK_CAL_STEP);
+}
+
+function shiftWeek(weeks) {
+  if (historyEditMode) return;
+  const next = weekCalOffset + weeks;
+  if (next > 0) return;
+  weekCalOffset = next;
+  renderWeekCalendar();
+}
+
+function updateWeekNavButtons() {
+  const prev = document.getElementById('hpWeekCalPrev');
+  const next = document.getElementById('hpWeekCalNext');
+  const locked = historyEditMode;
+  if (prev) {
+    prev.disabled = locked;
+    prev.style.opacity = locked ? '.35' : '';
+    prev.style.pointerEvents = locked ? 'none' : '';
+  }
+  if (next) {
+    const atCurrent = weekCalOffset >= 0;
+    next.disabled = locked || atCurrent;
+    next.style.opacity = (locked || atCurrent) ? '.35' : '';
+    next.style.pointerEvents = (locked || atCurrent) ? 'none' : '';
+  }
 }
 
 function appendCalDayMarkers(cell, stat) {
@@ -473,6 +523,7 @@ function updateHistoryEditChrome() {
     weekExpand.style.opacity = filterLocked ? '.45' : '';
     weekExpand.style.pointerEvents = filterLocked ? 'none' : '';
   }
+  updateWeekNavButtons();
   document.querySelectorAll('.hp-weekcal-day').forEach(el => {
     el.disabled = filterLocked;
     el.style.opacity = filterLocked ? '.45' : '';
@@ -522,11 +573,12 @@ function renderDateHeader() {
 function renderWeekCalendar() {
   const wrap = document.getElementById('hpWeekCalDays');
   if (!wrap) return;
+  const keys = weekCalKeys();
   const paint = () => {
     wrap.innerHTML = '';
     const todayKey = ymd(new Date());
     const dayStats = getHistoryDayStatsIndex();
-    weekCalKeys().forEach(key => {
+    keys.forEach(key => {
       const [y, mo, da] = key.split('-').map(Number);
       const d = new Date(y, mo - 1, da);
       const stat = dayStats.get(key);
@@ -550,13 +602,12 @@ function renderWeekCalendar() {
       cell.onclick = () => jumpToHistoryDate(key);
       wrap.appendChild(cell);
     });
+    updateWeekNavButtons();
   };
   paint();
-  if (isFirestoreActive() && !historyDayStatsIndex) {
-    ensureHistoryDayStatsIndex().then(() => {
-      if (typeof currentView !== 'undefined' && currentView === 'history') paint();
-    });
-  }
+  ensureWeekDayStats(keys).then(() => {
+    if (typeof currentView !== 'undefined' && currentView === 'history') paint();
+  });
 }
 
 function openCalendar() {
@@ -797,6 +848,10 @@ function buildHistoryRowEl(log, eid) {
   return row;
 }
 
+function buildHistoryEmptyHtml(iconName, title, desc) {
+  return `<div class="empty"><div class="empty-card"><div class="empty-icon">${ipIcon(iconName)}</div><div class="empty-title">${title}</div><div class="empty-desc">${desc}</div></div></div>`;
+}
+
 function renderHistory(options) {
   const h = document.getElementById('history');
   if (!h) return;
@@ -814,15 +869,15 @@ function renderHistory(options) {
   // 先重建列表本体，再渲染顶部日期头。这样即使日期头渲染（统计/周历可能触发
   // Firestore 查询）抛错，也不会让带单选框的编辑行残留在 DOM 中无法隐藏。
   if (!list.length) {
-    let emptyMsg;
+    let emptyHtml;
     if (isFirestoreActive() && !historyInitialLoadedInFirestore() && !historyEditMode) {
-      emptyMsg = `${ipIcon('rocket')}正在加载记录…`;
+      emptyHtml = buildHistoryEmptyHtml('rocket', '正在加载记录…', '请稍等片刻');
     } else if (historyEditMode) {
-      emptyMsg = `${ipIcon('inbox')}当前没有可删除的记录`;
+      emptyHtml = buildHistoryEmptyHtml('inbox', '当前没有可删除的记录', '换个日期再看看吧');
     } else {
-      emptyMsg = `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
+      emptyHtml = buildHistoryEmptyHtml('rocket', '还没有记录', '快去做任务赚星星吧！');
     }
-    h.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+    h.innerHTML = emptyHtml;
     historyRenderedCount = 0;
     renderHistoryHeaderSafe();
     if (historyEditMode) renderEditBar();

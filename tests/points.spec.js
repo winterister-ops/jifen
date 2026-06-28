@@ -30,16 +30,16 @@ test.describe('积分获取与消耗', () => {
 
   test('任务页与奖励页显示不同的 Hero', async ({ page }) => {
     await expect(page.locator('#mainHero')).toHaveClass(/main-hero--earn/);
-    await expect(page.locator('#mainHeroIcon')).toHaveText('💪');
+    await expect(page.locator('#mainHeroMain')).toContainText('任务');
 
     await page.locator('.bottom-nav-item[data-nav="rewards"]').click();
     await expect(page.locator('#mainHero')).toHaveClass(/main-hero--spend/);
-    await expect(page.locator('#mainHeroIcon')).toHaveText('🎁');
+    await expect(page.locator('#mainHeroMain')).toContainText('奖励');
     await expect(page.locator('.spend-item').first()).toBeVisible();
 
     await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
     await expect(page.locator('#mainHero')).toHaveClass(/main-hero--earn/);
-    await expect(page.locator('#mainHeroIcon')).toHaveText('💪');
+    await expect(page.locator('#mainHeroMain')).toContainText('任务');
   });
 
   test('积分不足时兑换奖励会提示', async ({ page }) => {

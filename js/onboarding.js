@@ -90,6 +90,13 @@ function openOnboardingReconfigure() {
   showOnboarding({ mode: 'reconfigure', step: 'habits' });
 }
 
+function cancelOnboardingReconfigure() {
+  if (onboardingMode !== 'reconfigure') return;
+  hideOnboarding();
+  switchView('settings');
+  render();
+}
+
 function setOnboardingStep(step) {
   if (!ONBOARDING_STEPS.includes(step)) return;
   onboardingStep = step;
@@ -133,6 +140,19 @@ function updateOnboardingChrome() {
     habitsHint.innerHTML = onboardingMode === 'reconfigure'
       ? '点一下可以增减习惯。头像和昵称请在「我的」里修改。'
       : '<strong>推荐</strong> 项已帮你选好，点一下可以增减。完成后每天点一下就能赚星星。';
+  }
+
+  document.querySelectorAll('.ob-reconfigure-cancel').forEach(btn => {
+    btn.hidden = onboardingMode !== 'reconfigure';
+  });
+
+  const habitsTitle = document.querySelector('#obStep-habits .ob-title');
+  if (habitsTitle) {
+    habitsTitle.textContent = onboardingMode === 'reconfigure' ? '调整今天的习惯' : '选今天的习惯';
+  }
+  const rewardsTitle = document.querySelector('#obStep-rewards .ob-title');
+  if (rewardsTitle) {
+    rewardsTitle.textContent = onboardingMode === 'reconfigure' ? '调整想要的奖励' : '选想要的奖励';
   }
 
   const rewardsDoneBtn = document.getElementById('obRewardsDoneBtn');
@@ -429,6 +449,7 @@ function initOnboardingEvents() {
     'ob-rewards-done': () => onboardingRewardsDone(),
     'ob-rewards-back': () => setOnboardingStep('habits'),
     'ob-rewards-restore': () => onboardingRestoreRewards(),
+    'ob-reconfigure-cancel': () => cancelOnboardingReconfigure(),
     'ob-enter-app': () => onboardingEnterApp(),
   };
 

@@ -196,4 +196,31 @@ test.describe('新用户引导', () => {
     await expect(page.locator('#mainView')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('#onboardingView')).toBeHidden();
   });
+
+  test('已完成用户可从我的页打开习惯计划重配', async ({ page }) => {
+    await gotoLoggedInApp(page);
+    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
+    await page.locator('[data-action="open-plan-reconfigure"]').click();
+    await expect(page.locator('#onboardingView')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#onboardingView')).toHaveClass(/is-reconfigure/);
+    await expect(page.locator('#obStep-habits')).toHaveClass(/active/);
+    await expect(page.locator('#obStep-habits .ob-title')).toHaveText('调整今天的习惯');
+  });
+
+  test('重配模式可取消且不保存改动', async ({ page }) => {
+    await gotoLoggedInApp(page);
+    await page.locator('.bottom-nav-item[data-nav="settings"]').click();
+    await page.locator('[data-action="open-plan-reconfigure"]').click();
+    await expect(page.locator('#obStep-habits')).toHaveClass(/active/, { timeout: 5000 });
+
+    await page.locator('#obStep-habits .ob-pick-card').filter({ hasText: '自己洗手' }).click();
+    await expect(page.locator('#obHabitCount')).toHaveText('已选 6 项');
+
+    await page.locator('#obStep-habits [data-ob-action="ob-reconfigure-cancel"]').click();
+    await expect(page.locator('#settingsView')).toBeVisible();
+    await expect(page.locator('#onboardingView')).toBeHidden();
+
+    await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
+    await expect(page.locator('.earn-item').filter({ hasText: '自己洗手' })).toBeVisible();
+  });
 });

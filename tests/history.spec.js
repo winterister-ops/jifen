@@ -73,6 +73,50 @@ test.describe('记录页日期跳转与周历', () => {
     }
   });
 
+  test('周历可切换上一周下一周', async ({ page }) => {
+    await page.evaluate(() => {
+      const ymd = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+      const mk = (d, h, min, name) => {
+        const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, min).getTime();
+        const p = (n) => String(n).padStart(2, '0');
+        return {
+          id: 'x',
+          emoji: '⭐',
+          name,
+          delta: 1,
+          time: `${d.getMonth() + 1}月${d.getDate()}日 ${p(h)}:${p(min)}`,
+          ts,
+          eid: 'e' + ts,
+        };
+      };
+      const hist = [...state.history];
+      const now = new Date();
+      for (let off = 13; off >= 7; off--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - off);
+        hist.push(mk(d, 10, 0, `上周${ymd(d)}`));
+      }
+      state.history = hist;
+      save();
+      if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+    });
+
+    const currentKeys = await page.evaluate(() => weekCalKeys());
+    await page.locator('#hpWeekCalPrev').click();
+    const prevKeys = await page.evaluate(() => weekCalKeys());
+    expect(prevKeys[0]).not.toBe(currentKeys[0]);
+    expect(prevKeys[6]).toBe(currentKeys[0]);
+
+    await page.locator('#hpWeekCalNext').click();
+    const backKeys = await page.evaluate(() => weekCalKeys());
+    expect(backKeys).toEqual(currentKeys);
+    await expect(page.locator('#hpWeekCalNext')).toBeDisabled();
+  });
+
   test('周历点击应跳转到较新日期', async ({ page }) => {
     const keys = await page.evaluate(() => weekCalKeys());
     const olderKey = keys[1];

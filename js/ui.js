@@ -171,7 +171,6 @@ function affordableRewardCount() {
 function renderEarnHero(els) {
   els.hero.classList.add('main-hero--earn');
   els.hero.classList.remove('main-hero--spend');
-  els.icon.textContent = '💪';
   const { earned, spent, earnCount, spendCount } = todaySummaryStats();
   if (!earnCount && !spendCount) {
     els.main.textContent = '今天还没记录，快去做任务吧';
@@ -193,7 +192,6 @@ function renderEarnHero(els) {
 function renderSpendHero(els) {
   els.hero.classList.add('main-hero--spend');
   els.hero.classList.remove('main-hero--earn');
-  els.icon.textContent = '🎁';
   const affordable = affordableRewardCount();
   els.main.textContent = affordable > 0 ? `可兑换 ${affordable} 个奖励` : '攒够星星就能换奖励啦';
   const locked = nearestLockedReward();
@@ -213,7 +211,6 @@ function renderMainHero() {
   if (!hero) return;
   const els = {
     hero,
-    icon: document.getElementById('mainHeroIcon'),
     main: document.getElementById('mainHeroMain'),
     sub: document.getElementById('mainHeroSub'),
   };
@@ -393,6 +390,7 @@ function switchView(view) {
   if (view === 'history') {
     if (typeof exitHistoryEdit === 'function') exitHistoryEdit();
     focusedDateKey = null;
+    weekCalOffset = 0;
     resetHistoryAllLimit();
     renderDateHeader();
     renderHistory();
@@ -531,11 +529,14 @@ function buildCatalogItemEl(it, mode) {
   const ptsClass = mode === 'earn' ? 'plus' : 'minus';
   const ptsLabel = mode === 'earn' ? `+${it.pts}` : `-${it.pts}`;
   row.className = 'catalog-row ' + (mode === 'earn' ? 'earn-item' : 'spend-item');
+  let locked = false;
   if (mode === 'earn') {
     row.dataset.taskId = it.id;
     if (isTaskInEarnCooldown(it.id)) row.classList.add('cooldown');
+  } else if (state.score < it.pts) {
+    locked = true;
+    row.classList.add('locked', 'disabled');
   }
-  if (mode === 'spend' && state.score < it.pts) row.classList.add('locked', 'disabled');
 
   const btn = document.createElement('button');
   btn.type = 'button';
@@ -549,24 +550,26 @@ function buildCatalogItemEl(it, mode) {
   nameSpan.className = 'catalog-name';
   nameSpan.textContent = it.name;
 
+  const subSpan = document.createElement('span');
+  subSpan.className = 'catalog-sub';
+  if (mode === 'earn') {
+    const hint = earnCooldownHintText(it.id);
+    if (hint) {
+      subSpan.classList.add('catalog-cooldown-hint');
+      subSpan.textContent = hint;
+    } else {
+      subSpan.textContent = '点一下完成';
+    }
+  } else {
+    subSpan.textContent = locked ? `还差 ${it.pts - state.score} 星` : '可以兑换';
+  }
+
   const ptsSpan = document.createElement('span');
   ptsSpan.className = 'catalog-pts ' + ptsClass;
   ptsSpan.textContent = ptsLabel;
 
-  const cooldownHint = mode === 'earn' ? earnCooldownHintText(it.id) : '';
-  if (cooldownHint) {
-    const info = document.createElement('span');
-    info.className = 'catalog-info';
-    const hintSpan = document.createElement('span');
-    hintSpan.className = 'catalog-cooldown-hint';
-    hintSpan.textContent = cooldownHint;
-    info.append(nameSpan, hintSpan);
-    btn.append(emojiSpan, info, ptsSpan);
-  } else {
-    btn.append(emojiSpan, nameSpan, ptsSpan);
-  }
+  btn.append(emojiSpan, nameSpan, subSpan, ptsSpan);
 
-  const locked = mode === 'spend' && state.score < it.pts;
   btn.onclick = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -786,10 +789,26 @@ const CLICK_ACTION_HANDLERS = {
   'enter-history-edit': () => enterHistoryEdit(),
   'exit-history-edit': () => exitHistoryEdit(),
   'open-calendar': () => openCalendar(),
+  'week-shift': el => shiftWeek(Number(el.dataset.weeks)),
   'select-all-history': () => selectAllVisibleHistory(),
   'show-delete-confirm': () => showDeleteConfirmModal(),
   'open-profile-modal': () => openProfileModal(),
   'open-catalog-manage': el => openCatalogManage(el.dataset.catalogType),
+  'open-plan-reconfigure': () => {
+    const launch = () => {
+      if (typeof openOnboardingReconfigure !== 'function') {
+        throw new Error('onboarding not ready');
+      }
+      openOnboardingReconfigure();
+    };
+    const chain = typeof ensureOnboardingReady === 'function'
+      ? ensureOnboardingReady().then(launch)
+      : Promise.resolve().then(launch);
+    chain.catch(err => {
+      console.warn('习惯计划页加载失败', err);
+      toast('加载失败，请稍后再试', 'error');
+    });
+  },
   'open-password-modal': () => openPasswordModal(),
   'logout': () => logoutApp(),
   'open-catalog-edit': el => openCatalogEditModal(el.dataset.catalogType),
