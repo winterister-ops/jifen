@@ -114,6 +114,9 @@ function mergeUserDocs(localRaw, remoteRaw) {
 }
 
 function readRtdbOnce(uid) {
+  if (typeof ENABLE_RTDB_MIGRATION === 'undefined' || !ENABLE_RTDB_MIGRATION) {
+    return Promise.resolve(null);
+  }
   if (!firebaseConfig.databaseURL) return Promise.resolve(null);
   return ensureFirebaseDatabase().then(() => {
     return firebase.database().ref('users/' + uid + '/data').once('value')
@@ -407,10 +410,18 @@ function writeHistoryEntryToFirestore(entry) {
 
 function retryPendingHistoryWrites() {
   if (!firestoreActive || !currentUser) return Promise.resolve();
-  const entries = (state.history || []).filter(h => h && h.eid);
+  const pending = typeof pendingHistoryWriteSet === 'function'
+    ? pendingHistoryWriteSet()
+    : new Set();
+  if (!pending.size) return Promise.resolve();
+  const entries = (state.history || []).filter(h => h && h.eid && pending.has(h.eid));
   if (!entries.length) return Promise.resolve();
   return Promise.all(
-    entries.map(h => writeHistoryEntryToFirestore(h).catch(err => console.warn('历史补写失败', err)))
+    entries.map(h => writeHistoryEntryToFirestore(h)
+      .then(() => {
+        if (typeof clearHistoryWritePending === 'function') clearHistoryWritePending(h.eid);
+      })
+      .catch(err => console.warn('历史补写失败', err)))
   );
 }
 

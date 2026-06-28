@@ -33,7 +33,7 @@ async function seedHistoryWeek(page) {
     }
     state.history = hist;
     save();
-    invalidateHistoryDateKeysCache();
+    if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
     return keys;
   });
 }
@@ -196,6 +196,7 @@ test.describe('Firestore 历史分页', () => {
 
   test('周历统计查询失败时仍显示日期格子', async ({ page }) => {
     await page.evaluate(async () => {
+      await ensureHistoryReady();
       const uid = 'test-playwright-user';
       window.__testFirestore.seedHistory(uid, [{
         eid: 'seed1', id: 'wash', emoji: '🧼', name: '离线记录', delta: 2, time: '', ts: Date.now(),
@@ -212,7 +213,8 @@ test.describe('Firestore 历史分页', () => {
   });
 
   test('历史缓存过期后进入记录页会重新渲染', async ({ page }) => {
-    await page.evaluate(() => {
+    await page.evaluate(async () => {
+      await ensureHistoryReady();
       const entry = {
         eid: 'late1', id: 'wash', emoji: '🧼', name: '迟到记录', delta: 3, time: '', ts: Date.now(),
       };

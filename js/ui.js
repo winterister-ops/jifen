@@ -127,13 +127,22 @@ function greetingText() {
 }
 
 function todaySummaryStats() {
-  const todayKey = typeof ymd === 'function' ? ymd(new Date()) : '';
+  const today = new Date();
+  const todayKey = today.getFullYear() + '-'
+    + String(today.getMonth() + 1).padStart(2, '0') + '-'
+    + String(today.getDate()).padStart(2, '0');
   let earned = 0;
   let spent = 0;
   let earnCount = 0;
   let spendCount = 0;
   (state.history || []).forEach(h => {
-    if (!h || typeof entryDateKey !== 'function' || entryDateKey(h) !== todayKey) return;
+    if (!h || typeof entryDate !== 'function') return;
+    const d = entryDate(h);
+    if (!d) return;
+    const key = d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
+    if (key !== todayKey) return;
     if (h.delta > 0) {
       earned += h.delta;
       earnCount++;
@@ -261,7 +270,21 @@ function applyViewVisibility(view) {
 }
 
 function switchView(view) {
-  if (currentView === 'history' && view !== 'history') exitHistoryEdit();
+  if (view === 'history' && typeof renderHistory !== 'function') {
+    if (typeof ensureHistoryReady === 'function') {
+      ensureHistoryReady()
+        .then(() => switchView(view))
+        .catch(err => {
+          console.warn('记录页加载失败', err);
+          if (typeof toast === 'function') toast('记录页加载失败，请稍后再试', 'error');
+        });
+      return;
+    }
+  }
+
+  if (currentView === 'history' && view !== 'history' && typeof exitHistoryEdit === 'function') {
+    exitHistoryEdit();
+  }
 
   if (view === 'tasks' || view === 'rewards') {
     currentView = view;
@@ -275,7 +298,7 @@ function switchView(view) {
   currentView = view;
   applyViewVisibility(view);
   if (view === 'history') {
-    exitHistoryEdit();
+    if (typeof exitHistoryEdit === 'function') exitHistoryEdit();
     focusedDateKey = null;
     resetHistoryAllLimit();
     renderDateHeader();

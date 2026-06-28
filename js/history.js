@@ -10,6 +10,7 @@ let historyAllLimit = HISTORY_PAGE_SIZE;
 let historyDayStatsIndex = null;
 let historyDateKeysMonthCache = { key: '', stats: null };
 let historyReversedCache = null; // { items, dateFirstIndex }
+let historyRenderedCount = 0;
 
 function ymd(d) {
   const p = n => String(n).padStart(2, '0');
@@ -216,15 +217,19 @@ function visibleHistoryPage() {
 }
 
 function loadMoreHistory() {
+  const beforeCount = visibleHistoryPage().items.length;
   if (isFirestoreActive()) {
     if (historyIsLoadingFromFirestore()) return;
     const p = loadMoreHistoryFromFirestore();
     renderHistory();
-    p.then(() => renderHistory());
+    p.then(loaded => {
+      if (loaded) renderHistory({ appendFrom: beforeCount });
+      else renderHistory();
+    });
     return;
   }
   historyAllLimit += HISTORY_PAGE_SIZE;
-  renderHistory();
+  renderHistory({ appendFrom: beforeCount });
 }
 
 let historyScrollBound = false;
@@ -267,6 +272,7 @@ function initHistoryInfiniteScroll() {
 
 function resetHistoryAllLimit() {
   historyAllLimit = HISTORY_PAGE_SIZE;
+  historyRenderedCount = 0;
 }
 
 function invalidateHistoryDateKeysCache() {
@@ -641,6 +647,9 @@ function deleteHistoryRecords(eids) {
 
   if (isFirestoreActive()) {
     bumpHistoryTotalCount(-set.size);
+    if (typeof clearHistoryWritePending === 'function') {
+      set.forEach(eid => clearHistoryWritePending(eid));
+    }
     softDeleteHistoryInFirestore([...set]).catch(err => console.warn('历史删除同步失败', err));
   }
 
@@ -688,12 +697,119 @@ function confirmDeleteSelected() {
   else render();
 }
 
-function renderHistory() {
+function removeHistoryStatusRows(container) {
+  container.querySelectorAll('.history-load-more-status').forEach(el => el.remove());
+}
+
+function appendHistoryStatus(container, page) {
+  if (page.hasMore && isFirestoreActive() && historyIsLoadingFromFirestore()) {
+    const status = document.createElement('div');
+    status.className = 'history-load-more-status';
+    status.textContent = '加载中…';
+    container.appendChild(status);
+  } else if (!page.hasMore) {
+    const status = document.createElement('div');
+    status.className = 'history-load-more-status';
+    status.textContent = '到底了';
+    container.appendChild(status);
+  }
+}
+
+function appendHistoryRows(container, list, startIndex) {
+  let lastKey = null;
+  if (startIndex > 0 && list[startIndex - 1]) {
+    lastKey = entryDateKey(list[startIndex - 1].log);
+  }
+  for (let i = startIndex; i < list.length; i++) {
+    const { log, eid } = list[i];
+    const key = entryDateKey(log);
+    if (key !== lastKey) {
+      lastKey = key;
+      const head = document.createElement('div');
+      head.className = 'date-head';
+      head.dataset.date = key;
+      head.textContent = dateHeadLabel(key);
+      container.appendChild(head);
+    }
+    container.appendChild(buildHistoryRowEl(log, eid));
+  }
+}
+
+function buildHistoryRowEl(log, eid) {
+  const row = document.createElement('div');
+  const plus = log.delta > 0;
+  const selected = selectedEids.has(eid);
+  row.className = 'catalog-row history-row'
+    + (historyEditMode ? ' catalog-row-edit' : '')
+    + (selected ? ' sel' : '');
+  row.dataset.eid = eid;
+  if (historyEditMode) row.setAttribute('aria-selected', selected ? 'true' : 'false');
+  const deltaLabel = `${plus ? '+' : ''}${log.delta}`;
+  const deltaClass = plus ? 'plus' : 'minus';
+
+  if (historyEditMode) {
+    const label = document.createElement('label');
+    label.className = 'catalog-check';
+    label.onclick = (e) => e.stopPropagation();
+
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = selected;
+    input.onchange = () => toggleHistorySelection(eid);
+    label.appendChild(input);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'catalog-main';
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'catalog-emoji';
+    emojiSpan.textContent = log.emoji;
+    btn.appendChild(emojiSpan);
+
+    appendHistoryInfo(btn, log);
+
+    const ptsSpan = document.createElement('span');
+    ptsSpan.className = 'catalog-pts ' + deltaClass;
+    ptsSpan.textContent = deltaLabel;
+    btn.appendChild(ptsSpan);
+
+    btn.onclick = () => toggleHistorySelection(eid);
+    row.append(label, btn);
+  } else {
+    const main = document.createElement('div');
+    main.className = 'catalog-main catalog-main-static';
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = 'catalog-emoji';
+    emojiSpan.textContent = log.emoji;
+    main.appendChild(emojiSpan);
+
+    appendHistoryInfo(main, log);
+
+    const ptsSpan = document.createElement('span');
+    ptsSpan.className = 'catalog-pts ' + deltaClass;
+    ptsSpan.textContent = deltaLabel;
+    main.appendChild(ptsSpan);
+
+    row.appendChild(main);
+  }
+  return row;
+}
+
+function renderHistory(options) {
   const h = document.getElementById('history');
   if (!h) return;
 
   const page = visibleHistoryPage();
   const list = page.items;
+  const appendFrom = options?.appendFrom;
+  const canAppend = !historyEditMode
+    && typeof appendFrom === 'number'
+    && appendFrom > 0
+    && appendFrom <= historyRenderedCount
+    && appendFrom <= list.length
+    && h.querySelector('.history-row');
 
   // 先重建列表本体，再渲染顶部日期头。这样即使日期头渲染（统计/周历可能触发
   // Firestore 查询）抛错，也不会让带单选框的编辑行残留在 DOM 中无法隐藏。
@@ -707,95 +823,26 @@ function renderHistory() {
       emptyMsg = `${ipIcon('rocket')}还没有记录，快去做任务赚积分吧！`;
     }
     h.innerHTML = `<div class="empty">${emptyMsg}</div>`;
+    historyRenderedCount = 0;
     renderHistoryHeaderSafe();
     if (historyEditMode) renderEditBar();
     return;
   }
 
-  h.innerHTML = '';
-  let lastKey = null;
-  list.forEach(({ log, eid }) => {
-    const key = entryDateKey(log);
-    if (key !== lastKey) {
-      lastKey = key;
-      const head = document.createElement('div');
-      head.className = 'date-head';
-      head.dataset.date = key;
-      head.textContent = dateHeadLabel(key);
-      h.appendChild(head);
-    }
-    const row = document.createElement('div');
-    const plus = log.delta > 0;
-    const selected = selectedEids.has(eid);
-    row.className = 'catalog-row history-row'
-      + (historyEditMode ? ' catalog-row-edit' : '')
-      + (selected ? ' sel' : '');
-    row.dataset.eid = eid;
-    if (historyEditMode) row.setAttribute('aria-selected', selected ? 'true' : 'false');
-    const deltaLabel = `${plus ? '+' : ''}${log.delta}`;
-    const deltaClass = plus ? 'plus' : 'minus';
-
-    if (historyEditMode) {
-      const label = document.createElement('label');
-      label.className = 'catalog-check';
-      label.onclick = (e) => e.stopPropagation();
-
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.checked = selected;
-      input.onchange = () => toggleHistorySelection(eid);
-      label.appendChild(input);
-
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'catalog-main';
-
-      const emojiSpan = document.createElement('span');
-      emojiSpan.className = 'catalog-emoji';
-      emojiSpan.textContent = log.emoji;
-      btn.appendChild(emojiSpan);
-
-      appendHistoryInfo(btn, log);
-
-      const ptsSpan = document.createElement('span');
-      ptsSpan.className = 'catalog-pts ' + deltaClass;
-      ptsSpan.textContent = deltaLabel;
-      btn.appendChild(ptsSpan);
-
-      btn.onclick = () => toggleHistorySelection(eid);
-      row.append(label, btn);
-    } else {
-      const main = document.createElement('div');
-      main.className = 'catalog-main catalog-main-static';
-
-      const emojiSpan = document.createElement('span');
-      emojiSpan.className = 'catalog-emoji';
-      emojiSpan.textContent = log.emoji;
-      main.appendChild(emojiSpan);
-
-      appendHistoryInfo(main, log);
-
-      const ptsSpan = document.createElement('span');
-      ptsSpan.className = 'catalog-pts ' + deltaClass;
-      ptsSpan.textContent = deltaLabel;
-      main.appendChild(ptsSpan);
-
-      row.appendChild(main);
-    }
-    h.appendChild(row);
-  });
-
-  if (page.hasMore && isFirestoreActive() && historyIsLoadingFromFirestore()) {
-    const status = document.createElement('div');
-    status.className = 'history-load-more-status';
-    status.textContent = '加载中…';
-    h.appendChild(status);
-  } else if (!page.hasMore) {
-    const status = document.createElement('div');
-    status.className = 'history-load-more-status';
-    status.textContent = '到底了';
-    h.appendChild(status);
+  if (canAppend) {
+    removeHistoryStatusRows(h);
+    appendHistoryRows(h, list, appendFrom);
+    appendHistoryStatus(h, page);
+    historyRenderedCount = list.length;
+    renderHistoryHeaderSafe();
+    scheduleHistoryAutoLoadCheck();
+    return;
   }
+
+  h.innerHTML = '';
+  appendHistoryRows(h, list, 0);
+  appendHistoryStatus(h, page);
+  historyRenderedCount = list.length;
 
   renderHistoryHeaderSafe();
   if (historyEditMode) renderEditBar();
@@ -808,12 +855,6 @@ function renderHistoryHeaderSafe() {
   } catch (err) {
     console.warn('记录页头部渲染失败', err);
   }
-}
-
-function nowStr() {
-  const d = new Date();
-  const p = n => String(n).padStart(2, '0');
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 initHistoryInfiniteScroll();

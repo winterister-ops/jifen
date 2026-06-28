@@ -1,11 +1,13 @@
-// ====== Firebase SDK 按需加载（database 仅用于 RTDB 迁移读取；firestore 登录后加载） ======
+// ====== Firebase SDK / 页面脚本按需加载（database 仅在显式开启 RTDB 迁移时使用） ======
 
 const FIREBASE_SDK_VERSION = '10.12.2';
 const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION;
+const FIRESTORE_SDK_URL = FIREBASE_CDN + '/firebase-firestore-compat.js';
 
 let firebaseDatabaseLoadPromise = null;
 let firebaseFirestoreLoadPromise = null;
 let firestorePersistencePromise = null;
+const appScriptLoadPromises = {};
 
 function ensureFirestorePersistence() {
   if (firestorePersistencePromise) return firestorePersistencePromise;
@@ -53,6 +55,44 @@ function loadFirebaseScript(src) {
   });
 }
 
+function appRuntimeCacheName() {
+  const v = (typeof APP_VERSION === 'string' && APP_VERSION) ? APP_VERSION : 'dev';
+  return 'stars-bank-runtime-' + v;
+}
+
+function precacheFirestoreSdk() {
+  if (typeof caches === 'undefined' || !FIRESTORE_SDK_URL) return Promise.resolve();
+  return caches.open(appRuntimeCacheName())
+    .then(cache => cache.add(FIRESTORE_SDK_URL))
+    .catch(err => {
+      console.warn('Firestore SDK 运行时缓存失败', err);
+    });
+}
+
+function appScriptUrl(path) {
+  const v = (typeof APP_VERSION === 'string' && APP_VERSION) ? APP_VERSION : '';
+  return path + (v ? '?v=' + encodeURIComponent(v) : '');
+}
+
+function ensureAppScript(path) {
+  if (appScriptLoadPromises[path]) return appScriptLoadPromises[path];
+  appScriptLoadPromises[path] = loadFirebaseScript(appScriptUrl(path)).catch(err => {
+    appScriptLoadPromises[path] = null;
+    throw err;
+  });
+  return appScriptLoadPromises[path];
+}
+
+function ensureHistoryReady() {
+  if (typeof renderHistory === 'function') return Promise.resolve();
+  return ensureAppScript('js/history.js');
+}
+
+function ensureOnboardingReady() {
+  if (typeof enterAppAfterCloudReady === 'function') return Promise.resolve();
+  return ensureAppScript('js/onboarding.js');
+}
+
 function ensureFirebaseDatabase() {
   if (typeof firebase !== 'undefined' && typeof firebase.database === 'function') {
     return Promise.resolve();
@@ -73,9 +113,10 @@ function ensureFirebaseFirestore() {
     return ensureFirestorePersistence();
   }
   if (!firebaseFirestoreLoadPromise) {
-    firebaseFirestoreLoadPromise = loadFirebaseScript(
-      FIREBASE_CDN + '/firebase-firestore-compat.js'
-    ).then(() => ensureFirestorePersistence()).catch(err => {
+    firebaseFirestoreLoadPromise = loadFirebaseScript(FIRESTORE_SDK_URL).then(() => {
+      precacheFirestoreSdk();
+      return ensureFirestorePersistence();
+    }).catch(err => {
       firebaseFirestoreLoadPromise = null;
       throw err;
     });

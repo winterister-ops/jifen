@@ -2,6 +2,7 @@
 
 const CLOUD_PUSH_DEBOUNCE_MS = 400;
 const REVOKED_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+const LOCAL_HISTORY_CACHE_LIMIT = 120;
 
 function markBoot(label) {
   if (typeof window === 'undefined' || !window.performance) return;
@@ -294,6 +295,12 @@ function entryDate(log) {
   return null;
 }
 
+function nowStr() {
+  const d = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function applyClearAndRevoked(history, lastClearAt, revokedSet) {
   return history.filter(h => {
     if (revokedSet.has(h.eid)) return false;
@@ -467,9 +474,76 @@ function loadLocal() {
   return defaultState();
 }
 
+function pendingHistoryKey() {
+  return KEY ? KEY + '_pending_history_writes' : null;
+}
+
+function readPendingHistoryWriteEids() {
+  const key = pendingHistoryKey();
+  if (!key) return [];
+  try {
+    const raw = JSON.parse(localStorage.getItem(key));
+    return Array.isArray(raw) ? raw.filter(Boolean) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function writePendingHistoryWriteEids(eids) {
+  const key = pendingHistoryKey();
+  if (!key) return;
+  const uniq = [...new Set((eids || []).filter(Boolean))];
+  if (uniq.length) localStorage.setItem(key, JSON.stringify(uniq));
+  else localStorage.removeItem(key);
+}
+
+function markHistoryWritePending(eid) {
+  if (!eid) return;
+  const eids = readPendingHistoryWriteEids();
+  if (!eids.includes(eid)) {
+    eids.push(eid);
+    writePendingHistoryWriteEids(eids);
+  }
+}
+
+function clearHistoryWritePending(eid) {
+  if (!eid) return;
+  writePendingHistoryWriteEids(readPendingHistoryWriteEids().filter(x => x !== eid));
+}
+
+function pendingHistoryWriteSet() {
+  return new Set(readPendingHistoryWriteEids());
+}
+
+function shouldSlimLocalHistoryCache(s) {
+  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) return true;
+  return !!(s && s.meta && s.meta.firestoreMigratedAt);
+}
+
+function slimLocalHistoryCache(s) {
+  if (!shouldSlimLocalHistoryCache(s)) return s;
+  const pending = pendingHistoryWriteSet();
+  const history = parseHistoryList(s.history);
+  if (history.length <= LOCAL_HISTORY_CACHE_LIMIT && !pending.size) return s;
+
+  const sorted = history.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const keep = new Map();
+  sorted.slice(-LOCAL_HISTORY_CACHE_LIMIT).forEach(h => {
+    if (h && h.eid) keep.set(h.eid, h);
+  });
+  sorted.forEach(h => {
+    if (h && h.eid && pending.has(h.eid)) keep.set(h.eid, h);
+  });
+
+  return {
+    ...s,
+    history: [...keep.values()].sort((a, b) => (a.ts || 0) - (b.ts || 0)),
+  };
+}
+
 function saveLocal() {
   if (!KEY) return;
-  localStorage.setItem(KEY, JSON.stringify(state));
+  localStorage.setItem(KEY, JSON.stringify(slimLocalHistoryCache(state)));
 }
 
 function firestoreCloudReady() {
@@ -543,7 +617,10 @@ function appendHistoryEntry(entry) {
   if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
   if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
     bumpHistoryTotalCount(1);
-    writeHistoryEntryToFirestore(entry).catch(err => console.warn('历史写入失败', err));
+    markHistoryWritePending(entry.eid);
+    writeHistoryEntryToFirestore(entry)
+      .then(() => clearHistoryWritePending(entry.eid))
+      .catch(err => console.warn('历史写入失败', err));
   }
 }
 
@@ -624,6 +701,33 @@ function isCloudInitialSyncConfirmed() {
   return cloudInitialSyncConfirmed;
 }
 
+function enterAppAfterCloudReadyLazy() {
+  const enter = () => {
+    if (typeof enterAppAfterCloudReady === 'function') {
+      enterAppAfterCloudReady();
+      return;
+    }
+    if (typeof switchView === 'function') switchView('tasks');
+    if (typeof render === 'function') render();
+    if (typeof lockPageScroll === 'function') lockPageScroll();
+  };
+
+  if (typeof enterAppAfterCloudReady === 'function') {
+    enter();
+    return;
+  }
+  if (typeof needsOnboarding === 'function' && needsOnboarding() && typeof ensureOnboardingReady === 'function') {
+    ensureOnboardingReady()
+      .then(enter)
+      .catch(err => {
+        console.warn('新用户引导加载失败', err);
+        enter();
+      });
+    return;
+  }
+  enter();
+}
+
 // 云端首次同步结束后调用。只有确认过云端，或本地已有旧数据时，才离开加载页。
 function markCloudInitialSyncSettled(confirmed) {
   cloudInitialSyncPending = false;
@@ -637,7 +741,7 @@ function markCloudInitialSyncSettled(confirmed) {
   if (cloudInitialSyncConfirmed || hasUsableLocalData) {
     appEntered = true;
     if (typeof hideAuthView === 'function') hideAuthView();
-    if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
+    enterAppAfterCloudReadyLazy();
     markBoot('app-entered-cloud');
     reportBootPerf();
     return;
@@ -665,7 +769,7 @@ function initCloud() {
   if (hasUsableLocalData) {
     appEntered = true;
     if (typeof hideAuthView === 'function') hideAuthView();
-    if (typeof enterAppAfterCloudReady === 'function') enterAppAfterCloudReady();
+    enterAppAfterCloudReadyLazy();
     markBoot('app-entered-local');
   }
   markBoot('cloud-init-start');
