@@ -5,7 +5,7 @@
   "scripts": {
     "sync-version": "node scripts/sync-version.js",
     "version": "node scripts/sync-version.js",
-    "postinstall": "chmod +x node_modules/@playwright/test/cli.js node_modules/playwright-core/cli.js 2>/dev/null || true",
+    "postinstall": "chmod +x node_modules/@playwright/test/cli.js node_modules/playwright-core/cli.js 2>/dev/null || true; npx playwright install chromium",
     "test": "node node_modules/@playwright/test/cli.js test",
     "test:ui": "node node_modules/@playwright/test/cli.js test --ui",
     "playwright": "node node_modules/@playwright/test/cli.js"

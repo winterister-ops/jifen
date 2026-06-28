@@ -29,9 +29,7 @@ serviceAccountKey.json
 *.swp
 *.swo
 
-# 本地测试依赖（playwright 等，非应用运行时依赖）
-# package-lock.json 不提交；需要锁定版本时可移除此行并提交 lock 文件
-package-lock.json
+# 本地测试产物（playwright 等，非应用运行时依赖）
 test-results/
 playwright-report/
 .pw-browsers/

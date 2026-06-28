@@ -6,6 +6,11 @@
 
 ```bash
 npm install
+```
+
+`postinstall` 会自动下载 Playwright 用的 Chromium。若下载失败或较慢，可手动重试：
+
+```bash
 npx playwright install chromium
 ```
 
