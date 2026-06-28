@@ -176,33 +176,27 @@ body.has-bottom-nav #settingsView .section-title {
 
 /* 任务/奖励双态 Hero */
 .main-hero {
-  margin-bottom: 16px;
-  padding: 14px 16px;
-  border-radius: 20px;
-  color: #fff;
-  box-shadow: var(--shadow);
-  transition: background .25s;
+  margin-bottom: 14px;
+  padding: 0 2px;
 }
-.main-hero--earn { background: linear-gradient(135deg, var(--blue), var(--accent2)); }
-.main-hero--spend { background: linear-gradient(135deg, var(--accent), var(--purple)); }
-.main-hero-head { display: flex; align-items: center; gap: 7px; }
-.main-hero-icon { font-size: 1.15rem; line-height: 1; }
-.main-hero-title { font-size: .9rem; font-weight: 800; letter-spacing: .02em; }
+.main-hero-line { display: flex; align-items: baseline; gap: 6px; }
+.main-hero-icon { font-size: 1.05rem; line-height: 1; flex-shrink: 0; }
 .main-hero-main {
-  font-size: 1.15rem; font-weight: 800; margin-top: 6px;
+  font-size: 1rem; font-weight: 800; color: var(--text);
+  min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.main-hero-main .plus { color: #fff; }
-.main-hero-main .minus { color: #fff; opacity: .92; }
+.main-hero-main .plus { color: var(--green); }
+.main-hero-main .minus { color: var(--accent); }
 .main-hero-sub {
-  display: inline-block; margin-top: 6px; padding: 0;
+  display: inline-block; margin-top: 4px; padding: 0;
   border: none; background: transparent; cursor: pointer;
-  font-family: inherit; font-size: .78rem; font-weight: 700;
-  color: rgba(255, 255, 255, .92);
+  font-family: inherit; font-size: .76rem; font-weight: 700;
+  color: #b08a5e;
   max-width: 100%;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.main-hero-sub:active { opacity: .7; }
+.main-hero-sub:active { opacity: .6; }
 .main-hero.hero-in-earn { animation: heroInEarn .22s ease; }
 .main-hero.hero-in-spend { animation: heroInSpend .22s ease; }
 @keyframes heroInEarn {

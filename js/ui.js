@@ -172,7 +172,6 @@ function renderEarnHero(els) {
   els.hero.classList.add('main-hero--earn');
   els.hero.classList.remove('main-hero--spend');
   els.icon.textContent = '💪';
-  els.title.textContent = '今天的习惯';
   const { earned, spent, earnCount, spendCount } = todaySummaryStats();
   if (!earnCount && !spendCount) {
     els.main.textContent = '今天还没记录，快去做任务吧';
@@ -195,7 +194,6 @@ function renderSpendHero(els) {
   els.hero.classList.add('main-hero--spend');
   els.hero.classList.remove('main-hero--earn');
   els.icon.textContent = '🎁';
-  els.title.textContent = '星星兑换站';
   const affordable = affordableRewardCount();
   els.main.textContent = affordable > 0 ? `可兑换 ${affordable} 个奖励` : '攒够星星就能换奖励啦';
   const locked = nearestLockedReward();
@@ -216,7 +214,6 @@ function renderMainHero() {
   const els = {
     hero,
     icon: document.getElementById('mainHeroIcon'),
-    title: document.getElementById('mainHeroTitle'),
     main: document.getElementById('mainHeroMain'),
     sub: document.getElementById('mainHeroSub'),
   };

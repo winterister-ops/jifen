@@ -6,19 +6,17 @@ test('首页关键壳层在样式缓存错配时仍保持布局', async ({ page 
   await gotoLoggedInApp(page);
   const layout = await page.evaluate(() => {
     const account = document.querySelector('.account-bar');
-    const hero = document.getElementById('mainHero');
+    const heroLine = document.querySelector('.main-hero-line');
     const star = document.querySelector('.star-balance .star-icon');
     return {
       accountDisplay: getComputedStyle(account).display,
       accountDirection: getComputedStyle(account).flexDirection,
-      heroRadius: getComputedStyle(hero).borderRadius,
-      heroBg: getComputedStyle(hero).backgroundImage,
+      heroLineDisplay: getComputedStyle(heroLine).display,
       starRadius: getComputedStyle(star).borderRadius,
     };
   });
   expect(layout.accountDisplay).toBe('flex');
   expect(layout.accountDirection).toBe('row');
-  expect(layout.heroRadius).toBe('20px');
-  expect(layout.heroBg).toContain('gradient');
+  expect(layout.heroLineDisplay).toBe('flex');
   expect(layout.starRadius).toBe('50%');
 });
