@@ -2,13 +2,10 @@ const { test, expect } = require('@playwright/test');
 const { gotoLoggedInApp, earnTask } = require('./helpers');
 
 async function seedHistoryWeek(page) {
-  return page.evaluate(() => {
-    const ymd = (d) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
+  await page.evaluate(async () => {
+    if (typeof ensureHistoryReady === 'function') await ensureHistoryReady();
+  });
+  await page.evaluate(() => {
     const mk = (d, h, min, name) => {
       const ts = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, min).getTime();
       const p = (n) => String(n).padStart(2, '0');
@@ -23,18 +20,40 @@ async function seedHistoryWeek(page) {
       };
     };
     const hist = [];
-    const keys = [];
-    const now = new Date();
-    for (let off = 6; off >= 0; off--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - off);
-      const key = ymd(d);
-      keys.push(key);
-      for (let i = 0; i < 5; i++) hist.push(mk(d, 10 + i, 0, `任务${key}-${i}`));
-    }
+    const keys = weekCalKeys();
+    keys.forEach((key) => {
+      const [y, m, d] = key.split('-').map(Number);
+      const date = new Date(y, m - 1, d);
+      for (let i = 0; i < 5; i++) hist.push(mk(date, 10 + i, 0, `任务${key}-${i}`));
+    });
     state.history = hist;
-    save();
     if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+    if (window.__testFirestore && currentUser) {
+      window.__testFirestore.seedHistory(currentUser.uid, hist.map(h => ({
+        eid: h.eid,
+        id: h.id,
+        emoji: h.emoji,
+        name: h.name,
+        delta: h.delta,
+        time: h.time,
+        ts: h.ts,
+        deleted: false,
+        deletedAt: null,
+      })));
+    }
+    save();
     return keys;
+  });
+  await page.waitForFunction(
+    () => typeof isFirestoreActive === 'function' && isFirestoreActive(),
+    null,
+    { timeout: 10000 },
+  );
+  await page.evaluate(async () => {
+    if (typeof reloadHistoryFromFirestore === 'function') {
+      await reloadHistoryFromFirestore(true);
+    }
+    if (typeof renderHistory === 'function') renderHistory();
   });
 }
 
@@ -53,9 +72,9 @@ async function readHistoryDateState(page, key) {
 test.describe('记录页日期跳转与周历', () => {
   test.beforeEach(async ({ page }) => {
     await gotoLoggedInApp(page);
-    await seedHistoryWeek(page);
     await page.locator('.bottom-nav-item[data-nav="history"]').click();
     await expect(page.locator('#historyView')).toBeVisible();
+    await seedHistoryWeek(page);
   });
 
   test('jumpToHistoryDate 连续跳转应定位到对应日期标题', async ({ page }) => {
@@ -109,7 +128,11 @@ test.describe('记录页日期跳转与周历', () => {
     await page.locator('#hpWeekCalPrev').click();
     const prevKeys = await page.evaluate(() => weekCalKeys());
     expect(prevKeys[0]).not.toBe(currentKeys[0]);
-    expect(prevKeys[6]).toBe(currentKeys[0]);
+    const toTs = (k) => {
+      const [y, m, d] = k.split('-').map(Number);
+      return new Date(y, m - 1, d).getTime();
+    };
+    expect(toTs(currentKeys[0]) - toTs(prevKeys[0])).toBe(7 * 86400000);
 
     await page.locator('#hpWeekCalNext').click();
     const backKeys = await page.evaluate(() => weekCalKeys());

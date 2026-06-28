@@ -3,9 +3,9 @@
 const HISTORY_PAGE_SIZE = 50;
 
 let focusedDateKey = null; // 日历高亮 / 滚动定位 'YYYY-MM-DD'
-// 周历为 7 天条带，按 6 天步进（相邻两屏共享 1 天作为锚点）。0=含今天的最近 7 天，-1=向前翻一屏，以此类推。
-const WEEK_CAL_STEP = 6;
+// 周历按自然周翻页（7 天一步），0=含今天的当前周，-1=上一周，以此类推。
 let weekCalOffset = 0;
+let calViewMode = 'week'; // 'week' | 'month'
 let calYear, calMonth; // calMonth: 0-11
 let historyEditMode = false;
 let selectedEids = new Set();
@@ -363,7 +363,7 @@ function historyDayStatsForMonth(year, month) {
     const end = dayRangeTs(year, month, daysInMonth).end;
     queryHistoryDayStatsFromFirestore(start, end).then(stats => {
       historyDateKeysMonthCache = { key: cacheKey, stats };
-      renderCalendar();
+      renderWeekCalendar();
     }).catch(err => {
       console.warn('月历统计查询失败', err);
       const prefix = year + '-' + String(month + 1).padStart(2, '0') + '-';
@@ -372,7 +372,7 @@ function historyDayStatsForMonth(year, month) {
         if (key.startsWith(prefix)) stats.set(key, stat);
       });
       historyDateKeysMonthCache = { key: cacheKey, stats };
-      renderCalendar();
+      renderWeekCalendar();
     });
     return historyDateKeysMonthCache.stats || new Map();
   }
@@ -385,12 +385,36 @@ function historyDayStatsForMonth(year, month) {
   return stats;
 }
 
+function calendarDowLabels() {
+  const labels = WEEKDAYS.map(w => w.slice(-1));
+  if (getWeekStartsOn() === 0) return labels;
+  return labels.slice(1).concat(labels[0]);
+}
+
+function jsDayToCalendarCol(jsDay) {
+  return (jsDay - getWeekStartsOn() + 7) % 7;
+}
+
+function monthLeadingBlanks(year, month) {
+  return jsDayToCalendarCol(new Date(year, month, 1).getDay());
+}
+
+function startOfWeekDate(d) {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = (date.getDay() - getWeekStartsOn() + 7) % 7;
+  date.setDate(date.getDate() - diff);
+  return date;
+}
+
 function weekCalKeys() {
-  const keys = [];
   const now = new Date();
-  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate() + weekCalOffset * WEEK_CAL_STEP);
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate() - i);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const currentWeekStart = startOfWeekDate(today);
+  const weekStart = new Date(currentWeekStart);
+  weekStart.setDate(weekStart.getDate() + weekCalOffset * 7);
+  const keys = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i);
     keys.push(ymd(d));
   }
   return keys;
@@ -400,11 +424,22 @@ function syncWeekOffsetToDate(key) {
   if (!key || key === 'unknown') return;
   const [y, mo, da] = key.split('-').map(Number);
   const target = new Date(y, mo - 1, da);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   target.setHours(0, 0, 0, 0);
-  const daysAgo = Math.round((today - target) / 86400000);
-  weekCalOffset = daysAgo <= 6 ? 0 : -Math.ceil((daysAgo - 6) / WEEK_CAL_STEP);
+  const targetWeekStart = startOfWeekDate(target);
+  const currentWeekStart = startOfWeekDate(today);
+  const diffDays = Math.round((targetWeekStart - currentWeekStart) / 86400000);
+  weekCalOffset = Math.min(0, Math.floor(diffDays / 7));
+}
+
+function shiftCalPeriod(delta) {
+  if (historyEditMode) return;
+  if (calViewMode === 'month') {
+    calShift(delta);
+    return;
+  }
+  shiftWeek(delta);
 }
 
 function shiftWeek(weeks) {
@@ -419,16 +454,27 @@ function updateWeekNavButtons() {
   const prev = document.getElementById('hpWeekCalPrev');
   const next = document.getElementById('hpWeekCalNext');
   const locked = historyEditMode;
+  const monthMode = calViewMode === 'month';
   if (prev) {
     prev.disabled = locked;
     prev.style.opacity = locked ? '.35' : '';
     prev.style.pointerEvents = locked ? 'none' : '';
+    prev.title = monthMode ? '上个月' : '上一周';
+    prev.setAttribute('aria-label', prev.title);
   }
   if (next) {
-    const atCurrent = weekCalOffset >= 0;
+    let atCurrent = false;
+    if (monthMode) {
+      const now = new Date();
+      atCurrent = calYear === now.getFullYear() && calMonth === now.getMonth();
+    } else {
+      atCurrent = weekCalOffset >= 0;
+    }
     next.disabled = locked || atCurrent;
     next.style.opacity = (locked || atCurrent) ? '.35' : '';
     next.style.pointerEvents = (locked || atCurrent) ? 'none' : '';
+    next.title = monthMode ? '下个月' : '下一周';
+    next.setAttribute('aria-label', next.title);
   }
 }
 
@@ -522,6 +568,10 @@ function updateHistoryEditChrome() {
     weekExpand.disabled = filterLocked;
     weekExpand.style.opacity = filterLocked ? '.45' : '';
     weekExpand.style.pointerEvents = filterLocked ? 'none' : '';
+    const expanded = calViewMode === 'month';
+    weekExpand.title = expanded ? '收起月历' : '展开月历';
+    weekExpand.setAttribute('aria-label', weekExpand.title);
+    weekExpand.setAttribute('aria-pressed', expanded ? 'true' : 'false');
   }
   updateWeekNavButtons();
   document.querySelectorAll('.hp-weekcal-day').forEach(el => {
@@ -570,9 +620,72 @@ function renderDateHeader() {
   if (historyEditMode) renderEditBar();
 }
 
+function updateWeekCalChrome() {
+  const root = document.getElementById('hpWeekCal');
+  const dowHead = document.getElementById('hpWeekCalDowHead');
+  if (root) root.classList.toggle('is-month', calViewMode === 'month');
+  renderWeekCalDowHead();
+  if (dowHead) dowHead.hidden = false;
+  updateWeekNavButtons();
+  const weekExpand = document.getElementById('hpWeekCalExpand');
+  if (weekExpand) {
+    const expanded = calViewMode === 'month';
+    weekExpand.title = expanded ? '收起月历' : '展开月历';
+    weekExpand.setAttribute('aria-label', weekExpand.title);
+    weekExpand.setAttribute('aria-pressed', expanded ? 'true' : 'false');
+  }
+}
+
+function renderWeekCalDowHead() {
+  const head = document.getElementById('hpWeekCalDowHead');
+  if (!head) return;
+  head.innerHTML = calendarDowLabels().map(label => `<span>${label}</span>`).join('');
+}
+
+function measureAndSetCalBodyHeight(animate) {
+  const body = document.getElementById('hpWeekCalBody');
+  if (!body) return;
+  body.style.height = 'auto';
+  const nextHeight = body.scrollHeight;
+  if (!animate) {
+    body.style.height = nextHeight + 'px';
+    return;
+  }
+  const prevHeight = body.getBoundingClientRect().height;
+  body.style.height = prevHeight + 'px';
+  requestAnimationFrame(() => {
+    body.style.height = nextHeight + 'px';
+  });
+}
+
+function scheduleHistoryStickyOffsetAfterTransition() {
+  const body = document.getElementById('hpWeekCalBody');
+  if (!body) {
+    updateHistoryStickyOffset();
+    return;
+  }
+  const onEnd = (ev) => {
+    if (ev.propertyName !== 'height') return;
+    body.removeEventListener('transitionend', onEnd);
+    updateHistoryStickyOffset();
+  };
+  body.addEventListener('transitionend', onEnd);
+  requestAnimationFrame(() => updateHistoryStickyOffset());
+}
+
 function renderWeekCalendar() {
   const wrap = document.getElementById('hpWeekCalDays');
+  const root = document.getElementById('hpWeekCal');
   if (!wrap) return;
+  updateWeekCalChrome();
+  if (root) root.classList.add('is-cal-transitioning');
+  if (calViewMode === 'month') {
+    renderInlineMonthCalendar(wrap);
+    measureAndSetCalBodyHeight(true);
+    scheduleHistoryStickyOffsetAfterTransition();
+    requestAnimationFrame(() => root?.classList.remove('is-cal-transitioning'));
+    return;
+  }
   const keys = weekCalKeys();
   const paint = () => {
     wrap.innerHTML = '';
@@ -580,7 +693,6 @@ function renderWeekCalendar() {
     const dayStats = getHistoryDayStatsIndex();
     keys.forEach(key => {
       const [y, mo, da] = key.split('-').map(Number);
-      const d = new Date(y, mo - 1, da);
       const stat = dayStats.get(key);
       const cell = document.createElement('button');
       cell.type = 'button';
@@ -589,15 +701,11 @@ function renderWeekCalendar() {
         + (key === focusedDateKey ? ' sel' : '');
       cell.disabled = historyEditMode;
 
-      const dow = document.createElement('span');
-      dow.className = 'hp-weekcal-dow';
-      dow.textContent = key === todayKey ? '今' : WEEKDAYS[d.getDay()].slice(-1);
-
       const num = document.createElement('span');
       num.className = 'hp-weekcal-num';
       num.textContent = da;
 
-      cell.append(dow, num);
+      cell.appendChild(num);
       appendCalDayMarkers(cell, stat);
       cell.onclick = () => jumpToHistoryDate(key);
       wrap.appendChild(cell);
@@ -606,71 +714,90 @@ function renderWeekCalendar() {
   };
   paint();
   ensureWeekDayStats(keys).then(() => {
-    if (typeof currentView !== 'undefined' && currentView === 'history') paint();
+    if (typeof currentView !== 'undefined' && currentView === 'history' && calViewMode === 'week') paint();
   });
+  measureAndSetCalBodyHeight(true);
+  scheduleHistoryStickyOffsetAfterTransition();
+  requestAnimationFrame(() => root?.classList.remove('is-cal-transitioning'));
 }
 
-function openCalendar() {
-  if (historyEditMode) return;
-  let base;
-  if (focusedDateKey && focusedDateKey !== 'unknown') {
-    const [y, m] = focusedDateKey.split('-').map(Number);
-    base = new Date(y, m - 1, 1);
-  } else {
-    base = new Date();
-  }
-  calYear = base.getFullYear();
-  calMonth = base.getMonth();
-  renderCalendar();
-  document.getElementById('calModal').classList.add('show');
-}
-
-function hideCalendar() {
-  document.getElementById('calModal').classList.remove('show');
-}
-
-function calShift(deltaMonths) {
-  const d = new Date(calYear, calMonth + deltaMonths, 1);
-  calYear = d.getFullYear();
-  calMonth = d.getMonth();
-  renderCalendar();
-}
-
-function calSelect(key) {
-  hideCalendar();
-  jumpToHistoryDate(key);
-}
-
-function calPickToday() {
-  calSelect(ymd(new Date()));
-}
-
-function renderCalendar() {
-  document.getElementById('calTitle').textContent = `${calYear}年${calMonth + 1}月`;
-  const grid = document.getElementById('calGrid');
-  grid.innerHTML = '';
-  const startDow = new Date(calYear, calMonth, 1).getDay();
+function renderInlineMonthCalendar(wrap) {
+  wrap.innerHTML = '';
+  const leading = monthLeadingBlanks(calYear, calMonth);
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const todayKey = ymd(new Date());
   const dayStats = historyDayStatsForMonth(calYear, calMonth);
 
-  for (let i = 0; i < startDow; i++) {
-    const b = document.createElement('div');
-    b.className = 'cal-cell blank';
-    grid.appendChild(b);
+  for (let i = 0; i < leading; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'hp-weekcal-day blank';
+    blank.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(blank);
   }
   for (let day = 1; day <= daysInMonth; day++) {
     const key = ymd(new Date(calYear, calMonth, day));
+    const stat = dayStats.get(key);
     const cell = document.createElement('button');
     cell.type = 'button';
-    cell.className = 'cal-cell'
+    cell.className = 'hp-weekcal-day'
       + (key === todayKey ? ' today' : '')
       + (key === focusedDateKey ? ' sel' : '');
-    cell.textContent = day;
-    appendCalDayMarkers(cell, dayStats.get(key));
-    cell.onclick = () => calSelect(key);
-    grid.appendChild(cell);
+    cell.disabled = historyEditMode;
+
+    const num = document.createElement('span');
+    num.className = 'hp-weekcal-num';
+    num.textContent = day;
+
+    cell.appendChild(num);
+    appendCalDayMarkers(cell, stat);
+    cell.onclick = () => jumpToHistoryDate(key);
+    wrap.appendChild(cell);
   }
+  updateWeekNavButtons();
+}
+
+function toggleMonthView() {
+  if (historyEditMode) return;
+  calViewMode = calViewMode === 'week' ? 'month' : 'week';
+  if (calViewMode === 'month') {
+    let base;
+    if (focusedDateKey && focusedDateKey !== 'unknown') {
+      const [y, m] = focusedDateKey.split('-').map(Number);
+      base = new Date(y, m - 1, 1);
+    } else {
+      base = new Date();
+    }
+    calYear = base.getFullYear();
+    calMonth = base.getMonth();
+  }
+  renderWeekCalendar();
+}
+
+function setWeekStartsOn(value) {
+  const next = value === 1 ? 1 : 0;
+  if (getWeekStartsOn() === next) return;
+  state.prefs = { ...normalizePrefs(state.prefs), weekStartsOn: next };
+  state.meta = { ...defaultMeta(), ...state.meta, prefsUpdatedAt: Date.now(), updatedAt: Date.now() };
+  save();
+  if (typeof renderSettings === 'function') renderSettings();
+  if (focusedDateKey && focusedDateKey !== 'unknown') syncWeekOffsetToDate(focusedDateKey);
+  else weekCalOffset = 0;
+  if (typeof currentView !== 'undefined' && currentView === 'history') renderWeekCalendar();
+}
+
+function calShift(deltaMonths) {
+  const d = new Date(calYear, calMonth + deltaMonths, 1);
+  const now = new Date();
+  const target = new Date(d.getFullYear(), d.getMonth(), 1);
+  const current = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (target > current) return;
+  calYear = d.getFullYear();
+  calMonth = d.getMonth();
+  renderWeekCalendar();
+}
+
+function openCalendar() {
+  toggleMonthView();
 }
 
 function deleteHistoryRecords(eids) {

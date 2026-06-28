@@ -542,9 +542,18 @@ body.history-editing.has-bottom-nav .hp-editbar {
 }
 .hp-weekcal {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hp-weekcal-controls {
+  display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 12px;
+}
+.hp-weekcal-controls-spacer {
+  flex: 1;
+  min-width: 0;
 }
 .hp-weekcal-nav {
   flex: 0 0 34px;
@@ -630,6 +639,42 @@ body.history-editing.has-bottom-nav .hp-editbar {
 .hp-weekcal-expand:active { transform: scale(.9); }
 .hp-weekcal-expand:disabled { cursor: default; }
 .hp-weekcal-expand .ui-ic { width: 22px; height: 22px; }
+.hp-weekcal.is-month .hp-weekcal-expand {
+  background: var(--blue);
+  box-shadow: none;
+}
+.hp-weekcal.is-month .hp-weekcal-expand .ui-ic { filter: brightness(0) invert(1); }
+.hp-weekcal-body {
+  overflow: hidden;
+  transition: height .32s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hp-weekcal-days {
+  transition: opacity .22s ease, transform .22s ease;
+}
+.hp-weekcal.is-cal-transitioning .hp-weekcal-days {
+  opacity: .55;
+  transform: translateY(4px);
+}
+.hp-weekcal-dow-head {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.hp-weekcal-dow-head span {
+  text-align: center;
+  font-size: .65rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.hp-weekcal-day.blank {
+  visibility: hidden;
+  pointer-events: none;
+  box-shadow: none;
+  background: transparent;
+  border-color: transparent;
+  cursor: default;
+}
 
 .cal-btn {
   flex: 0 0 auto; width: 48px; border: none; border-radius: 16px;
@@ -639,27 +684,6 @@ body.history-editing.has-bottom-nav .hp-editbar {
 .cal-btn:active { transform: scale(.9); }
 .cal-btn-sm { width: 42px; font-size: 1.2rem; }
 
-/* 自定义日历 */
-.cal-box { max-width: 360px; }
-.cal-head { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-.cal-nav {
-  border: none; background: #fff0d6; color: var(--text); border-radius: 12px;
-  width: 38px; height: 38px; font-size: 1.05rem; font-weight: 800; cursor: pointer;
-  font-family: inherit; flex: 0 0 auto; line-height: 1;
-}
-.cal-nav:active { transform: scale(.9); }
-.cal-title { flex: 1; text-align: center; font-size: 1.08rem; font-weight: 800; }
-.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 6px; }
-.cal-week span { text-align: center; font-size: .78rem; font-weight: 700; color: #b08a5e; }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-cell {
-  aspect-ratio: 1; border: none; background: transparent; border-radius: 12px;
-  font-family: var(--font-num); font-size: .95rem; font-weight: 700; color: var(--text);
-  cursor: pointer; position: relative;
-  display: flex; align-items: center; justify-content: center;
-}
-.cal-cell.blank { visibility: hidden; cursor: default; }
-.cal-cell:active { transform: scale(.9); }
 .cal-marks {
   position: absolute;
   bottom: 4px;
@@ -679,12 +703,6 @@ body.history-editing.has-bottom-nav .hp-editbar {
 }
 .cal-marks .dot.earn { background: var(--green); }
 .cal-marks .dot.spend { background: var(--accent); }
-.cal-cell.today { box-shadow: inset 0 0 0 2px var(--accent2); }
-.cal-cell.sel {
-  background: var(--blue); color: #fff;
-}
-.cal-cell.sel .cal-marks .dot.earn,
-.cal-cell.sel .cal-marks .dot.spend { background: #fff; }
 
 .toolbar { display: flex; gap: 10px; margin-top: 14px; }
 .btn-soft {
@@ -882,6 +900,34 @@ footer .ui-ic { width: .95rem; height: .95rem; }
 .menu-title { display: block; font-size: 1rem; font-weight: 800; color: var(--text); }
 .menu-desc { display: block; font-size: .76rem; font-weight: 700; color: var(--muted); margin-top: 3px; }
 .menu-arrow { font-size: 1.35rem; font-weight: 800; color: #d2a679; flex-shrink: 0; }
+
+.seg-pills {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: #fff3e0;
+  border: 1px solid rgba(255, 226, 191, .8);
+}
+.seg-pill {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: .72rem;
+  font-weight: 800;
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s, color .2s, transform .12s;
+}
+.seg-pill:active { transform: scale(.94); }
+.seg-pill.active {
+  background: #fff;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
 
 .section-label {
   font-size: .78rem;

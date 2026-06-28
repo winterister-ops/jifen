@@ -391,6 +391,7 @@ function switchView(view) {
     if (typeof exitHistoryEdit === 'function') exitHistoryEdit();
     focusedDateKey = null;
     weekCalOffset = 0;
+    calViewMode = 'week';
     resetHistoryAllLimit();
     renderDateHeader();
     renderHistory();
@@ -414,6 +415,12 @@ function switchView(view) {
 function renderSettings() {
   document.getElementById('setAvatar').textContent = state.profile.avatar;
   document.getElementById('setName').textContent = state.profile.name;
+  const weekStart = getWeekStartsOn();
+  document.querySelectorAll('#weekStartPills .seg-pill').forEach(btn => {
+    const v = Number(btn.dataset.weekStart);
+    btn.classList.toggle('active', v === weekStart);
+    btn.setAttribute('aria-pressed', v === weekStart ? 'true' : 'false');
+  });
 }
 
 function saveProfile() {
@@ -774,7 +781,6 @@ const OVERLAY_DISMISS_HANDLERS = {
   catalogEditModal: () => hideCatalogEditModal(),
   passwordModal: () => hidePasswordModal(),
   profileModal: () => hideProfileModal(),
-  calModal: () => hideCalendar(),
   spendModal: () => hideSpendModal(),
   deleteModal: () => hideDeleteConfirmModal(),
 };
@@ -788,8 +794,9 @@ const CLICK_ACTION_HANDLERS = {
   'show-forgot-send-panel': () => showForgotSendPanel(),
   'enter-history-edit': () => enterHistoryEdit(),
   'exit-history-edit': () => exitHistoryEdit(),
-  'open-calendar': () => openCalendar(),
-  'week-shift': el => shiftWeek(Number(el.dataset.weeks)),
+  'open-calendar': () => toggleMonthView(),
+  'set-week-start': el => setWeekStartsOn(Number(el.dataset.weekStart)),
+  'week-shift': el => shiftCalPeriod(Number(el.dataset.weeks)),
   'select-all-history': () => selectAllVisibleHistory(),
   'show-delete-confirm': () => showDeleteConfirmModal(),
   'open-profile-modal': () => openProfileModal(),
@@ -820,9 +827,6 @@ const CLICK_ACTION_HANDLERS = {
   'submit-change-password': () => submitChangePassword(),
   'hide-profile-modal': () => hideProfileModal(),
   'save-profile': () => saveProfile(),
-  'cal-shift': el => calShift(Number(el.dataset.months)),
-  'hide-calendar': () => hideCalendar(),
-  'cal-pick-today': () => calPickToday(),
   'hide-spend-modal': () => hideSpendModal(),
   'confirm-spend': () => confirmSpend(),
   'hide-delete-confirm-modal': () => hideDeleteConfirmModal(),

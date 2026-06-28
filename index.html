@@ -10,13 +10,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.98">
+<meta name="app-version" content="0.0.99">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="styles.css?v=0.0.98">
+<link rel="stylesheet" href="styles.css?v=0.0.99">
 <style id="critical-main-shell">
 .account-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:10px 14px;background:#fff;border-radius:20px;box-shadow:0 4px 14px rgba(200,140,60,.1);border:1px solid rgba(255,226,191,.6)}.account-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.account-bar .avatar{width:40px;height:40px;font-size:1.4rem}.account-bar .welcome{min-width:0;flex:1;display:flex;align-items:baseline;gap:8px}.account-bar .greet-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.account-bar .sub{white-space:nowrap}.star-balance{display:flex;align-items:center;gap:6px;flex-shrink:0;background:transparent;padding:0}.star-balance .star-icon{width:28px;height:28px;border-radius:50%;background:#ffb627;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(200,140,60,.1)}.star-balance-ic{width:1rem;height:1rem;filter:brightness(0) invert(1)}.star-balance .score-num{font-family:"Fredoka",sans-serif;font-size:1.35rem;font-weight:700;line-height:1;color:#6b4a2b;min-width:1.1em;text-align:center}.main-hero{margin-bottom:14px;padding:12px 14px;background:linear-gradient(135deg,#fff9f0 0%,#fff 100%);border-radius:20px;border:1px solid rgba(255,226,191,.55);box-shadow:0 4px 14px rgba(200,140,60,.1)}.main-hero-line{display:flex;align-items:baseline;gap:6px}.main-hero-icon{font-size:1.05rem;line-height:1;flex-shrink:0}.main-hero-main{font-size:1rem;font-weight:800;color:#6b4a2b;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.main-hero-sub{display:inline-block;margin-top:6px;padding:0;border:none;background:transparent;font:inherit;font-size:.76rem;font-weight:700;color:#b08a5e;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 </style>
@@ -208,10 +208,16 @@ scrollTo(0, 0);
    </div>
 
    <div class="hp-weekcal" id="hpWeekCal">
-    <button type="button" class="hp-weekcal-nav" id="hpWeekCalPrev" data-action="week-shift" data-weeks="-1" title="上一周" aria-label="上一周">‹</button>
-    <div class="hp-weekcal-days" id="hpWeekCalDays"></div>
-    <button type="button" class="hp-weekcal-nav" id="hpWeekCalNext" data-action="week-shift" data-weeks="1" title="下一周" aria-label="下一周">›</button>
-    <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" data-action="open-calendar" title="万年历" aria-label="打开万年历"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
+    <div class="hp-weekcal-controls">
+     <button type="button" class="hp-weekcal-nav" id="hpWeekCalPrev" data-action="week-shift" data-weeks="-1" title="上一周" aria-label="上一周">‹</button>
+     <div class="hp-weekcal-controls-spacer" aria-hidden="true"></div>
+     <button type="button" class="hp-weekcal-nav" id="hpWeekCalNext" data-action="week-shift" data-weeks="1" title="下一周" aria-label="下一周">›</button>
+     <button type="button" class="hp-weekcal-expand" id="hpWeekCalExpand" data-action="open-calendar" title="展开月历" aria-label="展开月历" aria-pressed="false"><img class="ui-ic" src="icons/calendar.svg" alt=""></button>
+    </div>
+    <div class="hp-weekcal-body" id="hpWeekCalBody">
+     <div class="hp-weekcal-dow-head" id="hpWeekCalDowHead"></div>
+     <div class="hp-weekcal-days" id="hpWeekCalDays"></div>
+    </div>
    </div>
   </div>
 
@@ -262,6 +268,21 @@ scrollTo(0, 0);
       </span>
       <span class="menu-arrow">›</span>
     </button>
+  </div>
+
+  <div class="section-label">偏好</div>
+  <div class="menu-list">
+    <div class="menu-item menu-item-static">
+      <span class="menu-ic"><img class="ui-ic" src="icons/calendar.svg" alt=""></span>
+      <span class="menu-tx">
+        <span class="menu-title">日历每周第一天</span>
+        <span class="menu-desc">记录页周历与月历按同一规则排列</span>
+      </span>
+      <div class="seg-pills" id="weekStartPills">
+        <button type="button" class="seg-pill" data-action="set-week-start" data-week-start="0">周日</button>
+        <button type="button" class="seg-pill" data-action="set-week-start" data-week-start="1">周一</button>
+      </div>
+    </div>
   </div>
 
   <div id="settingsSection">
@@ -390,26 +411,6 @@ scrollTo(0, 0);
   </div>
 </div>
 
-<div class="modal-overlay" id="calModal">
-  <div class="modal-box cal-box">
-    <div class="cal-head">
-      <button type="button" class="cal-nav" data-action="cal-shift" data-months="-12" title="上一年">«</button>
-      <button type="button" class="cal-nav" data-action="cal-shift" data-months="-1" title="上个月">‹</button>
-      <div class="cal-title" id="calTitle"></div>
-      <button type="button" class="cal-nav" data-action="cal-shift" data-months="1" title="下个月">›</button>
-      <button type="button" class="cal-nav" data-action="cal-shift" data-months="12" title="下一年">»</button>
-    </div>
-    <div class="cal-week">
-      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-    <div class="modal-btns">
-      <button type="button" class="modal-btn cancel" data-action="hide-calendar">取消</button>
-      <button type="button" class="modal-btn confirm" data-action="cal-pick-today">回到今天</button>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="spendModal">
   <div class="modal-box">
     <div class="modal-emoji" id="spendModalEmoji"></div>
@@ -437,13 +438,13 @@ scrollTo(0, 0);
 <!-- Firebase 认证 SDK（firestore 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.98"></script>
-<script src="js/firebase-loader.js?v=0.0.98"></script>
-<script src="js/sync.js?v=0.0.98"></script>
-<script src="js/firestore-sync.js?v=0.0.98"></script>
-<script src="js/catalog.js?v=0.0.98"></script>
-<script src="js/ui.js?v=0.0.98"></script>
-<script src="js/auth.js?v=0.0.98"></script>
-<script src="js/pwa.js?v=0.0.98"></script>
+<script src="data.js?v=0.0.99"></script>
+<script src="js/firebase-loader.js?v=0.0.99"></script>
+<script src="js/sync.js?v=0.0.99"></script>
+<script src="js/firestore-sync.js?v=0.0.99"></script>
+<script src="js/catalog.js?v=0.0.99"></script>
+<script src="js/ui.js?v=0.0.99"></script>
+<script src="js/auth.js?v=0.0.99"></script>
+<script src="js/pwa.js?v=0.0.99"></script>
 </body>
 </html>

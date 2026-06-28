@@ -59,11 +59,24 @@ function defaultMeta() {
     lastClearAt: 0,
     profileUpdatedAt: 0,
     catalogUpdatedAt: 0,
+    prefsUpdatedAt: 0,
     scoreUpdatedAt: 0,
     updatedAt: 0,
     onboardingDone: false,
     firestoreMigratedAt: 0,
   };
+}
+
+function defaultPrefs() {
+  return { weekStartsOn: 0 };
+}
+
+function normalizePrefs(raw) {
+  return { weekStartsOn: raw?.weekStartsOn === 1 ? 1 : 0 };
+}
+
+function getWeekStartsOn() {
+  return normalizePrefs(state.prefs).weekStartsOn;
 }
 
 function needsOnboarding(s) {
@@ -133,7 +146,15 @@ function normalizeCatalog(raw) {
 }
 
 function defaultState() {
-  return { score: 0, history: [], profile: defaultProfile(), revoked: {}, catalog: defaultCatalog(), meta: defaultMeta() };
+  return {
+    score: 0,
+    history: [],
+    profile: defaultProfile(),
+    prefs: defaultPrefs(),
+    revoked: {},
+    catalog: defaultCatalog(),
+    meta: defaultMeta(),
+  };
 }
 
 function normalizeRevoked(raw) {
@@ -187,6 +208,11 @@ function buildUserDocPatch(prev, next) {
 
   if (!prev || prev.score !== next.score) patch.score = next.score;
 
+  if (!prev || JSON.stringify(prev.prefs) !== JSON.stringify(next.prefs)) {
+    patch.prefs = next.prefs;
+    hasStructuralChange = true;
+  }
+
   if (!prev || JSON.stringify(prev.profile) !== JSON.stringify(next.profile)) {
     patch.profile = next.profile;
     hasStructuralChange = true;
@@ -201,7 +227,8 @@ function buildUserDocPatch(prev, next) {
   const metaConflict = !prev
     || prevMeta.lastClearAt !== nextMeta.lastClearAt
     || prevMeta.profileUpdatedAt !== nextMeta.profileUpdatedAt
-    || prevMeta.catalogUpdatedAt !== nextMeta.catalogUpdatedAt;
+    || prevMeta.catalogUpdatedAt !== nextMeta.catalogUpdatedAt
+    || prevMeta.prefsUpdatedAt !== nextMeta.prefsUpdatedAt;
   if (metaConflict) {
     patch.meta = next.meta;
     hasStructuralChange = true;
@@ -328,9 +355,10 @@ function normalizeState(raw, forMerge, options) {
   const meta = { ...defaultMeta(), ...(raw.meta || {}) };
   let revoked = normalizeRevoked(raw);
   const profile = normalizeProfile(raw.profile);
+  const prefs = normalizePrefs(raw.prefs);
   const catalog = normalizeCatalog(raw.catalog);
   if (forMerge) {
-    return { score: raw.score, history, profile, revoked, catalog, meta };
+    return { score: raw.score, history, profile, prefs, revoked, catalog, meta };
   }
   revoked = compactRevoked(revoked);
   if (firestoreMode) {
@@ -339,6 +367,7 @@ function normalizeState(raw, forMerge, options) {
       score: raw.score,
       history,
       profile,
+      prefs,
       revoked,
       catalog,
       meta,
@@ -347,7 +376,7 @@ function normalizeState(raw, forMerge, options) {
   const filtered = applyClearAndRevoked(history, meta.lastClearAt, revokedSet(revoked))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
   const score = netScoreFromHistory(history, meta.lastClearAt, revoked);
-  return { score, history: filtered, profile, revoked, catalog, meta };
+  return { score, history: filtered, profile, prefs, revoked, catalog, meta };
 }
 
 function mergeStates(localRaw, remoteRaw) {
@@ -365,16 +394,20 @@ function mergeStates(localRaw, remoteRaw) {
     ? local.profile : remote.profile;
   const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
     ? normalizeCatalog(local.catalog) : normalizeCatalog(remote.catalog);
+  const prefs = local.meta.prefsUpdatedAt >= remote.meta.prefsUpdatedAt
+    ? normalizePrefs(local.prefs) : normalizePrefs(remote.prefs);
   return {
     score,
     history,
     profile,
+    prefs,
     revoked,
     catalog,
     meta: {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
       catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
+      prefsUpdatedAt: Math.max(local.meta.prefsUpdatedAt || 0, remote.meta.prefsUpdatedAt || 0),
       scoreUpdatedAt: Math.max(local.meta.scoreUpdatedAt || 0, remote.meta.scoreUpdatedAt || 0),
       updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt),
       onboardingDone: !!(local.meta.onboardingDone || remote.meta.onboardingDone)
@@ -406,6 +439,8 @@ function stateContentQuickKey(s) {
     s.meta?.lastClearAt || 0,
     s.meta?.profileUpdatedAt || 0,
     s.meta?.catalogUpdatedAt || 0,
+    s.meta?.prefsUpdatedAt || 0,
+    s.prefs?.weekStartsOn || 0,
     s.profile?.name || '',
     s.profile?.avatar || '',
     revokedFingerprint(normalizeRevoked(s)),
@@ -428,6 +463,8 @@ function stateContentFullEqual(a, b) {
   if (na.meta.lastClearAt !== nb.meta.lastClearAt) return false;
   if (na.meta.profileUpdatedAt !== nb.meta.profileUpdatedAt) return false;
   if (na.meta.catalogUpdatedAt !== nb.meta.catalogUpdatedAt) return false;
+  if (na.meta.prefsUpdatedAt !== nb.meta.prefsUpdatedAt) return false;
+  if (na.prefs.weekStartsOn !== nb.prefs.weekStartsOn) return false;
   if (na.profile.name !== nb.profile.name || na.profile.avatar !== nb.profile.avatar) return false;
   if (revokedFingerprint(na.revoked) !== revokedFingerprint(nb.revoked)) return false;
   if (catalogQuickSig(na.catalog) !== catalogQuickSig(nb.catalog)) return false;

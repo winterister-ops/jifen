@@ -35,6 +35,7 @@ function stateToFirestoreUserDoc(s) {
   return {
     score: n.score,
     profile: n.profile,
+    prefs: n.prefs,
     catalog: n.catalog,
     meta: n.meta,
     revoked: { ...n.revoked },
@@ -46,6 +47,7 @@ function firestoreUserDocToState(data, historyCache) {
   return normalizeState({
     score: data.score,
     profile: data.profile,
+    prefs: data.prefs,
     catalog: data.catalog,
     meta: data.meta,
     revoked: data.revoked,
@@ -91,17 +93,21 @@ function mergeUserDocs(localRaw, remoteRaw) {
     ? local.profile : remote.profile;
   const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
     ? normalizeCatalog(local.catalog) : normalizeCatalog(remote.catalog);
+  const prefs = local.meta.prefsUpdatedAt >= remote.meta.prefsUpdatedAt
+    ? normalizePrefs(local.prefs) : normalizePrefs(remote.prefs);
   const score = mergeUserDocScore(local, remote);
   return {
     score,
     history: localRaw.history || [],
     profile,
+    prefs,
     revoked,
     catalog,
     meta: {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
       catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
+      prefsUpdatedAt: Math.max(local.meta.prefsUpdatedAt || 0, remote.meta.prefsUpdatedAt || 0),
       scoreUpdatedAt: Math.max(local.meta.scoreUpdatedAt || 0, remote.meta.scoreUpdatedAt || 0),
       updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt),
       onboardingDone: !!(local.meta.onboardingDone || remote.meta.onboardingDone),
@@ -501,6 +507,7 @@ function userDocContentEqual(a, b) {
   const db = stateToFirestoreUserDoc(b);
   if (da.score !== db.score) return false;
   if (JSON.stringify(da.profile) !== JSON.stringify(db.profile)) return false;
+  if (JSON.stringify(da.prefs) !== JSON.stringify(db.prefs)) return false;
   if (JSON.stringify(da.catalog) !== JSON.stringify(db.catalog)) return false;
   if (da.meta.lastClearAt !== db.meta.lastClearAt) return false;
   if (da.meta.profileUpdatedAt !== db.meta.profileUpdatedAt) return false;
