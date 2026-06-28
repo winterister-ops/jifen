@@ -22,8 +22,6 @@ function reportBootPerf() {
 
 let KEY = null;
 let state = defaultState();
-let cloudRef = null;
-let cloudUnsubscribe = null;
 let applyingRemote = false;
 let firebaseReady = false;
 let cloudPushPending = false;
@@ -182,48 +180,7 @@ function parseHistoryList(raw) {
   return [];
 }
 
-function historyToCloudMap(history) {
-  const map = {};
-  (history || []).forEach(h => {
-    if (h && h.eid) map[h.eid] = h;
-  });
-  return map;
-}
-
-function stateToCloudBlob(s) {
-  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-    return stateToFirestoreUserDoc(s);
-  }
-  const n = normalizeState(s);
-  return {
-    score: n.score,
-    profile: n.profile,
-    catalog: n.catalog,
-    meta: n.meta,
-    revoked: { ...n.revoked },
-    history: historyToCloudMap(n.history)
-  };
-}
-
-function applyCloudPatch(base, patch) {
-  const next = base ? JSON.parse(JSON.stringify(base)) : {};
-  Object.entries(patch || {}).forEach(([path, val]) => {
-    const slash = path.indexOf('/');
-    if (slash === -1) {
-      if (val === null) delete next[path];
-      else next[path] = val;
-      return;
-    }
-    const top = path.slice(0, slash);
-    const key = path.slice(slash + 1);
-    if (!next[top] || typeof next[top] !== 'object') next[top] = {};
-    if (val === null) delete next[top][key];
-    else next[top][key] = val;
-  });
-  return next;
-}
-
-function buildCloudPatch(prev, next) {
+function buildUserDocPatch(prev, next) {
   const patch = {};
   let hasStructuralChange = false;
 
@@ -261,21 +218,6 @@ function buildCloudPatch(prev, next) {
   });
   if (Object.keys(patch).some(k => k.startsWith('revoked/'))) hasStructuralChange = true;
 
-  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-    return { patch, incremental: !hasStructuralChange };
-  }
-
-  const prevHist = (prev && prev.history) || {};
-  const nextHist = next.history || {};
-  Object.keys(nextHist).forEach(eid => {
-    if (JSON.stringify(prevHist[eid]) !== JSON.stringify(nextHist[eid])) {
-      patch['history/' + eid] = nextHist[eid];
-    }
-  });
-  Object.keys(prevHist).forEach(eid => {
-    if (!(eid in nextHist)) patch['history/' + eid] = null;
-  });
-
   return { patch, incremental: !hasStructuralChange };
 }
 
@@ -297,13 +239,24 @@ function touchScoreMeta() {
   state.meta = { ...defaultMeta(), ...state.meta, scoreUpdatedAt: now, updatedAt: now };
 }
 
+// ----- 积分权威来源（详见 AGENTS.md「积分权威来源」）-----
+// 1. 历史净和为最终权威（全量历史可得时）。
+// 2. Firestore 用户文档合并时，本地 history 仅为分页缓存，用 scoreUpdatedAt 裁决 score 字段。
+// 3. Firestore 全量历史统计查询后，applyScoreFromHistoryNet 将 score 对齐净和。
+
+function netScoreFromHistory(history, lastClearAt, revoked) {
+  return applyClearAndRevoked(history, lastClearAt, revokedSet(revoked))
+    .reduce((sum, h) => sum + h.delta, 0);
+}
+
 function scoreAuthoredAt(meta) {
   if (!meta) return 0;
   if (typeof meta.scoreUpdatedAt === 'number' && meta.scoreUpdatedAt > 0) return meta.scoreUpdatedAt;
   return 0;
 }
 
-function pickMergedScore(local, remote) {
+// Firestore 用户文档合并：history 缓存不完整，仅比较 score 字段及其 scoreUpdatedAt。
+function mergeUserDocScore(local, remote) {
   const localScoreAt = scoreAuthoredAt(local.meta);
   const remoteScoreAt = scoreAuthoredAt(remote.meta);
   if (localScoreAt > 0 || remoteScoreAt > 0) {
@@ -311,6 +264,19 @@ function pickMergedScore(local, remote) {
   }
   return (local.meta.updatedAt || 0) >= (remote.meta.updatedAt || 0)
     ? local.score : remote.score;
+}
+
+// 全量历史净和已知时，将 score 对齐权威值；有漂移则本地校正并回写云端。
+function applyScoreFromHistoryNet(net) {
+  if (typeof state.score !== 'number' || state.score === net) return false;
+  console.warn('净星星数与历史记录不一致，已按历史净和校正', { from: state.score, to: net });
+  state.score = net;
+  touchScoreMeta();
+  if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+  saveLocal();
+  schedulePushToCloud();
+  if (typeof scheduleRender === 'function') scheduleRender();
+  return true;
 }
 
 function touchCatalogMeta() {
@@ -337,8 +303,7 @@ function applyClearAndRevoked(history, lastClearAt, revokedSet) {
 }
 
 function recomputeScore(history, lastClearAt, revoked) {
-  return applyClearAndRevoked(history, lastClearAt, revokedSet(revoked))
-    .reduce((s, h) => s + h.delta, 0);
+  return netScoreFromHistory(history, lastClearAt, revoked);
 }
 
 function normalizeState(raw, forMerge, options) {
@@ -362,6 +327,7 @@ function normalizeState(raw, forMerge, options) {
   }
   revoked = compactRevoked(revoked);
   if (firestoreMode) {
+    // history 为分页缓存，score 以存储字段为准；全量对齐见 applyScoreFromHistoryNet。
     return {
       score: raw.score,
       history,
@@ -373,7 +339,7 @@ function normalizeState(raw, forMerge, options) {
   }
   const filtered = applyClearAndRevoked(history, meta.lastClearAt, revokedSet(revoked))
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  const score = recomputeScore(history, meta.lastClearAt, revoked);
+  const score = netScoreFromHistory(history, meta.lastClearAt, revoked);
   return { score, history: filtered, profile, revoked, catalog, meta };
 }
 
@@ -387,7 +353,7 @@ function mergeStates(localRaw, remoteRaw) {
   [...local.history, ...remote.history].forEach(h => byEid.set(h.eid, h));
   const history = applyClearAndRevoked([...byEid.values()], lastClearAt, revokedKeys)
     .sort((a, b) => (a.ts || 0) - (b.ts || 0));
-  const score = history.reduce((s, h) => s + h.delta, 0);
+  const score = netScoreFromHistory(history, lastClearAt, revoked);
   const profile = local.meta.profileUpdatedAt >= remote.meta.profileUpdatedAt
     ? local.profile : remote.profile;
   const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
@@ -402,6 +368,7 @@ function mergeStates(localRaw, remoteRaw) {
       lastClearAt,
       profileUpdatedAt: Math.max(local.meta.profileUpdatedAt, remote.meta.profileUpdatedAt),
       catalogUpdatedAt: Math.max(local.meta.catalogUpdatedAt, remote.meta.catalogUpdatedAt),
+      scoreUpdatedAt: Math.max(local.meta.scoreUpdatedAt || 0, remote.meta.scoreUpdatedAt || 0),
       updatedAt: Math.max(local.meta.updatedAt, remote.meta.updatedAt),
       onboardingDone: !!(local.meta.onboardingDone || remote.meta.onboardingDone)
     }
@@ -505,6 +472,10 @@ function saveLocal() {
   localStorage.setItem(KEY, JSON.stringify(state));
 }
 
+function firestoreCloudReady() {
+  return typeof isFirestoreActive === 'function' && isFirestoreActive();
+}
+
 function finishCloudPush(error) {
   cloudPushPending = false;
   if (error) {
@@ -513,96 +484,41 @@ function finishCloudPush(error) {
     schedulePushToCloud();
     return;
   }
-  lastSyncedCloud = stateToCloudBlob(state);
+  lastSyncedCloud = stateToFirestoreUserDoc(state);
   if (cloudPushDirty) schedulePushToCloud();
 }
 
-function pushToCloudFull(nextCloud) {
+function pushUserDocToCloud() {
   cloudPushPending = true;
-  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-    pushUserDocToFirestore()
-      .then(() => finishCloudPush(null))
-      .catch(err => finishCloudPush(err));
-    return;
-  }
-  cloudRef.set(nextCloud)
+  pushUserDocToFirestore()
     .then(() => finishCloudPush(null))
     .catch(err => finishCloudPush(err));
 }
 
-function pushToCloudTransaction() {
-  cloudPushPending = true;
-  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-    pushUserDocToFirestore()
-      .then(() => finishCloudPush(null))
-      .catch(err => finishCloudPush(err));
-    return;
-  }
-  cloudRef.transaction(current => {
-    const remote = current ? normalizeState(current, true) : null;
-    const merged = remote ? mergeStates(state, current) : normalizeState(state);
-    return stateToCloudBlob(merged);
-  }, (error, committed, snapshot) => {
-    if (error || !committed || !snapshot) {
-      finishCloudPush(error || new Error('transaction not committed'));
-      return;
-    }
-    finishCloudPush(null);
-  });
-}
-
-function pushToCloudIncremental(patch) {
-  cloudPushPending = true;
-  if (typeof isFirestoreActive === 'function' && isFirestoreActive()) {
-    pushUserDocToFirestore()
-      .then(() => finishCloudPush(null))
-      .catch(err => finishCloudPush(err));
-    return;
-  }
-  cloudRef.update(patch)
-    .then(() => {
-      lastSyncedCloud = applyCloudPatch(lastSyncedCloud, patch);
-      finishCloudPush(null);
-    })
-    .catch(err => {
-      console.warn('增量云同步失败，回退全量合并', err);
-      cloudPushPending = false;
-      pushToCloudTransaction();
-    });
-}
-
 function flushPushToCloud() {
   cloudPushTimer = null;
-  const cloudReady = (typeof isFirestoreActive === 'function' && isFirestoreActive())
-    || cloudRef;
-  if (!cloudPushDirty || !cloudReady || applyingRemote) return;
+  if (!cloudPushDirty || !firestoreCloudReady() || applyingRemote) return;
   if (cloudPushPending) {
     cloudPushTimer = setTimeout(flushPushToCloud, 80);
     return;
   }
 
   cloudPushDirty = false;
-  const nextCloud = stateToCloudBlob(state);
+  const nextDoc = stateToFirestoreUserDoc(state);
 
   if (!lastSyncedCloud) {
-    pushToCloudFull(nextCloud);
+    pushUserDocToCloud();
     return;
   }
 
-  const { patch, incremental } = buildCloudPatch(lastSyncedCloud, nextCloud);
+  const { patch } = buildUserDocPatch(lastSyncedCloud, nextDoc);
   if (!Object.keys(patch).length) return;
 
-  if (incremental) {
-    pushToCloudIncremental(patch);
-  } else {
-    pushToCloudTransaction();
-  }
+  pushUserDocToCloud();
 }
 
 function schedulePushToCloud() {
-  const cloudReady = (typeof isFirestoreActive === 'function' && isFirestoreActive())
-    || cloudRef;
-  if (!cloudReady || applyingRemote) return;
+  if (!firestoreCloudReady() || applyingRemote) return;
   cloudPushDirty = true;
   if (cloudPushTimer) return;
   cloudPushTimer = setTimeout(flushPushToCloud, CLOUD_PUSH_DEBOUNCE_MS);
@@ -663,24 +579,19 @@ function tearDownCloud() {
   lastSyncedCloud = null;
   appEntered = false;
   if (typeof tearDownFirestoreCloud === 'function') tearDownFirestoreCloud();
-  if (cloudRef && cloudUnsubscribe) {
-    try { cloudRef.off('value', cloudUnsubscribe); } catch (e) { console.warn(e); }
-  }
-  cloudUnsubscribe = null;
-  cloudRef = null;
 }
 
 function storageKeysForUser(uid) {
   KEY = STORAGE_PREFIX + uid;
 }
 
-function cloudPathForUser(user) {
-  return `users/${user.uid}/data`;
-}
-
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
-    if (currentUser && typeof isFirestoreActive === 'function' && isFirestoreActive()) {
+    if (!currentUser) {
+      if (typeof renderAppMeta === 'function') renderAppMeta();
+      return;
+    }
+    if (firestoreCloudReady()) {
       const afterReconnect = () => {
         cloudPushDirty = true;
         schedulePushToCloud();
@@ -691,11 +602,10 @@ if (typeof window !== 'undefined') {
       } else {
         afterReconnect();
       }
-    } else if (currentUser && typeof initCloud === 'function') {
-      initCloud();
-    } else if (typeof renderAppMeta === 'function') {
-      renderAppMeta();
+      return;
     }
+    initCloud();
+    if (typeof renderAppMeta === 'function') renderAppMeta();
   });
   window.addEventListener('offline', () => {
     if (typeof renderAppMeta === 'function') renderAppMeta();

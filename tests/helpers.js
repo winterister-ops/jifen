@@ -7,10 +7,16 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
 
   await page.addInitScript(({ testUid, skipOnboarding, cloudDoc }) => {
     window.__testFlags = { skipOnboarding };
+    const testUser = {
+      uid: testUid,
+      email: 'test@example.com',
+      reauthenticateWithCredential: () => Promise.resolve(),
+      updatePassword: () => Promise.resolve(),
+    };
     const authInstance = {
       setPersistence: () => Promise.resolve(),
       onAuthStateChanged: (cb) => {
-        cb({ uid: testUid, email: 'test@example.com' });
+        cb(testUser);
         return () => {};
       },
       signInWithEmailAndPassword: () => Promise.resolve(),
@@ -228,6 +234,7 @@ async function gotoLoggedInApp(page, uid = 'test-playwright-user', options = {})
       initializeApp: () => {},
       auth: Object.assign(() => authInstance, {
         Auth: { Persistence: { SESSION: 'session' } },
+        EmailAuthProvider: { credential: () => ({}) },
       }),
       firestore: () => fakeFirestore,
     };
@@ -298,6 +305,26 @@ async function earnTask(page, name) {
   await page.locator('.earn-item').filter({ hasText: name }).click();
 }
 
+async function setAppOffline(page, offline) {
+  await page.context().setOffline(offline);
+  await page.evaluate((isOffline) => {
+    window.dispatchEvent(new Event(isOffline ? 'offline' : 'online'));
+  }, offline);
+}
+
+/** 模拟清空记录后的数据层状态（lastClearAt 截断，积分归零） */
+async function performClearRecords(page) {
+  await page.evaluate(() => {
+    const now = Date.now();
+    state.meta = { ...defaultMeta(), ...state.meta, lastClearAt: now, updatedAt: now };
+    state.score = 0;
+    state.history = [];
+    touchScoreMeta();
+    if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
+    save();
+  });
+}
+
 async function gotoOnboardingApp(page, uid = 'test-playwright-new-user') {
   await gotoLoggedInApp(page, uid, { skipOnboarding: false });
   await expect(page.locator('#obStep-profile')).toHaveClass(/active/);
@@ -331,4 +358,6 @@ module.exports = {
   addCatalogItem,
   waitForCloudSync,
   earnTask,
+  setAppOffline,
+  performClearRecords,
 };

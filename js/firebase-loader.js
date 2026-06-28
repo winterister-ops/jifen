@@ -1,4 +1,4 @@
-// ====== Firebase SDK 按需加载（database / firestore 在登录后加载） ======
+// ====== Firebase SDK 按需加载（database 仅用于 RTDB 迁移读取；firestore 登录后加载） ======
 
 const FIREBASE_SDK_VERSION = '10.12.2';
 const FIREBASE_CDN = 'https://www.gstatic.com/firebasejs/' + FIREBASE_SDK_VERSION;

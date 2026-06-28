@@ -152,7 +152,7 @@ test.describe('云同步合并逻辑', () => {
     expect(result.keep).toBeDefined();
   });
 
-  test('buildCloudPatch Firestore 模式不写 history 字段', async ({ page }) => {
+  test('buildUserDocPatch 不写 history 字段', async ({ page }) => {
     const result = await page.evaluate(() => {
       const prev = {
         score: 2,
@@ -166,7 +166,7 @@ test.describe('云同步合并逻辑', () => {
         score: 5,
         meta: { ...defaultMeta(), updatedAt: 2000 },
       };
-      return buildCloudPatch(prev, next);
+      return buildUserDocPatch(prev, next);
     });
 
     expect(result.incremental).toBe(true);
@@ -233,7 +233,7 @@ test.describe('云同步合并逻辑', () => {
     );
   });
 
-  test('mergeUserDocs 凭 scoreUpdatedAt 合并积分，避免 catalog 更新覆盖离线加分', async ({ page }) => {
+  test('mergeUserDocs 凭 scoreUpdatedAt 合并用户文档 score（history 为分页缓存时不重算）', async ({ page }) => {
     const result = await page.evaluate(() => {
       const local = {
         score: 7,
@@ -269,7 +269,7 @@ test.describe('云同步合并逻辑', () => {
     expect(result.score).toBe(7);
   });
 
-  test('历史已同步但 score 被旧云端值覆盖时，重新加载会按历史净值自愈并回写', async ({ page }) => {
+  test('全量历史统计后按历史净和校正 score 并回写', async ({ page }) => {
     await waitForCloudSync(page);
 
     const entries = [

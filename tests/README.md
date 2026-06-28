@@ -47,6 +47,8 @@ npx playwright test tests/catalog.spec.js
 | `catalog.spec.js` | 任务/奖励管理：增删改、启停、预设保护、分值排序、localStorage |
 | `sync.spec.js` | `mergeStates` / `normalizeState` 等云同步合并逻辑 |
 | `history.spec.js` | 记录删除与积分重算；`jumpToHistoryDate` 连续跳转、周历切换；云端历史分页与异步渲染 |
+| `history-edit-exit.spec.js` | 记录编辑模式退出后复选框隐藏（含日期头渲染异常） |
+| `key-paths.spec.js` | 离线重连、清空记录（`lastClearAt`）、设置页（资料/改密/登出） |
 | `helpers.js` | 注入 Firebase / Firestore 桩、自动登录、引导流程辅助、`openTaskManage` 等公共函数 |
 
 ## 测试环境说明

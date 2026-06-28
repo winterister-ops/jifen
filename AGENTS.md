@@ -60,10 +60,19 @@
 
 ## 数据与同步
 
-- 积分 `score` 应与未删除历史记录的 `delta` 净和保持一致。
+- 积分 `score` 应与未删除历史记录的 `delta` 净和保持一致（见下方「积分权威来源」）。
 - 删除历史记录、清空、迁移、合并云端状态时，要避免重复扣分/加分。
 - Firestore 规则应保持用户只能读写自己的数据。
 - 历史记录分页、统计、日期跳转相关改动要考虑记录很多的情况。
+
+### 积分权威来源
+
+维护 `score` 相关逻辑时遵守以下分层规则（实现见 `js/sync.js` 顶部注释与 `netScoreFromHistory` / `mergeUserDocScore` / `applyScoreFromHistoryNet`）：
+
+1. **最终权威：历史净和** — 对「未删除且在 `lastClearAt` 之后」的全部历史 `delta` 求和。适用于：本地完整历史（`normalizeState` 非 Firestore 模式）、`mergeStates`（RTDB 迁移等全量历史合并）、Firestore 全量历史统计查询后的校正（`applyScoreFromHistoryNet`）。
+2. **Firestore 用户文档合并（临时）** — 本地 `state.history` 仅为分页缓存，不能据此重算总分。合并用户文档时，取 `meta.scoreUpdatedAt` 较新一侧的 `score`；双方均为 0 时回退比较 `meta.updatedAt`。赚分/删记录等改分操作必须调用 `touchScoreMeta()`。
+3. **Firestore 模式下的 `normalizeState`** — 不凭分页缓存重算 `score`，保留已存储字段；全量历史查询后由 `applyScoreFromHistoryNet` 对齐净和。
+4. **改分入口** — `appendHistoryEntry`、`deleteHistoryRecords` 与历史条目同步更新 `score` 并 `touchScoreMeta()`，避免单独改分。
 
 ## 交付说明
 

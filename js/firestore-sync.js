@@ -91,7 +91,7 @@ function mergeUserDocs(localRaw, remoteRaw) {
     ? local.profile : remote.profile;
   const catalog = local.meta.catalogUpdatedAt >= remote.meta.catalogUpdatedAt
     ? normalizeCatalog(local.catalog) : normalizeCatalog(remote.catalog);
-  const score = pickMergedScore(local, remote);
+  const score = mergeUserDocScore(local, remote);
   return {
     score,
     history: localRaw.history || [],
@@ -244,25 +244,18 @@ function fetchHistoryTotalCountFromFirestore() {
   });
 }
 
-// 净星星数（score）是去规范化的字段，正常情况下应等于「未删除且在清空时间点之后」
-// 的全部历史 delta 之和。离线赚分时历史条目已写入云端，但 score 可能被旧的云端值
-// 覆盖（旧版同步缺陷），导致两者漂移。historyCountQuery 已读取全部计入的历史文档，
-// 这里顺带按 delta 求和得到权威净值，与本地 score 不一致时自动校正并回写，零额外读取。
-function reconcileScoreFromHistorySnapshot(snap) {
-  if (!firestoreActive || !currentUser || !snap) return;
+function netScoreFromFirestoreSnapshot(snap) {
   let net = 0;
   snap.forEach(doc => {
     const d = doc.data();
     if (d && d.deleted !== true && typeof d.delta === 'number') net += d.delta;
   });
-  if (typeof state.score !== 'number' || state.score === net) return;
-  console.warn('净星星数与历史记录不一致，已自动校正', { from: state.score, to: net });
-  state.score = net;
-  touchScoreMeta();
-  if (typeof invalidateHistoryDateKeysCache === 'function') invalidateHistoryDateKeysCache();
-  saveLocal();
-  schedulePushToCloud();
-  if (typeof scheduleRender === 'function') scheduleRender();
+  return net;
+}
+
+function reconcileScoreFromHistorySnapshot(snap) {
+  if (!firestoreActive || !currentUser || !snap) return;
+  applyScoreFromHistoryNet(netScoreFromFirestoreSnapshot(snap));
 }
 
 function ensureHistoryTotalCountFromFirestore() {
