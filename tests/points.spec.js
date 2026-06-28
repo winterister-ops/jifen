@@ -7,8 +7,11 @@ test.describe('积分获取与消耗', () => {
   });
 
   test('完成任务可增加积分', async ({ page }) => {
+    await expect(page.locator('#todaySummary')).toHaveText('今天还没记录，快去做任务吧');
     await page.locator('.earn-item').filter({ hasText: '自己洗手' }).click();
     await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
+    await expect(page.locator('#todaySummary')).toContainText('完成 1 项');
+    await expect(page.locator('#todaySummary')).toContainText('+2');
   });
 
   test('积分不足时兑换奖励会提示', async ({ page }) => {
@@ -40,6 +43,9 @@ test.describe('积分获取与消耗', () => {
 
     await wash.click();
     await expect(wash).toHaveClass(/cooldown/);
+    await expect(wash.locator('.catalog-cooldown-hint')).toContainText('还剩');
+    await expect(page.locator('#toastEl')).toContainText('这个任务稍后再试');
+    await expect(page.locator('#toastEl')).toContainText('秒');
     await expect(page.locator('#scoreNum')).toHaveText('2');
 
     const historyLen = await page.evaluate(() => state.history.length);

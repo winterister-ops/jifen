@@ -126,6 +126,41 @@ function greetingText() {
   return '晚上好！';
 }
 
+function todaySummaryStats() {
+  const todayKey = typeof ymd === 'function' ? ymd(new Date()) : '';
+  let earned = 0;
+  let spent = 0;
+  let earnCount = 0;
+  let spendCount = 0;
+  (state.history || []).forEach(h => {
+    if (!h || typeof entryDateKey !== 'function' || entryDateKey(h) !== todayKey) return;
+    if (h.delta > 0) {
+      earned += h.delta;
+      earnCount++;
+    } else if (h.delta < 0) {
+      spent += -h.delta;
+      spendCount++;
+    }
+  });
+  return { earned, spent, earnCount, spendCount };
+}
+
+function renderTodaySummary() {
+  const el = document.getElementById('todaySummary');
+  if (!el) return;
+  const { earned, spent, earnCount, spendCount } = todaySummaryStats();
+  if (!earnCount && !spendCount) {
+    el.textContent = '今天还没记录，快去做任务吧';
+    return;
+  }
+  const parts = [];
+  if (earned > 0) parts.push(`<span class="plus">+${earned}</span>`);
+  if (earnCount > 0) parts.push(`完成 ${earnCount} 项`);
+  if (spendCount > 0) parts.push(`兑换 ${spendCount} 次`);
+  if (spent > 0) parts.push(`<span class="minus">-${spent}</span>`);
+  el.innerHTML = '今天 ' + parts.join(' · ');
+}
+
 function renderAppMeta() {
   const el = document.getElementById('appMeta');
   if (!el) return;
@@ -159,6 +194,7 @@ function renderHeader() {
   document.getElementById('welcomeName').textContent = state.profile.name;
   document.getElementById('welcomeSub').textContent = greetingText();
   document.getElementById('avatar').textContent = state.profile.avatar;
+  renderTodaySummary();
 }
 
 function renderEmojiPicker() {
@@ -318,6 +354,22 @@ function earnCooldownRemainingMs(taskId, now) {
   return Math.max(0, EARN_COOLDOWN_MS - ((now ?? Date.now()) - lastTs));
 }
 
+function earnCooldownRemainingSec(taskId, now) {
+  const ms = earnCooldownRemainingMs(taskId, now);
+  if (ms <= 0) return 0;
+  return Math.max(1, Math.ceil(ms / 1000));
+}
+
+function earnCooldownHintText(taskId, now) {
+  const sec = earnCooldownRemainingSec(taskId, now);
+  return sec > 0 ? `还剩 ${sec} 秒` : '';
+}
+
+function earnCooldownToastText(taskId, now) {
+  const sec = earnCooldownRemainingSec(taskId, now);
+  return sec > 0 ? `这个任务稍后再试，还剩 ${sec} 秒` : '这个任务稍后再试';
+}
+
 function isTaskInEarnCooldown(taskId) {
   return earnCooldownRemainingMs(taskId) > 0;
 }
@@ -385,7 +437,18 @@ function buildCatalogItemEl(it, mode) {
   ptsSpan.className = 'catalog-pts ' + ptsClass;
   ptsSpan.textContent = ptsLabel;
 
-  btn.append(emojiSpan, nameSpan, ptsSpan);
+  const cooldownHint = mode === 'earn' ? earnCooldownHintText(it.id) : '';
+  if (cooldownHint) {
+    const info = document.createElement('span');
+    info.className = 'catalog-info';
+    const hintSpan = document.createElement('span');
+    hintSpan.className = 'catalog-cooldown-hint';
+    hintSpan.textContent = cooldownHint;
+    info.append(nameSpan, hintSpan);
+    btn.append(emojiSpan, info, ptsSpan);
+  } else {
+    btn.append(emojiSpan, nameSpan, ptsSpan);
+  }
 
   const locked = mode === 'spend' && state.score < it.pts;
   btn.onclick = (e) => {
@@ -447,6 +510,7 @@ function lastEarnTimeForTask(taskId) {
 function earn(it, e) {
   if (isTaskInEarnCooldown(it.id)) {
     shakeEarnRow(it.id);
+    toast(earnCooldownToastText(it.id), 'error');
     return;
   }
   const ts = Date.now();
