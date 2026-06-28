@@ -105,6 +105,7 @@ body.has-bottom-nav::after {
   background: linear-gradient(180deg, rgba(255, 248, 237, 0) 0%, rgba(255, 248, 237, .92) 54%, var(--bg1) 100%);
   z-index: 44;
 }
+body.has-bottom-nav.is-onboarding::after { display: none; }
 #mainView .catalog-list {
   margin-bottom: 4px;
 }
