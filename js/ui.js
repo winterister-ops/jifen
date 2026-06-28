@@ -154,20 +154,92 @@ function todaySummaryStats() {
   return { earned, spent, earnCount, spendCount };
 }
 
-function renderTodaySummary() {
-  const el = document.getElementById('todaySummary');
-  if (!el) return;
+function nearestLockedReward() {
+  const score = state.score;
+  let best = null;
+  getActiveRewards().forEach(r => {
+    if (r.pts > score && (!best || r.pts < best.pts)) best = r;
+  });
+  return best;
+}
+
+function affordableRewardCount() {
+  const score = state.score;
+  return getActiveRewards().filter(r => r.pts <= score).length;
+}
+
+function renderEarnHero(els) {
+  els.hero.classList.add('main-hero--earn');
+  els.hero.classList.remove('main-hero--spend');
+  els.icon.textContent = '💪';
+  els.title.textContent = '今天的习惯';
   const { earned, spent, earnCount, spendCount } = todaySummaryStats();
   if (!earnCount && !spendCount) {
-    el.textContent = '今天还没记录，快去做任务吧';
+    els.main.textContent = '今天还没记录，快去做任务吧';
+    els.sub.style.display = 'none';
+    els.sub.onclick = null;
     return;
   }
   const parts = [];
-  if (earned > 0) parts.push(`<span class="plus">+${earned}</span>`);
   if (earnCount > 0) parts.push(`完成 ${earnCount} 项`);
+  if (earned > 0) parts.push(`<span class="plus">+${earned}</span>`);
   if (spendCount > 0) parts.push(`兑换 ${spendCount} 次`);
   if (spent > 0) parts.push(`<span class="minus">-${spent}</span>`);
-  el.innerHTML = '今天 ' + parts.join(' · ');
+  els.main.innerHTML = '今天 ' + parts.join(' · ');
+  els.sub.textContent = '查看今天记录 ›';
+  els.sub.style.display = '';
+  els.sub.onclick = () => { if (typeof switchView === 'function') switchView('history'); };
+}
+
+function renderSpendHero(els) {
+  els.hero.classList.add('main-hero--spend');
+  els.hero.classList.remove('main-hero--earn');
+  els.icon.textContent = '🎁';
+  els.title.textContent = '星星兑换站';
+  const affordable = affordableRewardCount();
+  els.main.textContent = affordable > 0 ? `可兑换 ${affordable} 个奖励` : '攒够星星就能换奖励啦';
+  const locked = nearestLockedReward();
+  if (locked) {
+    const gap = locked.pts - state.score;
+    els.sub.textContent = `还差 ${gap} 星换「${locked.name}」 ›`;
+    els.sub.style.display = '';
+    els.sub.onclick = () => scrollToFirstLockedReward();
+  } else {
+    els.sub.style.display = 'none';
+    els.sub.onclick = null;
+  }
+}
+
+function renderMainHero() {
+  const hero = document.getElementById('mainHero');
+  if (!hero) return;
+  const els = {
+    hero,
+    icon: document.getElementById('mainHeroIcon'),
+    title: document.getElementById('mainHeroTitle'),
+    main: document.getElementById('mainHeroMain'),
+    sub: document.getElementById('mainHeroSub'),
+  };
+  if (currentView === 'rewards') renderSpendHero(els);
+  else renderEarnHero(els);
+}
+
+function animateHeroSwitch(view) {
+  const hero = document.getElementById('mainHero');
+  if (!hero) return;
+  hero.classList.remove('hero-in-earn', 'hero-in-spend');
+  void hero.offsetWidth;
+  hero.classList.add(view === 'rewards' ? 'hero-in-spend' : 'hero-in-earn');
+}
+
+function scrollToFirstLockedReward() {
+  const row = document.querySelector('.spend-item.locked');
+  if (!row) return;
+  row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  row.classList.remove('catalog-hl');
+  void row.offsetWidth;
+  row.classList.add('catalog-hl');
+  setTimeout(() => row.classList.remove('catalog-hl'), 700);
 }
 
 function renderAppMeta() {
@@ -203,7 +275,6 @@ function renderHeader() {
   document.getElementById('welcomeName').textContent = state.profile.name;
   document.getElementById('welcomeSub').textContent = greetingText();
   document.getElementById('avatar').textContent = state.profile.avatar;
-  renderTodaySummary();
 }
 
 function renderEmojiPicker() {
@@ -314,6 +385,7 @@ function switchView(view) {
     currentView = view;
     applyViewVisibility(view);
     switchTab(view === 'tasks' ? 'earn' : 'spend');
+    animateHeroSwitch(view);
     updateBottomNav(view);
     resetViewScroll();
     return;
@@ -541,6 +613,7 @@ function render() {
   if (currentView === 'tasks' || currentView === 'rewards') {
     applyViewVisibility(currentView);
     renderHeader();
+    renderMainHero();
     renderCatalog();
   } else if (currentView === 'history') {
     renderHistory();

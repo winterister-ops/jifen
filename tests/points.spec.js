@@ -21,11 +21,25 @@ test.describe('积分获取与消耗', () => {
   });
 
   test('完成任务可增加积分', async ({ page }) => {
-    await expect(page.locator('#todaySummary')).toHaveText('今天还没记录，快去做任务吧');
+    await expect(page.locator('#mainHeroMain')).toHaveText('今天还没记录，快去做任务吧');
     await page.locator('.earn-item').filter({ hasText: '自己洗手' }).click();
     await expect(page.locator('#scoreNum')).toHaveText('2', { timeout: 5000 });
-    await expect(page.locator('#todaySummary')).toContainText('完成 1 项');
-    await expect(page.locator('#todaySummary')).toContainText('+2');
+    await expect(page.locator('#mainHeroMain')).toContainText('完成 1 项');
+    await expect(page.locator('#mainHeroMain')).toContainText('+2');
+  });
+
+  test('任务页与奖励页显示不同的 Hero', async ({ page }) => {
+    await expect(page.locator('#mainHero')).toHaveClass(/main-hero--earn/);
+    await expect(page.locator('#mainHeroTitle')).toHaveText('今天的习惯');
+
+    await page.locator('.bottom-nav-item[data-nav="rewards"]').click();
+    await expect(page.locator('#mainHero')).toHaveClass(/main-hero--spend/);
+    await expect(page.locator('#mainHeroTitle')).toHaveText('星星兑换站');
+    await expect(page.locator('.spend-item').first()).toBeVisible();
+
+    await page.locator('.bottom-nav-item[data-nav="tasks"]').click();
+    await expect(page.locator('#mainHero')).toHaveClass(/main-hero--earn/);
+    await expect(page.locator('#mainHeroTitle')).toHaveText('今天的习惯');
   });
 
   test('积分不足时兑换奖励会提示', async ({ page }) => {

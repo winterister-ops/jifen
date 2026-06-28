@@ -104,7 +104,8 @@ body.has-bottom-nav :is(
   .profile-card,
   .tab,
   .catalog-row,
-  .score-card,
+  .account-bar,
+  .main-hero,
   .hp-datebar,
   .hp-weekcal,
   .cal-btn
@@ -130,59 +131,92 @@ body.has-bottom-nav #settingsView .section-title {
   padding-inline: var(--page-inline);
 }
 
-/* 顶部栏 */
-.score-card {
-  margin-bottom: 18px;
-  padding: 4px 2px;
-}
-.header-row {
+/* 账户栏（轻量：身份 + 余额） */
+.account-bar {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 14px;
+  padding: 2px 2px;
 }
-.header-left {
-  display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;
+.account-left {
+  display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0;
 }
 .avatar {
-  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
   background: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.85rem;
+  font-size: 1.4rem;
   border: 2px solid #ffe2bf;
   transition: transform .15s;
   box-shadow: var(--shadow);
 }
-.welcome { min-width: 0; flex: 1; }
-.greet-row {
-  display: flex; align-items: center; gap: 2px; min-width: 0;
-}
+.welcome { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 8px; }
 .greet-name {
-  font-size: 1.05rem; font-weight: 800; color: var(--text);
+  font-size: 1rem; font-weight: 800; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  min-width: 0;
-}
-.greet-arrow {
-  font-size: 1.2rem; font-weight: 800; color: #d2a679; flex-shrink: 0; line-height: 1;
+  min-width: 0; flex-shrink: 1;
 }
 .welcome .sub {
-  display: block; font-size: .78rem; color: #b08a5e; margin-top: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: .76rem; color: #b08a5e; flex-shrink: 0;
+  white-space: nowrap;
 }
-.today-summary {
-  display: block;
-  font-size: .74rem; font-weight: 700; color: #9a7d5c;
-  margin-top: 4px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.today-summary .plus { color: #2a9d6a; }
-.today-summary .minus { color: #d4567a; }
-.star-badge {
-  display: flex; align-items: center; gap: 5px; flex-shrink: 0;
-  background: var(--blue); color: #fff;
-  padding: 8px 14px; border-radius: 999px;
-  box-shadow: var(--shadow);
+/* 星星余额：去胶囊，降低视觉重心；星星图标复用 splash 圆形样式 */
+.star-balance {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+  background: transparent; padding: 0;
   transition: transform .25s;
 }
-.star-badge.bump { transform: scale(1.15); }
-.star-badge .star-icon { display: flex; align-items: center; line-height: 1; }
+.star-balance.bump { transform: scale(1.12); }
+.star-balance .star-icon {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--blue);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+}
+.star-balance-ic { width: 1rem; height: 1rem; filter: brightness(0) invert(1); }
+
+/* 任务/奖励双态 Hero */
+.main-hero {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: var(--shadow);
+  transition: background .25s;
+}
+.main-hero--earn { background: linear-gradient(135deg, var(--blue), var(--accent2)); }
+.main-hero--spend { background: linear-gradient(135deg, var(--accent), var(--purple)); }
+.main-hero-head { display: flex; align-items: center; gap: 7px; }
+.main-hero-icon { font-size: 1.15rem; line-height: 1; }
+.main-hero-title { font-size: .9rem; font-weight: 800; letter-spacing: .02em; }
+.main-hero-main {
+  font-size: 1.15rem; font-weight: 800; margin-top: 6px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.main-hero-main .plus { color: #fff; }
+.main-hero-main .minus { color: #fff; opacity: .92; }
+.main-hero-sub {
+  display: inline-block; margin-top: 6px; padding: 0;
+  border: none; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: .78rem; font-weight: 700;
+  color: rgba(255, 255, 255, .92);
+  max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.main-hero-sub:active { opacity: .7; }
+.main-hero.hero-in-earn { animation: heroInEarn .22s ease; }
+.main-hero.hero-in-spend { animation: heroInSpend .22s ease; }
+@keyframes heroInEarn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes heroInSpend {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: none; }
+}
+.catalog-row.catalog-hl {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow);
+  transition: box-shadow .2s;
+}
 .ui-ic {
   width: 1.25em; height: 1.25em; vertical-align: middle;
   display: inline-block; object-fit: contain; flex-shrink: 0;
@@ -195,7 +229,7 @@ body.has-bottom-nav #settingsView .section-title {
 .btn-soft, .profile-edit { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn-soft .ui-ic { width: 1.05rem; height: 1.05rem; }
 .profile-edit .ui-ic { width: 1.05rem; height: 1.05rem; }
-.star-badge .ui-ic { width: 1.35rem; height: 1.35rem; }
+.star-balance .star-balance-ic { width: 1rem; height: 1rem; }
 footer {
   display: flex; align-items: center; justify-content: center; gap: 4px;
   text-align: center; color: #d2a679; font-size: .8rem; margin: 20px 0 8px;
@@ -204,14 +238,14 @@ footer {
 .empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty .ui-ic { width: 2.2rem; height: 2.2rem; opacity: .55; }
 .pop .pop-ic { width: 1.1em; height: 1.1em; vertical-align: -4px; margin-right: 2px; }
-.star-badge .score-num {
+.star-balance .score-num {
   font-family: var(--font-num);
-  font-size: 1.55rem; font-weight: 700; line-height: 1;
-  display: inline-block; min-width: 1.2em; text-align: center;
+  font-size: 1.35rem; font-weight: 700; line-height: 1; color: var(--text);
+  display: inline-block; min-width: 1.1em; text-align: center;
 }
-.star-badge .score-num.score-pulse { animation: scorePulse .5s ease-out; }
-.star-badge .score-num.score-up { text-shadow: 0 0 8px rgba(255, 245, 157, .9); }
-.star-badge .score-num.score-down { text-shadow: 0 0 8px rgba(255, 180, 200, .85); }
+.star-balance .score-num.score-pulse { animation: scorePulse .5s ease-out; }
+.star-balance .score-num.score-up { color: var(--green); }
+.star-balance .score-num.score-down { color: var(--accent); }
 @keyframes scorePulse {
   0% { transform: scale(1); }
   40% { transform: scale(1.35); }
