@@ -1,4 +1,4 @@
-const CACHE_VERSION = '0.0.94';
+const CACHE_VERSION = '0.0.95';
 const PRECACHE = 'stars-bank-precache-' + CACHE_VERSION;
 const RUNTIME = 'stars-bank-runtime-' + CACHE_VERSION;
 const FIREBASE_SDK_VERSION = '10.12.2';
@@ -83,6 +83,23 @@ async function cacheFirstRevalidate(request, cacheKey) {
   return new Response('Offline', { status: 503, statusText: 'Offline' });
 }
 
+async function networkFirst(request) {
+  const cache = await caches.open(PRECACHE);
+  const key = stripQuery(request.url);
+  try {
+    const res = await fetch(request);
+    if (res.ok) {
+      cache.put(request, res.clone());
+      cache.put(key, res.clone());
+    }
+    return res;
+  } catch (err) {
+    const cached = await cache.match(request) || await cache.match(key);
+    if (cached) return cached;
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
+  }
+}
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(PRECACHE).then(cache => {
@@ -127,7 +144,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   if (url.pathname === '/data.js' || url.pathname === '/styles.css' || url.pathname.startsWith('/js/')) {
-    event.respondWith(cacheFirstRevalidate(event.request));
+    event.respondWith(url.search ? networkFirst(event.request) : cacheFirstRevalidate(event.request));
     return;
   }
 

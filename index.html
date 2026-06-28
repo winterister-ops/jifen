@@ -10,13 +10,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="星星银行">
-<meta name="app-version" content="0.0.94">
+<meta name="app-version" content="0.0.95">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+SC:wght@400..900&display=swap" rel="stylesheet"></noscript>
-<link rel="stylesheet" href="styles.css?v=0.0.94">
+<link rel="stylesheet" href="styles.css?v=0.0.95">
+<style id="critical-main-shell">
+.account-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:2px}.account-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}.account-bar .avatar{width:40px;height:40px;font-size:1.4rem}.account-bar .welcome{min-width:0;flex:1;display:flex;align-items:baseline;gap:8px}.account-bar .greet-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.account-bar .sub{white-space:nowrap}.star-balance{display:flex;align-items:center;gap:6px;flex-shrink:0;background:transparent;padding:0}.star-balance .star-icon{width:28px;height:28px;border-radius:50%;background:#ffb627;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(200,140,60,.18)}.star-balance-ic{width:1rem;height:1rem;filter:brightness(0) invert(1)}.star-balance .score-num{font-family:"Fredoka",sans-serif;font-size:1.35rem;font-weight:700;line-height:1;color:#6b4a2b;min-width:1.1em;text-align:center}.main-hero{margin-bottom:16px;padding:14px 16px;border-radius:20px;color:#fff;box-shadow:0 8px 24px rgba(200,140,60,.18)}.main-hero--earn{background:linear-gradient(135deg,#ffb627,#ffc233)}.main-hero--spend{background:linear-gradient(135deg,#ff7b3d,#ff9f1c)}.main-hero-head{display:flex;align-items:center;gap:7px}.main-hero-main{font-size:1.15rem;font-weight:800;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.main-hero-sub{display:inline-block;margin-top:6px;padding:0;border:none;background:transparent;font:inherit;font-size:.78rem;font-weight:700;color:rgba(255,255,255,.92);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
 <script>
 window.__bootPerf = { start: performance.now(), marks: [{ label: 'html-inline', t: 0 }] };
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
@@ -419,13 +422,13 @@ scrollTo(0, 0);
 <!-- Firebase 认证 SDK（firestore 登录后按需加载，见 js/firebase-loader.js） -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="data.js?v=0.0.94"></script>
-<script src="js/firebase-loader.js?v=0.0.94"></script>
-<script src="js/sync.js?v=0.0.94"></script>
-<script src="js/firestore-sync.js?v=0.0.94"></script>
-<script src="js/catalog.js?v=0.0.94"></script>
-<script src="js/ui.js?v=0.0.94"></script>
-<script src="js/auth.js?v=0.0.94"></script>
-<script src="js/pwa.js?v=0.0.94"></script>
+<script src="data.js?v=0.0.95"></script>
+<script src="js/firebase-loader.js?v=0.0.95"></script>
+<script src="js/sync.js?v=0.0.95"></script>
+<script src="js/firestore-sync.js?v=0.0.95"></script>
+<script src="js/catalog.js?v=0.0.95"></script>
+<script src="js/ui.js?v=0.0.95"></script>
+<script src="js/auth.js?v=0.0.95"></script>
+<script src="js/pwa.js?v=0.0.95"></script>
 </body>
 </html>
